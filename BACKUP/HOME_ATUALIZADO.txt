@@ -1,0 +1,86 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card p-3 shadow-sm border-0 text-center">
+            <h6 class="text-muted"><i class="bi bi-folder-fill text-warning"></i> Arquivos Totais</h6>
+            <h3 id="dash-arquivos" style="color: #000 !important; font-size: 24px !important;">0</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3 shadow-sm border-0 text-center">
+            <h6 class="text-muted"><i class="bi bi-people-fill text-primary"></i> Total de Sócios</h6>
+            <h3 id="dash-socios" style="color: #000 !important; font-size: 24px !important;">0</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3 shadow-sm border-0 text-center">
+            <h6 class="text-muted"><i class="bi bi-calendar-check-fill text-danger"></i> Próximo Evento</h6>
+            <h3 id="dash-agenda" style="color: #000 !important; font-size: 18px !important;">Nenhum</h3>
+        </div>
+    </div>
+</div>
+
+<section id="viewport-explorer">
+    <div class="explorer-address-bar mb-3 d-flex justify-content-between align-items-center bg-light p-3 border rounded">
+        <div>
+            <i class="bi bi-pc-display-horizontal"></i>&nbsp;
+            <span id="txtCaminhoWindows" class="fw-bold">INSTITUTO</span>
+        </div>
+        <a href="/" class="btn btn-sm btn-dark" style="display: block !important; visibility: visible !important;">
+            <i class="bi bi-house-door"></i> Voltar ao Painel
+        </a>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary px-3" onclick="voltarDiretorio()">
+                <i class="bi bi-arrow-left"></i> Voltar Pasta
+            </button>
+            <button class="btn btn-sm btn-outline-primary px-3" onclick="abrirModalNovaPasta()">
+                <i class="bi bi-folder-plus"></i> Nova Pasta
+            </button>
+            <button class="btn btn-sm btn-success px-3" onclick="abrirModalUploadComContexto()">
+                <i class="bi bi-cloud-arrow-up-fill"></i> Enviar Arquivo
+            </button>
+        </div>
+    </div>
+
+    <div class="explorer-grid" id="wrapper-explorer-grid"></div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Criar o botão de forma "agressiva" para ele aparecer
+        const btnVoltar = document.createElement('a');
+        btnVoltar.href = '/';
+        btnVoltar.innerHTML = '⬅ VOLTAR AO PAINEL';
+        
+        // Estilo fixo: vai ficar no canto superior direito, flutuando sobre tudo
+        btnVoltar.style.position = 'fixed';
+        btnVoltar.style.top = '20px';
+        btnVoltar.style.right = '20px';
+        btnVoltar.style.zIndex = '999999';
+        btnVoltar.style.padding = '15px 25px';
+        btnVoltar.style.backgroundColor = '#000';
+        btnVoltar.style.color = '#fff';
+        btnVoltar.style.borderRadius = '5px';
+        btnVoltar.style.textDecoration = 'none';
+        btnVoltar.style.fontWeight = 'bold';
+        
+        document.body.appendChild(btnVoltar);
+
+        // Busca dados da API
+        fetch('/api/resumo-dashboard')
+        .then(res => res.json())
+        .then(data => {
+            if(data.total_arquivos !== undefined) {
+                document.getElementById('dash-arquivos').innerText = data.total_arquivos;
+                document.getElementById('dash-socios').innerText = data.total_socios;
+                document.getElementById('dash-agenda').innerText = data.proximo_evento;
+            }
+        });
+    });
+</script>
+{% endblock %}

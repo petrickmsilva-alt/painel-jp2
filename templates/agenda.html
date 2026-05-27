@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <title>Agenda | JP2BUSINESS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+    
+    <style>
+        body { background: #f8fafc; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        .agenda-container { 
+            background: white; 
+            padding: 15px; /* Reduzido */
+            border-radius: 10px; 
+            border: 1px solid #e2e8f0; 
+            max-width: 600px; /* Reduzido para ficar mais compacto */
+            margin: auto; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        h2 { font-size: 1.1rem; color: #000000 !important; font-weight: 700; margin-bottom: 10px; }
+        
+        /* Ajuste de escala do calendário */
+        .fc { font-size: 0.75rem; } 
+        .fc-toolbar-title { font-size: 0.95rem !important; font-weight: 600; }
+        
+        /* Botões */
+        .fc .fc-button-primary { 
+            background-color: #16a34a !important; 
+            border-color: #16a34a !important;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+        }
+        
+        .btn-outline-secondary {
+            padding: 2px 8px; font-size: 0.75rem;
+            background: #fee2e2 !important; color: #b91c1c !important;      
+            border: 1px solid #fecaca !important;
+        }
+
+        .fc .fc-event { border: none; padding: 1px 4px; cursor: pointer; }
+        .fc-day-today { background-color: #f1f5f9 !important; }
+        
+        /* Altura das células reduzida */
+        .fc .fc-daygrid-body { min-height: 250px !important; }
+    </style>
+</head>
+<body>
+    <div class="agenda-container">
+        <a href="/" class="btn btn-sm btn-outline-secondary mb-2">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+        <h2>Agenda - JP2BUSINESS</h2>
+        <div id='calendar'></div>
+    </div>
+
+    <script>
+       document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'pt-br',
+        height: 400,
+        
+        // SUBSTITUA A LINHA ANTIGA POR ESTA:
+        events: {
+            url: '/api/listar-eventos',
+            cache: false // Isso força o calendário a buscar dados novos sempre
+        },
+        
+        headerToolbar: {
+            left: 'prev,next',
+            center: 'title',
+            right: 'today'
+        },
+        eventDidMount: function(info) {
+            if (info.event.extendedProps.color || info.event.color) {
+                info.el.style.backgroundColor = info.event.extendedProps.color || info.event.color;
+                info.el.style.borderColor = info.event.extendedProps.color || info.event.color;
+            }
+        },
+        eventClick: function(info) {
+            let senha = prompt("Digite sua senha para confirmar a exclusão:");
+            if (senha) {
+                let formData = new FormData();
+                formData.append('id', info.event.id);
+                formData.append('senha', senha);
+
+                fetch('/excluir', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'sucesso') {
+                        info.event.remove();
+                        console.log("Evento excluído com sucesso!");
+                    } else {
+                        alert("Erro: " + (data.mensagem || "Senha incorreta ou erro no servidor."));
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert("Falha ao comunicar com o servidor.");
+                });
+            }
+        }
+    }); // Fecha o new FullCalendar.Calendar
+    
+    calendar.render(); // Renderiza o calendário
+}); // Fecha o document.addEventListener
+    </script>
+</body>
+</html>

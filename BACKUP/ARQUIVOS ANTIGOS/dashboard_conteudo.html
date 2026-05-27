@@ -1,0 +1,18 @@
+<section id="viewport-explorer">
+        <div class="explorer-address-bar mb-3">
+          <i class="bi bi-pc-display-horizontal"></i>&nbsp;
+          <span id="txtCaminhoWindows">INSTITUTO</span>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary px-3" id="btnVoltarExplorer" onclick="voltarDiretorio()"><i class="bi bi-arrow-left"></i> Voltar</button>
+            <button class="btn btn-sm btn-outline-primary px-3" id="btnCriarPastaExplorer" onclick="abrirModalNovaPasta()">
+              <i class="bi bi-folder-plus"></i> Nova Pasta
+            </button>
+          </div>
+          <button class="btn btn-sm btn-link text-secondary text-decoration-none" id="btnSincronizarExplorer" onclick="sincronizarGrade()"><i class="bi bi-arrow-clockwise"></i> Sincronizar</button>
+        </div>
+
+        <div class="explorer-grid" id="wrapper-explorer-grid"></div>
+      </section>

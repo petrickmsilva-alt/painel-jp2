@@ -1,0 +1,287 @@
+import os
+import sqlite3
+from datetime import datetime, timedelta
+from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, send_from_directory
+from werkzeug.utils import secure_filename
+
+app = Flask(__name__)
+DB_NAME = "banco_painel.db"
+UPLOAD_FOLDER = "arquivos_sistema"
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.secret_key = "chave_secreta_super_segura_jp2"
+
+def inicializar_banco():
+    conexao = sqlite3.connect(DB_NAME)
+    cursor = conexao.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS usuarios (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                        usuario TEXT NOT NULL UNIQUE, 
+                        senha TEXT NOT NULL, 
+                        nome_exibicao TEXT NOT NULL DEFAULT '')''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS arquivos_painel (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                        nome_original TEXT NOT NULL, 
+                        caminho_sistema TEXT, 
+                        bloco TEXT NOT NULL, 
+                        categoria TEXT NOT NULL, 
+                        tipo TEXT NOT NULL DEFAULT 'arquivo', 
+                        pasta_pai_id INTEGER DEFAULT NULL, 
+                        criado_por TEXT, 
+                        data_upload TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS agenda_eventos (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                        titulo TEXT NOT NULL, 
+                        data_evento TEXT NOT NULL, 
+                        data_fim TEXT, 
+                        horario TEXT, 
+                        tipo_evento TEXT NOT NULL DEFAULT 'reuniao')''')
+    
+    socios = [("petrick", "12345", "Petrick"), ("jefferson", "12345", "Jefferson"), ("peixoto", "12345", "Peixoto")]
+    for u, s, n in socios:
+        cursor.execute("SELECT COUNT(*) FROM usuarios WHERE usuario = ?", (u,))
+        if cursor.fetchone()[0] == 0:
+            cursor.execute("INSERT INTO usuarios (usuario, senha, nome_exibicao) VALUES (?, ?, ?)", (u, s, n))
+    conexao.commit()
+    conexao.close()
+
+if not os.path.exists(UPLOAD_FOLDER): os.makedirs(UPLOAD_FOLDER)
+inicializar_banco()
+
+# --- ROTAS DE AUTENTICAÇÃO ---
+@app.route('/login', methods=['GET'])
+def tela_login():
+    if 'usuario_logado' in session: return redirect(url_for('home'))
+    return render_template('login.html')
+
+@app.route('/login', methods=['POST'])
+def processar_login():
+    u = request.form.get('usuario', '').lower().strip()
+    s = request.form.get('senha')
+    conexao = sqlite3.connect(DB_NAME)
+    conexao.row_factory = sqlite3.Row
+    cursor = conexao.cursor()
+    cursor.execute("SELECT * FROM usuarios WHERE usuario = ?", (u,))
+    user = cursor.fetchone()
+    conexao.close()
+    if user and str(user['senha']) == str(s):
+        session['usuario_logado'] = user['usuario']
+        session['nome_exibicao'] = user['nome_exibicao']
+        return redirect(url_for('home'))
+    flash("Credenciais inválidas!")
+    return redirect(url_for('tela_login'))
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('tela_login'))
+
+# --- ROTAS PRINCIPAIS (Mapeamento para os seus Templates) ---
+@app.route('/')
+def home():
+    if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
+    return render_template('home.html', nome_sócio=session.get('nome_exibicao', 'Sócio'))
+
+@app.route('/agenda')
+def pagina_agenda():
+    if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
+    return render_template('agenda.html', nome_sócio=session.get('nome_exibicao', 'Sócio'))
+
+# --- ROTAS DE ARQUIVOS ---
+@app.route('/listar')
+def listar_arquivos():
+    if 'usuario_logado' not in session: return jsonify({'erro': 'Não autorizado'}), 401
+    
+    conexao = sqlite3.connect(DB_NAME)
+    conexao.row_factory = sqlite3.Row
+    cursor = conexao.cursor()
+
+    # BUSCA TUDO. Sem WHERE, sem filtros.
+    cursor.execute("SELECT * FROM arquivos_painel")
+    
+    linhas = cursor.fetchall()
+    conexao.close()
+    
+    print(f"DEBUG: Total de itens encontrados no banco: {len(linhas)}")
+    
+    return jsonify({
+        'itens': [{
+            'id': l['id'], 
+            'nome': l['nome_original'], 
+            'tipo': l['tipo'], 
+            'caminho': l['caminho_sistema'], 
+            'autor': l['criado_por'] or 'Sistema',
+            'bloco': l['bloco'] # Adicionei o bloco para você ver no console
+        } for l in linhas]
+    })
+
+@app.route('/criar-pasta', methods=['POST'])
+def criar_pasta():
+    if 'usuario_logado' not in session: 
+        return jsonify({'status': 'erro', 'mensagem': 'Não logado'}), 401
+    
+    nome = request.form.get('nome') 
+    bloco = request.form.get('bloco')
+    
+    # AJUSTE AQUI: Se a categoria vier vazia ou None, definimos como 'raiz'
+    cat = request.form.get('categoria')
+    if not cat or cat == "":
+        cat = 'raiz'
+        
+    pai = request.form.get('pasta_pai_id')
+    p_id = int(pai) if (pai and pai != "null" and pai != "undefined") else None
+    
+    conexao = None
+    try:
+        conexao = sqlite3.connect(DB_NAME, timeout=15)
+        cursor = conexao.cursor()
+        
+        cursor.execute("""
+            INSERT INTO arquivos_painel 
+            (nome_original, bloco, categoria, tipo, pasta_pai_id, criado_por) 
+            VALUES (?, ?, ?, 'pasta', ?, ?)
+        """, (nome, bloco, cat, p_id, session.get('nome_exibicao')))
+        
+        conexao.commit()
+        return jsonify({'status': 'sucesso'})
+        
+    except Exception as e:
+        print(f"Erro ao criar pasta: {e}")
+        return jsonify({'status': 'erro', 'mensagem': str(e)}), 500
+        
+    finally:
+        if conexao:
+            conexao.close()
+
+@app.route('/upload-avancado', methods=['POST'])
+def upload_avancado():
+    if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
+    arquivos = request.files.getlist('arquivos')
+    bloco, cat, pai = request.form.get('bloco'), request.form.get('categoria'), request.form.get('pasta_pai_id')
+    p_id = int(pai) if (pai and pai != "null") else None
+    conexao = sqlite3.connect(DB_NAME)
+    cursor = conexao.cursor()
+    for arq in arquivos:
+        if arq.filename == '': continue
+        nome_limpo = secure_filename(os.path.basename(arq.filename))
+        caminho_fisico = os.path.join(UPLOAD_FOLDER, nome_limpo)
+        arq.save(caminho_fisico)
+        cursor.execute("INSERT INTO arquivos_painel (nome_original, caminho_sistema, bloco, categoria, tipo, pasta_pai_id, criado_por) VALUES (?, ?, ?, ?, 'arquivo', ?, ?)", 
+                       (arq.filename, caminho_fisico, bloco, cat, p_id, session.get('nome_exibicao')))
+    conexao.commit()
+    conexao.close()
+    return jsonify({'status': 'sucesso'})
+
+@app.route('/baixar/<int:arquivo_id>')
+def baixar_arquivo(arquivo_id):
+    if 'usuario_logado' not in session: return "Não autorizado", 401
+    conexao = sqlite3.connect(DB_NAME)
+    conexao.row_factory = sqlite3.Row
+    cursor = conexao.cursor()
+    cursor.execute("SELECT caminho_sistema, nome_original FROM arquivos_painel WHERE id = ?", (arquivo_id,))
+    res = cursor.fetchone()
+    conexao.close()
+    return send_from_directory(UPLOAD_FOLDER, os.path.basename(res['caminho_sistema']), as_attachment=True, download_name=res['nome_original']) if res else "Arquivo não encontrado", 404
+
+@app.route('/excluir', methods=['POST'])
+def excluir_arquivo():
+    if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
+    arq_id, senha = request.form.get('id'), request.form.get('senha')
+    conexao = sqlite3.connect(DB_NAME)
+    cursor = conexao.cursor()
+    cursor.execute("SELECT senha FROM usuarios WHERE usuario = ?", (session.get('usuario_logado'),))
+    u = cursor.fetchone()
+    if not u or str(u[0]) != str(senha):
+        conexao.close()
+        return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
+    cursor.execute("DELETE FROM arquivos_painel WHERE id = ? OR pasta_pai_id = ?", (arq_id, arq_id))
+    conexao.commit()
+    conexao.close()
+    return jsonify({'status': 'sucesso'})
+
+@app.route('/salvar-site', methods=['POST'])
+def salvar_site():
+    if 'usuario_logado' not in session: 
+        return jsonify({'status': 'erro', 'mensagem': 'Não logado'}), 401
+    
+    nome = request.form.get('nome')
+    url = request.form.get('url')
+    bloco = request.form.get('bloco')
+    
+    if not nome or not url or not bloco:
+        return jsonify({'status': 'erro', 'mensagem': 'Dados incompletos'}), 400
+
+    conexao = None
+    try:
+        conexao = sqlite3.connect(DB_NAME, timeout=15)
+        cursor = conexao.cursor()
+        
+        # SALVANDO A URL NO 'caminho_sistema' já que não temos 'link_externo'
+        cursor.execute("""
+            INSERT INTO arquivos_painel 
+            (nome_original, bloco, tipo, categoria, criado_por, caminho_sistema) 
+            VALUES (?, ?, 'link', 'raiz', ?, ?)
+        """, (nome, bloco, session.get('nome_exibicao'), url))
+        
+        conexao.commit()
+        return jsonify({'status': 'sucesso'})
+        
+    except Exception as e:
+        print(f"Erro ao salvar site: {e}")
+        return jsonify({'status': 'erro', 'mensagem': str(e)}), 500
+        
+    finally:
+        if conexao:
+            conexao.close()
+
+# --- ROTAS DE AGENDA ---
+@app.route('/api/listar-eventos')
+def api_listar_eventos():
+    conexao = sqlite3.connect(DB_NAME)
+    cursor = conexao.cursor()
+    cursor.execute("SELECT titulo, data_evento, data_fim FROM agenda_eventos")
+    eventos = cursor.fetchall()
+    conexao.close()
+    lista_diaria = []
+    for ev in eventos:
+        titulo, inicio_str, fim_str = ev
+        inicio = datetime.strptime(inicio_str, '%Y-%m-%d')
+        fim = datetime.strptime(fim_str, '%Y-%m-%d')
+        delta = (fim - inicio).days
+        for i in range(delta + 1):
+            lista_diaria.append({'title': titulo, 'start': (inicio + timedelta(days=i)).strftime('%Y-%m-%d'), 'allDay': True})
+    return jsonify(lista_diaria)
+
+@app.route('/adicionar-evento', methods=['POST'])
+def calendar_adicionar():
+    titulo = request.form.get('titulo')
+    data_ini = request.form.get('dataReuniaoInput') or request.form.get('data_inicio') or datetime.now().strftime('%Y-%m-%d')
+    data_fim = request.form.get('data_fim') or data_ini
+    conexao = sqlite3.connect(DB_NAME)
+    cursor = conexao.cursor()
+    cursor.execute("INSERT INTO agenda_eventos (titulo, data_evento, data_fim) VALUES (?, ?, ?)", (titulo, data_ini, data_fim))
+    conexao.commit()
+    conexao.close()
+    return {"status": "sucesso"}, 200
+
+@app.route('/api/adicionar-evento', methods=['POST'])
+def api_adicionar_evento():
+    d = request.json
+    conexao = sqlite3.connect(DB_NAME)
+    cursor = conexao.cursor()
+    cursor.execute("INSERT INTO agenda_eventos (titulo, data_evento, data_fim) VALUES (?, ?, ?)", (d.get('titulo'), d.get('start'), d.get('end')))
+    conexao.commit()
+    conexao.close()
+    return jsonify({'status': 'sucesso'})
+
+@app.route('/api/excluir-evento', methods=['POST'])
+def api_excluir_evento():
+    conexao = sqlite3.connect(DB_NAME)
+    cursor = conexao.cursor()
+    cursor.execute("DELETE FROM agenda_eventos WHERE titulo = ?", (request.json.get('titulo'),))
+    conexao.commit()
+    conexao.close()
+    return jsonify({'status': 'excluido'})
+
+if __name__ == '__main__':
+    app.run(debug=True)
