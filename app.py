@@ -80,6 +80,10 @@ def realizar_backup():
         print(f"BACKUP OK: {nome_backup}")
     except Exception as e:
         print(f"ERRO NO BACKUP: {e}")
+        
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory('static', 'manifest.json')       
 
 @app.route('/login', methods=['GET', 'POST'])
 def tela_login():
