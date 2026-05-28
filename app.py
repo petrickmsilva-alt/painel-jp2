@@ -5,7 +5,7 @@ from supabase import create_client
 
 # Coloque as suas informações aqui:
 SUPABASE_URL = "https://zkdzgpblxorcxxdrmojo.supabase.co" 
-SUPABASE_KEY = "sb_publishable_ehLQ5mAA1T_hBGh1YK4KpA_DQ7dx..." 
+SUPABASE_KEY = "sb_secret_9004F4w6cyOWErL5RQJTPQ_rfUdEyEb" 
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 from datetime import datetime, timedelta
