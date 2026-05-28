@@ -12,6 +12,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
   <style>
+  /* Ajuste para telas pequenas (celulares) */
+  @media (max-width: 600px) {
+    body { font-size: 14px !important; }
+    .card { margin-bottom: 10px !important; }
+    .col-md-4 { width: 100% !important; flex: 0 0 100% !important; max-width: 100% !important; }
+    .explorer-grid { display: block !important; }
+    /* Ajusta botões para não ficarem quebrados */
+    .btn { font-size: 12px !important; padding: 5px 10px !important; }
+  }
     :root {
       --sidebar-width: 290px;
       --sidebar-bg: #1e293b;
