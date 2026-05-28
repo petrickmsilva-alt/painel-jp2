@@ -12,24 +12,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
   <style>
-  @media (max-width: 768px) {
-    /* Esconde a barra lateral automaticamente no celular */
-    .sidebar {
-        display: none; 
-    }
-    
-    /* Faz o conteúdo principal ocupar a tela toda */
-    .main-content {
+    @media (max-width: 768px) {
+      /* Esconde a barra lateral (sidebar) no celular */
+      .sidebar {
+        display: none !important;
+      }
+      
+      /* Faz o conteúdo principal ocupar a tela toda */
+      .main-content {
         width: 100%;
         padding: 15px;
-    }
+      }
 
-    /* Aumenta o tamanho dos botões para facilitar o toque com o dedo */
-    button, .btn {
+      /* Aumenta o tamanho dos botões */
+      button, .btn {
         padding: 15px;
         font-size: 16px;
+      }
     }
-}
     :root {
       --sidebar-width: 290px;
       --sidebar-bg: #1e293b;
@@ -1210,11 +1210,11 @@ function abrirModalExcluirDireto(event, id) {
   #mobile-only-ui { display: none; }
 
    /* 2. Só mostrar no celular */
-  @media (max-width: 768px) {
+ @media (max-width: 768px) {
     #mobile-only-ui { display: block !important; }
     
-    /* Forçamos o desaparecimento de qualquer menu lateral antigo */
-    .sidebar, #sidebar, .menu-lateral, nav.sidebar { 
+    /* ESCONDE A BARRA LATERAL (Usa o seletor mais genérico do Bootstrap que parece ser o seu caso) */
+    .sidebar, div[class*="sidebar"] { 
         display: none !important; 
     }
     
