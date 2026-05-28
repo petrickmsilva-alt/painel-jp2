@@ -1209,10 +1209,14 @@ function abrirModalExcluirDireto(event, id) {
   /* 1. Ocultar totalmente para computador */
   #mobile-only-ui { display: none; }
 
-  /* 2. Só mostrar no celular */
+   /* 2. Só mostrar no celular */
   @media (max-width: 768px) {
     #mobile-only-ui { display: block !important; }
-    .sidebar { display: none !important; } /* Esconde a lateral antiga no celular */
+    
+    /* Forçamos o desaparecimento de qualquer menu lateral antigo */
+    .sidebar, #sidebar, .menu-lateral, nav.sidebar { 
+        display: none !important; 
+    }
     
     .mobile-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: #001f3f; display: flex; justify-content: space-around; align-items: center; color: white; z-index: 1000; }
     .nav-item { color: white; text-decoration: none; font-size: 12px; }
