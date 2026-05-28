@@ -1,6 +1,13 @@
 import os
 import sqlite3
 import shutil
+from supabase import create_client
+
+# Coloque as suas informações aqui:
+SUPABASE_URL = "https://zkdzgpblxorcxxdrmojo.supabase.co" 
+SUPABASE_KEY = "sb_publishable_ehLQ5mAA1T_hBGh1YK4KpA_DQ7dx..." 
+
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, send_from_directory, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -45,6 +52,13 @@ def inicializar_banco():
                         usuario TEXT NOT NULL, 
                         acao TEXT NOT NULL, 
                         data_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS usuarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        usuario TEXT NOT NULL,
+        senha TEXT NOT NULL
+    )
+""")
     conexao.commit()
     conexao.close()
 
@@ -189,17 +203,28 @@ def upload_avancado():
     arquivos = request.files.getlist('arquivos')
     bloco, cat, pai = request.form.get('bloco'), request.form.get('categoria'), request.form.get('pasta_pai_id')
     p_id = int(pai) if (pai and pai != "null") else None
+    
     conexao = sqlite3.connect(DB_NAME)
     cursor = conexao.cursor()
+    
     for arq in arquivos:
         if arq.filename == '': continue
-        nome_limpo = secure_filename(os.path.basename(arq.filename))
-        caminho_fisico = os.path.join(UPLOAD_FOLDER, nome_limpo)
-        arq.save(caminho_fisico)
+        
+        # Envia para o Supabase (Bucket 'meus-arquivos')
+        # O arquivo é lido como bytes e enviado
+        supabase.storage.from_("meus-arquivos").upload(
+            path=arq.filename, 
+            file=arq.read(),
+            file_options={"content-type": arq.content_type}
+        )
+        # Pega a URL pública
+        link = supabase.storage.from_("meus-arquivos").get_public_url(arq.filename)
+        
+        # Salva o LINK no banco
         cursor.execute("INSERT INTO arquivos_painel (nome_original, caminho_sistema, bloco, categoria, tipo, pasta_pai_id, criado_por) VALUES (?, ?, ?, ?, 'arquivo', ?, ?)", 
-                       (arq.filename, caminho_fisico, bloco, cat, p_id, session.get('nome_exibicao')))
+                       (arq.filename, link, bloco, cat, p_id, session.get('nome_exibicao')))
+    
     conexao.commit()
-    registrar_log("Realizou upload de arquivo(s) no sistema")
     conexao.close()
     return jsonify({'status': 'sucesso'})
 
@@ -209,10 +234,14 @@ def baixar_arquivo(arquivo_id):
     conexao = sqlite3.connect(DB_NAME)
     conexao.row_factory = sqlite3.Row
     cursor = conexao.cursor()
-    cursor.execute("SELECT caminho_sistema, nome_original FROM arquivos_painel WHERE id = ?", (arquivo_id,))
+    cursor.execute("SELECT caminho_sistema FROM arquivos_painel WHERE id = ?", (arquivo_id,))
     res = cursor.fetchone()
     conexao.close()
-    return send_from_directory(UPLOAD_FOLDER, os.path.basename(res['caminho_sistema']), as_attachment=True, download_name=res['nome_original']) if res else "Arquivo não encontrado", 404
+    
+    if res and res['caminho_sistema'].startswith('http'):
+        # Redireciona o navegador direto para o arquivo no Supabase
+        return redirect(res['caminho_sistema'])
+    return "Arquivo não encontrado", 404
 
 @app.route('/excluir', methods=['POST'])
 def excluir_arquivo():
