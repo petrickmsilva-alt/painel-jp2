@@ -1184,26 +1184,46 @@ function abrirModalExcluirDireto(event, id) {
             .catch(err => console.error("Erro ao carregar resumo:", err));
         });
     </script>
-  <nav class="mobile-nav">
-      <a href="/" class="nav-item">🏠 Início</a>
-      <a href="/agenda" class="nav-item">📅 Agenda</a>
-      <a href="/arquivos" class="nav-item">📁 Arquivos</a>
-      <a href="#" class="nav-item">☰ Menu</a>
-    </nav>
+  <!-- INÍCIO DA BARRA DE NAVEGAÇÃO MOBILE -->
+<nav class="mobile-nav">
+  <a href="/" class="nav-item">🏠 Início</a>
+  <a href="/agenda" class="nav-item">📅 Agenda</a>
+  <a href="/arquivos" class="nav-item">📁 Arquivos</a>
+  <a href="#" class="nav-item" onclick="toggleMenu()">☰ Mais</a>
+</nav>
 
-    <a href="/agendar" class="fab">+</a>
+<!-- MENU EXPANSÍVEL (OCULTO POR PADRÃO) -->
+<div id="mobile-menu" class="mobile-menu-drawer">
+  <div class="menu-header"><span>Menu Completo</span><button onclick="toggleMenu()">X</button></div>
+  <a href="/instituto">🏢 Instituto (IBDTEC)</a>
+  <a href="/jp2-business">💼 JP2 Business</a>
+  <a href="/gestao-socios">👥 Gestão de Sócios</a>
+  <a href="/auditoria">📊 Auditoria (Logs)</a>
+  <a href="/sites-jp2">🌐 Sites JP2 Business</a>
+</div>
 
-    <style>
-      /* Esconde o menu original no celular para não duplicar */
-      @media (max-width: 768px) {
-        .sidebar { display: none !important; }
-      }
+<!-- BOTÃO FLUTUANTE DE AGENDAMENTO -->
+<a href="/agendar" class="fab">+</a>
 
-      .mobile-nav { display: none; position: fixed; bottom: 0; width: 100%; height: 60px; background: #001f3f; display: flex; justify-content: space-around; align-items: center; color: white; z-index: 1000; }
-      .nav-item { color: white; text-decoration: none; font-size: 12px; }
-      .fab { display: none; position: fixed; bottom: 80px; right: 20px; background: #28a745; color: white; border-radius: 50%; width: 60px; height: 60px; text-align: center; line-height: 60px; font-size: 30px; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3); z-index: 999; text-decoration: none; }
-      
-      @media (max-width: 768px) { .mobile-nav, .fab { display: flex; } }
-    </style>
+<style>
+  /* ESTILOS DO MENU */
+  .mobile-nav { display: none; position: fixed; bottom: 0; width: 100%; height: 60px; background: #001f3f; display: flex; justify-content: space-around; align-items: center; color: white; z-index: 1000; }
+  .nav-item { color: white; text-decoration: none; font-size: 12px; }
+  .fab { display: none; position: fixed; bottom: 80px; right: 20px; background: #28a745; color: white; border-radius: 50%; width: 60px; height: 60px; text-align: center; line-height: 60px; font-size: 30px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); z-index: 999; }
+  .mobile-menu-drawer { display: none; position: fixed; bottom: 60px; left: 0; width: 100%; background: white; border-top: 2px solid #001f3f; padding: 20px; z-index: 998; box-shadow: 0 -2px 10px rgba(0,0,0,0.2); }
+  .mobile-menu-drawer a { display: block; padding: 15px; border-bottom: 1px solid #eee; text-decoration: none; color: #333; }
+  .menu-header { display: flex; justify-content: space-between; font-weight: bold; padding-bottom: 10px; }
+  
+  /* ATIVAÇÃO NO CELULAR */
+  @media (max-width: 768px) { .mobile-nav, .fab { display: flex; } .sidebar { display: none !important; } }
+</style>
+
+<script>
+  function toggleMenu() {
+    var menu = document.getElementById('mobile-menu');
+    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+  }
+</script>
+<!-- FIM DA BARRA DE NAVEGAÇÃO MOBILE -->  
 </body>
 </html>
