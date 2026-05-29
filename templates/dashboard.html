@@ -1219,16 +1219,23 @@ function abrirModalExcluirDireto(event, id) {
 
 <style>
   /* 1. Ocultar totalmente para computador */
-  #mobile-only-ui { display: none; }
+   #mobile-only-ui { display: none; }
 
    /* 2. Só mostrar no celular */
- @media (max-width: 768px) {
-    #mobile-only-ui { display: block !important; }
-    
-    /* ESCONDE A BARRA LATERAL (Usa o seletor mais genérico do Bootstrap que parece ser o seu caso) */
-    .sidebar, div[class*="sidebar"] { 
-        display: none !important; 
-    }
+   @media (max-width: 768px) {
+      #mobile-only-ui { display: block !important; }
+      
+      /* ESCONDE A BARRA LATERAL E FORCE O GRID */
+      .sidebar-enterprise, .sidebar, div[class*="sidebar"] { 
+          display: none !important; 
+      }
+      
+      .explorer-grid { 
+          display: grid !important; 
+          grid-template-columns: 1fr 1fr !important; 
+          gap: 10px !important; 
+      }
+   }
     
     .mobile-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: #001f3f; display: flex; justify-content: space-around; align-items: center; color: white; z-index: 1000; }
     .nav-item { color: white; text-decoration: none; font-size: 12px; }
