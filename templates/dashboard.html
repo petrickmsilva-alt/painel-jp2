@@ -12,24 +12,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
   <style>
-    @media (max-width: 768px) {
-      /* Esconde a barra lateral (sidebar) no celular */
-      .sidebar {
-        display: none !important;
-      }
-      
-      /* Faz o conteúdo principal ocupar a tela toda */
-      .main-content {
-        width: 100%;
-        padding: 15px;
-      }
+    /* Comportamento padrão para computador (tela larga) */
+  /* Nenhuma alteração necessária aqui, mantém o menu lateral original */
 
-      /* Aumenta o tamanho dos botões */
-      button, .btn {
-        padding: 15px;
-        font-size: 16px;
-      }
+  /* Comportamento exclusivo para Celular (telas até 768px) */
+  @media (max-width: 768px) {
+    /* Esconde a barra lateral original */
+    .sidebar {
+      display: none !important;
     }
+    
+    /* Ajusta o conteúdo para ocupar toda a largura */
+    .main-content {
+      width: 100%;
+      padding: 15px;
+    }
+
+    /* Aumenta o tamanho dos botões */
+    button, .btn {
+      padding: 15px;
+      font-size: 16px;
+    }
+  }
     :root {
       --sidebar-width: 290px;
       --sidebar-bg: #1e293b;
