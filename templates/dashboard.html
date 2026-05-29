@@ -12,28 +12,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
   <style>
-    /* Comportamento padrão para computador (tela larga) */
-  /* Nenhuma alteração necessária aqui, mantém o menu lateral original */
-
-  /* Comportamento exclusivo para Celular (telas até 768px) */
-  @media (max-width: 768px) {
-    /* Esconde a barra lateral original */
-    .sidebar {
-      display: none !important;
+    <style>
+    @media (max-width: 768px) {
+      /* Ataque direto a qualquer elemento que pareça um menu lateral */
+      .sidebar, #sidebar, .menu-lateral, nav, .d-flex, .flex-column {
+        display: none !important;
+      }
+      
+      /* Mantém o conteúdo principal visível */
+      .main-content {
+        width: 100% !important;
+        padding: 15px !important;
+      }
     }
-    
-    /* Ajusta o conteúdo para ocupar toda a largura */
-    .main-content {
-      width: 100%;
-      padding: 15px;
-    }
-
-    /* Aumenta o tamanho dos botões */
-    button, .btn {
-      padding: 15px;
-      font-size: 16px;
-    }
-  }
+  </style>
     :root {
       --sidebar-width: 290px;
       --sidebar-bg: #1e293b;
