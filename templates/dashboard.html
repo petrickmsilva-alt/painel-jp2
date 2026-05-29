@@ -1174,11 +1174,11 @@ function abrirModalExcluirDireto(event, id) {
 
     <div id="mobile-menu" class="mobile-menu-drawer">
   <div class="menu-header"><span>Menu</span><button onclick="toggleMenu()">X</button></div>
-  <a href="/instituto">🏢 Instituto (IBDTEC)</a>
-  <a href="/jp2-business">💼 JP2 Business</a>
+  <a onclick="clicarBlocoMestre('instituto', this)" style="cursor:pointer;">🏢 Instituto (IBDTEC)</a>
+  <a onclick="clicarBlocoMestre('jp2_business', this)" style="cursor:pointer;">💼 JP2 Business</a>
   <a href="/admin/usuarios">👥 Gestão de Sócios</a>
   <a href="/admin/logs">📊 Auditoria (Logs)</a>
-  <a href="/sites-jp2">🌐 Sites JP2 Business</a>
+  <a onclick="clicarBlocoMestre('sites_jp2', this)" style="cursor:pointer;">🌐 Sites JP2 Business</a>
 </div>
     <a href="/agendar" class="fab">+</a>
 </div>
