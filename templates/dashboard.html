@@ -12,13 +12,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
   <style>
-    @media (max-width: 768px) {
-      .sidebar-enterprise {
-        display: none !important;
-      }
-        
-   </style>
-    :root {
+   
+  /* Comportamento exclusivo para Celular */
+  @media (max-width: 768px) {
+    /* Esconde a barra lateral corporativa */
+    .sidebar-enterprise {
+      display: none !important;
+    }
+    
+    /* Corrige o layout principal para ocupar a tela toda */
+    .workspace-wrapper {
+      display: block !important;
+      width: 100% !important;
+    }
+  }      
+     :root {
       --sidebar-width: 290px;
       --sidebar-bg: #1e293b;
       --sidebar-hover: #334155;
