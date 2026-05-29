@@ -12,20 +12,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
   <style>
-   
-  /* Comportamento exclusivo para Celular */
   @media (max-width: 768px) {
-    /* Esconde a barra lateral corporativa */
-    .sidebar-enterprise {
-      display: none !important;
+    /* 1. Esconde o botão/menu lateral original */
+    .btn-menu, #menu-btn, .sidebar-enterprise { display: none !important; }
+
+    /* 2. Exibição das pastas em blocos (grid) */
+    .lista-arquivos { 
+      display: grid !important; 
+      grid-template-columns: repeat(2, 1fr); 
+      gap: 10px; 
+      max-height: 70vh; 
+      overflow-y: auto; 
     }
-    
-    /* Corrige o layout principal para ocupar a tela toda */
-    .workspace-wrapper {
-      display: block !important;
-      width: 100% !important;
-    }
-  }      
+
+    /* 3. Ajuste do menu inferior (remove "Arquivos") */
+    .mobile-nav a[href="/arquivos"] { display: none !important; }
+    .mobile-nav { justify-content: space-evenly !important; }
+
+    /* 4. Calendário maior */
+    #calendar { height: 500px !important; }
+  }
      :root {
       --sidebar-width: 290px;
       --sidebar-bg: #1e293b;
@@ -1227,6 +1233,12 @@ function abrirModalExcluirDireto(event, id) {
     var menu = document.getElementById('mobile-menu');
     menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
   }
+  // Script para garantir que os botões do menu "Mais" funcionem
+  document.querySelectorAll('.mobile-menu-drawer a').forEach(link => {
+    link.addEventListener('click', function(e) {
+      window.location.href = this.getAttribute('href');
+    });
+  });
 </script>
 <!-- FIM DO MENU CELULAR -->
 </body>
