@@ -11,39 +11,7 @@
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
-  <style>
-  @media (max-width: 768px) {
-    /* 1. Remove o botão 'Menu' do canto superior direito */
-    .menu-trigger, .header-menu-btn, #menu-btn { 
-      display: none !important; 
-    }
-
-    /* 2. Força pastas a ficarem lado a lado (Grid) */
-    /* Ajuste o nome da classe '.pasta-item' se o seu sistema usar outro nome */
-    .container-pastas, .lista-arquivos { 
-      display: grid !important; 
-      grid-template-columns: 1fr 1fr !important; 
-      gap: 10px !important; 
-      padding: 10px !important;
-    }
-
-    /* 3. Garante que o menu de 'Mais' funcione */
-    .mobile-menu-drawer { display: none; }
-  }
-
-    /* 4. Calendário maior */
-    #calendar { height: 500px !important; }
-  
-    :root {
-      --sidebar-width: 290px;
-      --sidebar-bg: #1e293b;
-      --sidebar-hover: #334155;
-      --sidebar-active: #0f172a;
-      --workspace-bg: #f8fafc;
-      --card-border-hover: #cbd5e1;
-    }
-
-    body {
+  body {
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       background-color: var(--workspace-bg);
       overflow: hidden;
@@ -1201,7 +1169,6 @@ function abrirModalExcluirDireto(event, id) {
     <nav class="mobile-nav">
       <a href="/" class="nav-item">🏠 Início</a>
       <a href="/agenda" class="nav-item">📅 Agenda</a>
-      <a href="/arquivos" class="nav-item">📁 Arquivos</a>
       <a href="#" class="nav-item" onclick="toggleMenu()">☰ Mais</a>
     </nav>
 
