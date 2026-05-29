@@ -13,21 +13,23 @@
   
   <style>
   @media (max-width: 768px) {
-    /* 1. Esconde o botão/menu lateral original */
-    .btn-menu, #menu-btn, .sidebar-enterprise { display: none !important; }
-
-    /* 2. Exibição das pastas em blocos (grid) */
-    .lista-arquivos { 
-      display: grid !important; 
-      grid-template-columns: repeat(2, 1fr); 
-      gap: 10px; 
-      max-height: 70vh; 
-      overflow-y: auto; 
+    /* 1. Remove o botão 'Menu' do canto superior direito */
+    .menu-trigger, .header-menu-btn, #menu-btn { 
+      display: none !important; 
     }
 
-    /* 3. Ajuste do menu inferior (remove "Arquivos") */
-    .mobile-nav a[href="/arquivos"] { display: none !important; }
-    .mobile-nav { justify-content: space-evenly !important; }
+    /* 2. Força pastas a ficarem lado a lado (Grid) */
+    /* Ajuste o nome da classe '.pasta-item' se o seu sistema usar outro nome */
+    .container-pastas, .lista-arquivos { 
+      display: grid !important; 
+      grid-template-columns: 1fr 1fr !important; 
+      gap: 10px !important; 
+      padding: 10px !important;
+    }
+
+    /* 3. Garante que o menu de 'Mais' funcione */
+    .mobile-menu-drawer { display: none; }
+  }
 
     /* 4. Calendário maior */
     #calendar { height: 500px !important; }
@@ -554,7 +556,15 @@
             console.error("Erro: Elemento 'menu-bloco-instituto' não encontrado no menu!");
         }
     });
-
+     document.addEventListener('DOMContentLoaded', function() {
+        const links = document.querySelectorAll('.mobile-menu-drawer a');
+        links.forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Removemos o preventDefault para ele seguir o link normalmente
+                console.log("Navegando para: " + this.getAttribute('href'));
+            });
+        });
+    }); 
     function clicarBlocoMestre(bloco, elementoDom) {
         // 1. Remove classe ativa dos menus
         document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
