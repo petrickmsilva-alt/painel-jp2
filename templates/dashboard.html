@@ -905,7 +905,8 @@ function abrirModalNovaPasta() {
     overlay.querySelector('#btn_criar_pasta').onclick = function() {
         let nome = overlay.querySelector('#nome_nova_pasta_temp').value;
         if(!nome) return alert("Digite um nome!");
-        
+      
+       alert("Enviando para o pai ID: " + estadoDoPainel.pasta_pai_id); 
        fetch('/criar-pasta', { 
             method: 'POST', 
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
