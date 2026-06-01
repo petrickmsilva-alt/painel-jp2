@@ -833,37 +833,39 @@ function sincronizarGrade() {
         sincronizarGrade();
     }
 
-    function entrarSubpastaReal(id, nomePasta) {
-    // 1. Atualiza o ID do pai para o ID da pasta que você clicou
+   function entrarSubpastaReal(id, nomePasta) {
+    // Atualiza o ID do pai para o ID da pasta clicada
     estadoDoPainel.pasta_pai_id = id;
     
-    // 2. Reseta o caminho visual baseando-se no que já existe, 
-    // mas garante que estamos descendo um nível
-    let base = estadoDoPainel.string_caminho.split(' ➔ ')[0];
-    let categoria = estadoDoPainel.string_caminho.split(' ➔ ')[1] || "";
-    
-    // Constrói um caminho limpo para evitar a repetição
-    estadoDoPainel.string_caminho = `${base} ➔ ${categoria} ➔ ${nomePasta}`;
+    // Acrescenta ao caminho atual em vez de reconstruir do zero
+    estadoDoPainel.string_caminho += ` ➔ ${nomePasta}`; 
     
     estadoDoPainel.nivel_atual = 'subpasta';
     
-    // 3. Força a sincronização com o novo ID capturado
     sincronizarGrade();
 }
 
     function voltarDiretorio() {
-        if (estadoDoPainel.pasta_pai_id !== null) {
-            estadoDoPainel.pasta_pai_id = null;
-            let partes = estadoDoPainel.string_caminho.split(' ➔ ');
-            estadoDoPainel.string_caminho = partes[0] + ' ➔ ' + partes[1];
-            sincronizarGrade();
-        } else if (estadoDoPainel.nivel_atual === 'subpasta') {
-            estadoDoPainel.nivel_atual = 'raiz_bloco';
-            estadoDoPainel.categoria = '';
-            estadoDoPainel.string_caminho = estadoDoPainel.bloco.toUpperCase().replace('_', ' ');
-            sincronizarGrade();
-        }
+    let partes = estadoDoPainel.string_caminho.split(' ➔ ');
+    
+    if (partes.length > 2) {
+        // Remove apenas o último nível do caminho
+        partes.pop();
+        estadoDoPainel.string_caminho = partes.join(' ➔ ');
+        
+        // Aqui você precisaria que o servidor te desse o ID do pai anterior
+        // Como não temos esse ID salvo no front, uma solução rápida é forçar 
+        // o recarregamento da pasta pai via um novo fetch ou lógica de hierarquia.
+        alert("Para voltar níveis profundos, recarregue a página ou volte para a categoria principal.");
+    } else {
+        // Se estiver no nível básico, volta para a raiz do bloco
+        estadoDoPainel.nivel_atual = 'raiz_bloco';
+        estadoDoPainel.pasta_pai_id = null;
+        estadoDoPainel.string_caminho = estadoDoPainel.bloco.toUpperCase().replace('_', ' ');
+        sincronizarGrade();
     }
+}
+    
 function abrirModalNovaPasta() {
     // Remove modal anterior caso exista para evitar duplicidade
     const modalExistente = document.getElementById('modal-global-overlay-pasta');
