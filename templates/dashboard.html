@@ -181,11 +181,11 @@
 
     /* VIEWPORT CENTRAL */
     .content-workspace-viewport {
-    padding: 30px;
-    flex-grow: 1;
-    overflow-y: auto; /* Deixe o scroll apenas aqui */
-    height: 100%;     /* Ajustado para preencher o espaço sem travar */
-}
+      padding: 30px;
+      flex-grow: 1;
+      overflow-y: auto;
+      height: 100%;
+    }
 
     /* BARRA DE ENDEREÇO */
     .explorer-address-bar {
@@ -283,12 +283,13 @@
       font-weight: 600;
       font-size: 13px;
     }
-    /* Força qualquer botão que contenha texto de Nova Pasta ou Incluir Site a ser azul */
+    
     .btn-primary {
       background-color: #0d6efd !important;
       border-color: #0d6efd !important;
       color: #ffffff !important;
     }
+    
     .btn-action-primary:hover {
       background-color: #1e40af;
     }
@@ -309,27 +310,27 @@
             <span style="font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px;">CONSOLE DE GESTÃO</span>
         </div>
         <div class="px-3 py-2">
-    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#menuResumo">
-        <i class="bi bi-bar-chart-line"></i> Consultar Status
-    </button>
-    
-    <div class="collapse mt-2" id="menuResumo">
-        <div class="bg-dark p-2 rounded border border-secondary text-white">
-            <div class="d-flex justify-content-between mb-1">
-                <small style="font-size: 0.6rem;">ARQUIVOS:</small>
-                <span id="dash-arquivos" style="font-size: 0.7rem; font-weight: bold;">...</span>
-            </div>
-            <div class="d-flex justify-content-between mb-1">
-                <small style="font-size: 0.6rem;">SÓCIOS:</small>
-                <span id="dash-socios" style="font-size: 0.7rem; font-weight: bold;">...</span>
-            </div>
-            <div class="d-flex justify-content-between">
-                <small style="font-size: 0.6rem;">PRÓXIMO EVENTO:</small>
-                <span id="dash-agenda" style="font-size: 0.6rem; font-weight: bold; color: #0dcaf0;">...</span>
+            <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#menuResumo">
+                <i class="bi bi-bar-chart-line"></i> Consultar Status
+            </button>
+            
+            <div class="collapse mt-2" id="menuResumo">
+                <div class="bg-dark p-2 rounded border border-secondary text-white">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small style="font-size: 0.6rem;">ARQUIVOS:</small>
+                        <span id="dash-arquivos" style="font-size: 0.7rem; font-weight: bold;">...</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                         <small style="font-size: 0.6rem;">SÓCIOS:</small>
+                        <span id="dash-socios" style="font-size: 0.7rem; font-weight: bold;">...</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small style="font-size: 0.6rem;">PRÓXIMO EVENTO:</small>
+                        <span id="dash-agenda" style="font-size: 0.6rem; font-weight: bold; color: #0dcaf0;">...</span>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
         <div class="sidebar-agenda-box">
             <button class="btn-sidebar-agenda" onclick="abrirConfiguradorComContexto()">
                 <i class="bi bi-calendar3-event text-danger"></i> Agendar Compromisso
@@ -349,12 +350,13 @@
             
             <div class="menu-header mt-3">Gestão</div>
             <a href="/agenda" class="menu-item">
-                <i class="bi bi-calendar-event-fill text-danger"></i> Agenda 
+                 <i class="bi bi-calendar-event-fill text-danger"></i> Agenda 
             </a>
             <a href="/admin/usuarios" class="menu-item" style="color: #ffc107;">
                 <i class="bi bi-gear-fill"></i> Gestão de Sócios
-             <a href="/admin/logs" class="menu-item" style="color: #64748b;">
-                <i class="bi bi-clipboard-data"></i> Auditoria (Logs)   
+            </a>
+            <a href="/admin/logs" class="menu-item" style="color: #64748b;">
+                <i class="bi bi-clipboard-data"></i> Auditoria (Logs) 
             </a>
 
             <div class="menu-header mt-3">Ecossistema Digital</div>
@@ -384,17 +386,17 @@
         <div class="content-workspace-viewport">
             <div class="mb-4 bg-white p-3 rounded shadow-sm border">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div id="caminho-area" class="d-flex align-items-center">
+                     <div id="caminho-area" class="d-flex align-items-center">
                         <i class="bi bi-folder2-open me-2 text-primary"></i>
                         <span id="txtCaminhoWindows" class="fw-bold text-secondary" style="font-size: 13px;"></span>
                     </div>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="sincronizarGrade()">
+                     <button class="btn btn-sm btn-outline-secondary" onclick="sincronizarGrade()">
                         <i class="bi bi-arrow-clockwise"></i> Sincronizar
                     </button>
                 </div>
                 <div class="d-flex gap-2">
-                    <div id="controles-arquivos" class="d-flex gap-2">
-                        <button type="button" onclick="abrirModalNovaPasta()">
+                   <div id="controles-arquivos" class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-primary" id="btn-nova-pasta-acao" onclick="abrirModalNovaPasta()">
                           <i class="bi bi-folder-plus"></i> Nova Pasta
                         </button>
                         <button class="btn btn-sm btn-success" onclick="abrirModalUploadComContexto()"><i class="bi bi-cloud-arrow-up"></i> Enviar Arquivo</button>
@@ -412,84 +414,82 @@
 <div class="modal fade" id="eventoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 15px 35px rgba(0,0,0,0.2); overflow: hidden;">
-    <div class="modal-header" style="background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; border: none; padding: 20px 24px;">
-        <h5 class="modal-title" style="font-weight: 600; letter-spacing: 0.5px;">
-            <i class="bi bi-calendar-plus me-2"></i> Agendar Compromisso
-        </h5>
-    </div>
-    
-    <div class="modal-body" style="padding: 16px; background-color: #f8fafc;">
-        <div class="mb-4">
-            <label style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; display: block;">Tipo de Registro</label>
-            <select id="tipoEventoSelect" class="form-select" onchange="alternarCamposAgenda(this.value)" 
-                style="border-radius: 10px; border: 2px solid #e2e8f0; padding: 12px; font-weight: 600; color: #1e293b;">
-                <option value="reuniao">🤝 Reunião</option>
-                <option value="evento">🎉 Evento</option>
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <input type="text" id="tituloEvento" class="form-control" placeholder="O que será agendado?" 
-                style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 12px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
-        </div>
-        <div class="mb-3">
-            <input type="text" id="localEvento" class="form-control" placeholder="Local ou Link da Reunião" 
-                style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 12px;">
-        </div>
-
-        <hr style="border-top: 1px solid #e2e8f0; margin: 20px 0;">
-
-        <div id="blocoReuniao">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">Data</label>
-                   <input type="date" id="dataReuniaoInput" name="dataReuniaoInput" class="form-control" style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 10px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; border: none; padding: 20px 24px;">
+                <h5 class="modal-title" style="font-weight: 600; letter-spacing: 0.5px;">
+                    <i class="bi bi-calendar-plus me-2"></i> Agendar Compromisso
+                </h5>
+            </div>
+            
+            <div class="modal-body" style="padding: 16px; background-color: #f8fafc;">
+                <div class="mb-4">
+                    <label style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; display: block;">Tipo de Registro</label>
+                    <select id="tipoEventoSelect" class="form-select" onchange="alternarCamposAgenda(this.value)" 
+                        style="border-radius: 10px; border: 2px solid #e2e8f0; padding: 12px; font-weight: 600; color: #1e293b;">
+                        <option value="reuniao">🤝 Reunião</option>
+                        <option value="evento">🎉 Evento</option>
+                    </select>
                 </div>
-                <div class="col-md-6">
-                    <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">Horário</label>
-                    <input type="time" id="horaEventoInput" class="form-control" style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 10px;">
+
+                <div class="mb-3">
+                    <input type="text" id="tituloEvento" class="form-control" placeholder="O que será agendado?" 
+                        style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 12px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                </div>
+                <div class="mb-3">
+                    <input type="text" id="localEvento" class="form-control" placeholder="Local ou Link da Reunião" 
+                        style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 12px;">
+                </div>
+
+                <hr style="border-top: 1px solid #e2e8f0; margin: 20px 0;">
+
+                <div id="blocoReuniao">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">Data</label>
+                           <input type="date" id="dataReuniaoInput" name="dataReuniaoInput" class="form-control" style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 10px;">
+                        </div>
+                        <div class="col-md-6">
+                            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">Horário</label>
+                            <input type="time" id="horaEventoInput" class="form-control" style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 10px;">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="blocoEvento" class="d-none">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">Início do Evento</label>
+                            <input type="date" id="dataInicioEventoInput" class="form-control" style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 10px;">
+                        </div>
+                        <div class="col-md-6">
+                            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">Fim do Evento</label>
+                            <input type="date" id="dataFimEventoInput" class="form-control" style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 10px;">
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <div id="blocoEvento" class="d-none">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">Início do Evento</label>
-                    <input type="date" id="dataInicioEventoInput" class="form-control" style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 10px;">
-                </div>
-                <div class="col-md-6">
-                    <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">Fim do Evento</label>
-                    <input type="date" id="dataFimEventoInput" class="form-control" style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 10px;">
-                </div>
+            
+            <div class="modal-footer" style="background: white; border-top: 1px solid #e2e8f0; padding: 16px 24px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn" 
+                    style="border-radius: 8px; font-weight: 600; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; padding: 10px 20px;" 
+                    onmouseover="this.style.backgroundColor='#fecaca'" 
+                    onmouseout="this.style.backgroundColor='#fee2e2'"
+                    onclick="fecharModalAgendaCorretamente()">
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" 
+                    onclick="salvarEventoFormulario()"
+                    style="border-radius: 8px; font-weight: 600; background: #2563eb; border: none; padding: 10px 25px;">
+                    Salvar Agendamento
+                </button>
             </div>
         </div>
     </div>
-    
-    <div class="modal-footer" style="background: white; border-top: 1px solid #e2e8f0; padding: 16px 24px; display: flex; justify-content: flex-end; gap: 10px;">
-    <button type="button" class="btn" 
-        style="border-radius: 8px; font-weight: 600; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; padding: 10px 20px;" 
-        onmouseover="this.style.backgroundColor='#fecaca'" 
-        onmouseout="this.style.backgroundColor='#fee2e2'"
-        onclick="fecharModalAgendaCorretamente()">
-    Cancelar
-</button>
-    <button type="button" class="btn btn-primary" 
-        onclick="salvarEventoFormulario()"
-        style="border-radius: 8px; font-weight: 600; background: #2563eb; border: none; padding: 10px 25px;">
-    Salvar Agendamento
-</button>
 </div>
-        </div>
-    </div>
-</div>
-<div class="modal fade" id="senhaModal" tabindex="-1" aria-hidden="true">...</div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
   <script>
-    // Configurações e funções JS mantidas inalteradas
     let estadoDoPainel = { bloco: 'instituto', categoria: '', pasta_pai_id: null, nivel_atual: 'raiz_bloco', string_caminho: 'INSTITUTO' };
     let instanciaCalendario = null;
 
@@ -510,13 +510,23 @@
         'Sabor Fest': 'https://saborfest.com.br',
         'JP2 Ticket': 'https://jp2ticket.com.br',
         'Expo Fashion Brasil': 'https://expofashion.expofeirasco.com.br'
+    };
 
+    const mapeamentoLogos = {
+        'Expo Feiras CO': 'ExpoFeirasCO.jpeg',
+        'Brobond Wear': 'BrobondWear.jpeg',
+        'Atacado Brobond': 'AtacadoBrobond.jpeg',
+        'Nutrallis': 'Nutralis.jpeg',
+        'Capital Mix': 'CapitalMix.jpeg',
+        'Expo Centro Oeste': 'ExpoCentroOeste.jpeg',
+        'Sabor Fest': 'SaborFest.jpeg',
+        'JP2 Ticket': 'JP2Ticket.jpeg',
+        'Expo Fashion Brasil': 'ExpoFashion.jpeg',
+        'IBDTEC': 'IBDTEC.jpeg'
     };
 
     document.addEventListener('DOMContentLoaded', function() {
         console.log("Sistema carregado. Tentando carregar Instituto...");
-        
-        // Verifica se o elemento existe antes de tentar clicar
         let el = document.getElementById('menu-bloco-instituto');
         if(el) {
             clicarBlocoMestre('instituto', el);
@@ -524,503 +534,365 @@
             console.error("Erro: Elemento 'menu-bloco-instituto' não encontrado no menu!");
         }
     });
-     document.addEventListener('DOMContentLoaded', function() {
-        const links = document.querySelectorAll('.mobile-menu-drawer a');
-        links.forEach(link => {
-            link.addEventListener('click', function(e) {
-                // Removemos o preventDefault para ele seguir o link normalmente
-                console.log("Navegando para: " + this.getAttribute('href'));
-            });
-        });
-    }); 
+
     function clicarBlocoMestre(bloco, elementoDom) {
-        // 1. Remove classe ativa dos menus
         document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
         if (elementoDom) elementoDom.classList.add('active');
         
-        // 2. Mostra o Explorer e esconde o Agenda (COM SEGURANÇA)
         let explorer = document.getElementById('viewport-explorer');
         let agenda = document.getElementById('viewport-agenda');
         
         if (explorer) explorer.classList.remove('d-none');
-        if (agenda) agenda.classList.add('d-none'); // Só esconde se existir
+        if (agenda) agenda.classList.add('d-none');
         
-        // 3. Atualiza o estado
         estadoDoPainel.bloco = bloco;
         estadoDoPainel.categoria = '';
         estadoDoPainel.pasta_pai_id = null;
         estadoDoPainel.nivel_atual = 'raiz_bloco';
         estadoDoPainel.string_caminho = bloco.toUpperCase().replace('_', ' ');
-        
-        // 4. Recarrega as pastas corretas
         sincronizarGrade();
     }
 
-    function abrirConfiguradorAgenda() {
-    let hoje = new Date().toISOString().split('T')[0];
-    
-    // Lista dos elementos que precisamos encontrar
-    let elementos = {
-        'dataReuniaoInput': hoje,
-        'dataInicioEventoInput': hoje,
-        'dataFimEventoInput': hoje,
-        'tituloEvento': "",
-        'tipoEventoSelect': "reuniao"
-    };
+    // NOVA FUNÇÃO SINCRONIZAR GRADE - UNIFICADA E CORRIGIDA
+    function sincronizarGrade() {
+        let gridContainer = document.getElementById("wrapper-explorer-grid");
+        let caminhoEl = document.getElementById('txtCaminhoWindows');
+        let divArquivos = document.getElementById('controles-arquivos');
+        let divSites = document.getElementById('controles-sites');
+        let btnNovaPasta = document.getElementById('btn-nova-pasta-acao');
 
-    // Tenta preencher cada um com segurança
-    for (let id in elementos) {
-        let el = document.getElementById(id);
-        if (el) {
-            el.value = elementos[id];
+        if (!gridContainer || !caminhoEl) return;
+
+        caminhoEl.innerText = estadoDoPainel.string_caminho;
+        gridContainer.innerHTML = '<div class="text-center w-100 py-4"><div class="spinner-border text-primary"></div><br>Buscando na nuvem...</div>';
+
+        // Altera dinamicamente os botões de controle de acordo com o contexto do bloco
+        if (estadoDoPainel.bloco === 'sites_jp2') {
+            if(divArquivos) divArquivos.classList.add('d-none');
+            if(divSites) divSites.classList.remove('d-none');
         } else {
-            console.warn("Aviso: O elemento com ID '" + id + "' não foi encontrado no HTML.");
-        }
-    }
-
-    alternarCamposAgenda("reuniao");
-
-    // Mostra o modal
-    let modalEl = document.getElementById('eventoModal');
-    if (modalEl) {
-        let modal = new bootstrap.Modal(modalEl);
-        modal.show();
-    } else {
-        console.error("ERRO CRÍTICO: Modal 'eventoModal' não encontrado!");
-    }
-}
-
-    function alternarCamposAgenda(tipo) {
-    let blocoReuniao = document.getElementById('blocoReuniao');
-    let blocoEvento = document.getElementById('blocoEvento');
-    
-    if (!blocoReuniao || !blocoEvento) return;
-
-    if (tipo === 'evento') {
-        // Modo Evento: Mostra datas de início/fim e esconde o bloco de reunião (que tem a hora)
-        blocoEvento.classList.remove('d-none');
-        blocoReuniao.classList.add('d-none');
-    } else {
-        // Modo Reunião: Mostra data única + hora e esconde o bloco de evento
-        blocoReuniao.classList.remove('d-none');
-        blocoEvento.classList.add('d-none');
-    }
-}
-
-function fecharModalAgendaCorretamente() {
-    // 1. Esconde o modal
-    const modalEl = document.getElementById('eventoModal');
-    if (modalEl) {
-        modalEl.style.setProperty('display', 'none', 'important');
-        modalEl.classList.remove('show');
-        modalEl.removeAttribute('aria-modal');
-        modalEl.setAttribute('aria-hidden', 'true');
-    }
-
-    // 2. Remove todos os backdrops possíveis
-    const backdrops = document.getElementsByClassName('modal-backdrop');
-    while(backdrops.length > 0){
-        backdrops[0].parentNode.removeChild(backdrops[0]);
-    }
-
-    // 3. Libera o scroll e o travamento do corpo (o culpado número 1 do travamento)
-    document.body.classList.remove('modal-open');
-    document.body.style.removeProperty('overflow');
-    document.body.style.removeProperty('padding-right');
-
-    console.log("Fechamento forçado executado.");
-}
-
-   function salvarEventoFormulario() {
-    let t = document.getElementById('tituloEvento').value.trim();
-    let tipo = document.getElementById('tipoEventoSelect').value;
-    if (!t) return alert("Por favor, digite o título do compromisso!");
-
-    let fd = new URLSearchParams();
-    fd.append('titulo', t);
-    fd.append('tipo_evento', tipo);
-
-    if (tipo === 'reuniao') {
-        let data = document.getElementById('dataReuniaoInput').value;
-        let hora = document.getElementById('horaEventoInput').value;
-        if (!data) return alert("Selecione a data!");
-        
-        // CORREÇÃO AQUI: Enviando como 'dataReuniaoInput' para o app.py
-        fd.append('dataReuniaoInput', data); 
-        fd.append('data_fim', '');
-        fd.append('horario', hora);
-    } else {
-        let dataIni = document.getElementById('dataInicioEventoInput').value;
-        let dataFim = document.getElementById('dataFimEventoInput').value;
-        if (!dataIni || !dataFim) return alert("Preencha o período completo do evento!");
-        
-        // CORREÇÃO AQUI: O seu Python espera 'dataReuniaoInput', então vamos enviar a dataIni nele
-        fd.append('dataReuniaoInput', dataIni);
-        fd.append('data_fim', dataFim);
-        fd.append('horario', '00:00');
-    }
-
-    fetch('/adicionar-evento', { method: 'POST', body: fd })
-    .then(response => response.json())
-    .then(data => {
-        const modalEl = document.getElementById('eventoModal');
-        const modal = bootstrap.Modal.getInstance(modalEl);
-        if (modal) modal.hide();
-
-        alert("Compromisso agendado com sucesso!");
-
-        if (window.location.pathname === '/agenda') {
-            window.location.reload(); 
-        }
-    })
-    .catch(err => {
-        console.error("Erro ao salvar:", err);
-        alert("Erro ao salvar o compromisso.");
-    });
-}
-
-// O mapeamentoLogos deve ficar FORA da função, como um objeto global
-const mapeamentoLogos = {
-    'Expo Feiras CO': 'ExpoFeirasCO.jpeg',
-    'Brobond Wear': 'BrobondWear.jpeg',
-    'Atacado Brobond': 'AtacadoBrobond.jpeg',
-    'Nutrallis': 'Nutralis.jpeg',
-    'Capital Mix': 'CapitalMix.jpeg',
-    'Expo Centro Oeste': 'ExpoCentroOeste.jpeg',
-    'Sabor Fest': 'SaborFest.jpeg',
-    'JP2 Ticket': 'JP2Ticket.jpeg',
-    'Expo Fashion Brasil': 'ExpoFashion.jpeg',
-    'IBDTEC': 'IBDTEC.jpeg'
-};
-
-function sincronizarGrade() {
-    let gridContainer = document.getElementById("wrapper-explorer-grid");
-    let caminhoEl = document.getElementById('txtCaminhoWindows');
-    if (!gridContainer || !caminhoEl) return;
-
-    // Atualiza o breadcrumb (caminho)
-    caminhoEl.innerText = estadoDoPainel.string_caminho;
-    
-    // Limpeza total antes de renderizar
-    gridContainer.innerHTML = '<div class="text-center w-100 py-4"><div class="spinner-border text-primary"></div></div>';
-
-    // Ajuste de visibilidade dos botões
-    let isRaiz = estadoDoPainel.nivel_atual === 'raiz_bloco';
-    let btnVoltar = document.getElementById('btnVoltarExplorer');
-    let btnCriar = document.getElementById('btnCriarPastaExplorer');
-    let btnUpload = document.getElementById('btnNovoItemDrive');
-    
-    if(btnVoltar) btnVoltar.style.visibility = isRaiz ? 'hidden' : 'visible';
-    if(btnCriar) btnCriar.style.visibility = isRaiz ? 'hidden' : 'visible';
-    if(btnUpload) btnUpload.disabled = isRaiz;
-
-    fetch(`/listar?bloco=${estadoDoPainel.bloco}&categoria=${estadoDoPainel.categoria || 'raiz'}&pasta_pai_id=${estadoDoPainel.pasta_pai_id}`)
-    .then(res => res.json())
-    .then(data => {
-        gridContainer.innerHTML = "";
-        
-        if (!data.itens || data.itens.length === 0) {
-            gridContainer.innerHTML = '<div class="text-center w-100 py-4 text-muted">Nenhum item encontrado.</div>';
-            return;
+            if(divArquivos) divArquivos.classList.remove('d-none');
+            if(divSites) divSites.classList.add('d-none');
         }
 
-        data.itens.forEach(item => {
-            let card = document.createElement("div");
-            card.className = "explorer-card";
+        if (estadoDoPainel.nivel_atual === 'raiz_bloco') {
+            let btnVoltar = document.getElementById('btnVoltarExplorer');
+            if(btnVoltar) btnVoltar.style.visibility = 'hidden';
             
-            // Define a ação baseada no tipo
-            let acao = "";
-            if (item.tipo === 'pasta') {
-                acao = `onclick="entrarSubpastaReal(${item.id}, '${item.nome}')"`;
-            } else if (item.tipo === 'link') {
-                acao = `onclick="window.open('${item.caminho}', '_blank')"`;
-            } else {
-                acao = `onclick="window.open('/baixar/${item.id}', '_blank')"`;
-            }
+            let categorias = subpastasFixas[estadoDoPainel.bloco];
+            gridContainer.innerHTML = "";
+            
+            categorias.forEach(cat => {
+                let card = document.createElement("div");
+                card.className = "explorer-card";
+                if (estadoDoPainel.bloco === 'sites_jp2') {
+                    let urlDestino = linksDirecionamento[cat] || '#';
+                    let nomeArquivo = mapeamentoLogos[cat] || 'default.png';
+                    card.onclick = function() { window.open(urlDestino, '_blank'); };
+                    card.innerHTML = `<div class="icon-wrapper"><img src="/static/image/${nomeArquivo}" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px;"></div><div class="item-label">${cat}</div><div class="item-author">Portal WEB</div>`;
+                } else {
+                    card.onclick = function() { entrarNaCategoriaFixa(cat); };
+                    card.innerHTML = `<div class="icon-wrapper"><i class="bi bi-folder-fill text-warning"></i></div><div class="item-label">${cat}</div><div class="item-author">Diretório</div>`;
+                }
+                gridContainer.appendChild(card);
+            });
+            
+            fetch(`/listar?bloco=${estadoDoPainel.bloco}&categoria=raiz&pasta_pai_id=null`)
+            .then(res => res.json())
+            .then(data => {
+                if(data && data.itens) {
+                    data.itens.forEach(item => {
+                        if (item.tipo === 'link' && estadoDoPainel.bloco !== 'sites_jp2') return;
 
-            card.innerHTML = `
-                <div class="action-trigger">
-                    <button class="btn btn-sm btn-light text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button>
-                </div>
-                <div class="icon-wrapper" ${acao} style="cursor:pointer;">
-                    <i class="bi ${item.tipo === 'pasta' ? 'bi-folder-fill text-warning' : 'bi-file-earmark-text-fill text-primary'}"></i>
-                </div>
-                <div class="item-label" ${acao} style="cursor:pointer;">${item.nome}</div>
-            `;
-            gridContainer.appendChild(card);
-        });
-    });
-}
+                        let card = document.createElement("div");
+                        card.className = "explorer-card";
+                        
+                        let iconHtml = item.tipo === 'pasta' ? '<i class="bi bi-folder-fill text-warning"></i>' : '<i class="bi bi-file-earmark-text-fill text-primary"></i>';
+                        let cliqueAcao = item.tipo === 'pasta' ? `entrarSubpastaReal(${item.id}, '${item.nome}')` : `window.open('/baixar/${item.id}', '_blank')`;
+                        
+                        card.innerHTML = `
+                            <div class="action-trigger"><button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button></div>
+                            <div class="icon-wrapper" onclick="${cliqueAcao}">${iconHtml}</div>
+                            <div class="item-label" onclick="${cliqueAcao}" title="${item.nome}">${item.nome}</div>
+                            <div class="item-author">${item.autor}</div>`;
+                        gridContainer.appendChild(card);
+                    });
+                }
+            });
+        } else {
+            let btnVoltar = document.getElementById('btnVoltarExplorer');
+            if(btnVoltar) btnVoltar.style.visibility = 'visible';
+            
+            // CORREÇÃO DA ROTA DE LISTAGEM PARA SUBPASTAS
+            let urlListar = `/listar?bloco=${estadoDoPainel.bloco}&categoria=${estadoDoPainel.categoria}&pasta_pai_id=${estadoDoPainel.pasta_pai_id || ''}`;
+            
+            fetch(urlListar)
+            .then(res => res.json())
+            .then(data => {
+                gridContainer.innerHTML = "";
+                if (!data.itens || data.itens.length === 0) {
+                    gridContainer.innerHTML = '<div class="text-center w-100 py-4 text-muted"><i class="bi bi-folder-x fs-3"></i><br>Nenhum item ou subpasta aqui.</div>';
+                    return;
+                }
+                data.itens.forEach(item => {
+                    let card = document.createElement("div");
+                    card.className = "explorer-card";
+                    let iconHtml = item.tipo === 'pasta' ? '<i class="bi bi-folder-fill text-warning"></i>' : (item.tipo === 'link' ? '<i class="bi bi-globe text-info"></i>' : '<i class="bi bi-file-earmark-text-fill text-primary"></i>');
+                    let cliqueAcao = item.tipo === 'pasta' ? `entrarSubpastaReal(${item.id}, '${item.nome}')` : (item.tipo === 'link' ? `window.open('${item.caminho}', '_blank')` : `window.open('/baixar/${item.id}', '_blank')`);
+                    
+                    if (item.tipo === 'link') {
+                        let logoUrl = `https://www.google.com/s2/favicons?domain=${item.caminho}&sz=64`;
+                        iconHtml = `<img src="${logoUrl}" style="width: 40px; height: 40px; border-radius: 8px; object-fit: contain;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/282/282115.png'">`;
+                    }
 
-function entrarNaCategoriaFixa(nomeCategoria) {
-    estadoDoPainel.categoria = nomeCategoria;
-    estadoDoPainel.nivel_atual = 'subpasta';
-    estadoDoPainel.pasta_pai_id = null; // Categoria inicial não tem pai ID
-    estadoDoPainel.string_caminho = `${estadoDoPainel.bloco.toUpperCase()} ➔ ${nomeCategoria}`;
-    sincronizarGrade();
-}
-
-function entrarSubpastaReal(id, nomePasta) {
-    estadoDoPainel.pasta_pai_id = id;
-    estadoDoPainel.nivel_atual = 'subpasta';
-    
-    // Evita duplicar o nome no caminho se você já estiver nele
-    if (!estadoDoPainel.string_caminho.endsWith(nomePasta)) {
-        estadoDoPainel.string_caminho += ` ➔ ${nomePasta}`;
+                    card.innerHTML = `
+                        <div class="action-trigger"><button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button></div>
+                        <div class="icon-wrapper" onclick="${cliqueAcao}">${iconHtml}</div>
+                        <div class="item-label" onclick="${cliqueAcao}" title="${item.nome}">${item.nome}</div>
+                        <div class="item-author">${item.autor}</div>`;
+                    gridContainer.appendChild(card);
+                });
+            });
+        }
     }
-    
-    sincronizarGrade();
-}
 
-function voltarDiretorio() {
-    // Lógica simples: se o caminho tem mais de 2 partes, voltamos uma
-    let partes = estadoDoPainel.string_caminho.split(' ➔ ');
-    if (partes.length > 2) {
-        partes.pop();
-        estadoDoPainel.string_caminho = partes.join(' ➔ ');
-        // Nota: Sem o ID do pai anterior salvo, o voltar fica limitado. 
-        // Para navegação real, o ideal é uma pilha (stack) de IDs.
-        alert("Navegação de volta limitada. Recarregue a categoria.");
-    } else {
-        estadoDoPainel.nivel_atual = 'raiz_bloco';
-        estadoDoPainel.categoria = '';
-        estadoDoPainel.pasta_pai_id = null;
-        estadoDoPainel.string_caminho = estadoDoPainel.bloco.toUpperCase();
+    function entrarNaCategoriaFixa(nomeCategoria) {
+        estadoDoPainel.categoria = nomeCategoria;
+        estadoDoPainel.nivel_atual = 'subpasta';
+        estadoDoPainel.pasta_pai_id = '';
+        estadoDoPainel.string_caminho = `${estadoDoPainel.bloco.toUpperCase().replace('_', ' ')} ➔ ${nomeCategoria}`;
         sincronizarGrade();
     }
-}
-    
-function abrirModalNovaPasta() {
-    // Remove modal anterior caso exista para evitar duplicidade
-    const modalExistente = document.getElementById('modal-global-overlay-pasta');
-    if (modalExistente) modalExistente.remove();
 
-    let overlay = document.createElement('div');
-    overlay.id = 'modal-global-overlay-pasta';
-    
-    overlay.style.cssText = `
-        position: fixed; 
-        top: 0; 
-        left: 0; 
-        width: 100vw; 
-        height: 100vh; 
-        background: rgba(0,0,0,0.5); 
-        z-index: 9999999; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center;
-        overflow: hidden;
-    `;
-  
-    overlay.innerHTML = `
-        <div style="background:white; padding:30px; border-radius:12px; width:400px; max-width: 90%; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
-            <h4 style="margin-bottom:20px; color:#1e293b; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
-                <i class="bi bi-folder-plus"></i> Nova Pasta
-            </h4>
-            
-            <div style="margin-bottom:25px;">
-                <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:8px; display:block;">NOME DA PASTA</label>
-                <input type="text" id="nome_nova_pasta_temp" placeholder="Digite o nome..." 
-                       style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:6px; outline:none; box-sizing: border-box;">
-            </div>
-
-            <div style="display:flex; gap:10px; justify-content:flex-end;">
-                <button id="btn_cancelar_pasta" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; font-weight:600; cursor:pointer; color:#475569;">Cancelar</button>
-                <button id="btn_criar_pasta" style="padding:10px 20px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Criar Pasta</button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    overlay.querySelector('#btn_cancelar_pasta').onclick = () => overlay.remove();
-
-    overlay.querySelector('#btn_criar_pasta').onclick = function() {
-        let nome = overlay.querySelector('#nome_nova_pasta_temp').value;
-        if(!nome) return alert("Digite um nome!");
+    function entrarSubpastaReal(id, nomePasta) {
+        estadoDoPainel.pasta_pai_id = id;
+        estadoDoPainel.nivel_atual = 'subpasta';
         
-        fetch('/criar-pasta', { 
-            method: 'POST', 
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: `nome=${encodeURIComponent(nome)}&bloco=${encodeURIComponent(estadoDoPainel.bloco)}&pasta_pai_id=${estadoDoPainel.pasta_pai_id}` 
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.text().then(text => { throw new Error(text); });
-            }
-            return response.json();
-        })
-        .then(() => {
-            overlay.remove();
-            setTimeout(() => { sincronizarGrade(); }, 500);
-        })
-        .catch(err => {
-            console.error("Erro no servidor:", err);
-            alert("Erro ao criar pasta. Verifique o console.");
-        });
-    };
-}
-function abrirModalCadastroSite() {
-    console.log("Injetando Modal de Cadastro de Site...");
-
-    let overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:9999999; display:flex; align-items:center; justify-content:center; overflow:hidden;';
-
-    overlay.innerHTML = `
-        <div style="background:white; padding:30px; border-radius:12px; width:450px; max-width: 90%; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
-            <h4 style="margin-bottom:20px; color:#1e293b; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
-                <i class="bi bi-globe"></i> Incluir Site
-            </h4>
-            
-            <div style="margin-bottom:15px;">
-                <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">NOME DO SITE</label>
-                <input type="text" id="site_nome_temp" placeholder="Ex: Meu Portal" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
-            </div>
-
-            <div style="margin-bottom:20px;">
-                <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">URL DO SITE</label>
-                <input type="url" id="site_url_temp" placeholder="https://exemplo.com.br" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
-            </div>
-
-            <div style="display:flex; gap:10px; justify-content:flex-end;">
-                <button id="btn_cancelar_site" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; cursor:pointer;">Cancelar</button>
-                <button id="btn_salvar_site" style="padding:10px 20px; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer;">Salvar Site</button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    overlay.querySelector('#btn_cancelar_site').onclick = () => overlay.remove();
-
-    // AQUI OCORRE O AJUSTE
-    overlay.querySelector('#btn_salvar_site').onclick = function() {
-        let nome = overlay.querySelector('#site_nome_temp').value;
-        let url = overlay.querySelector('#site_url_temp').value;
-
-        if(!nome || !url) return alert("Preencha todos os campos!");
+        // Evita a duplicação sequencial de nomes idênticos no caminho visual
+        let partes = estadoDoPainel.string_caminho.split(' ➔ ');
+        if (partes[partes.length - 1] !== nomePasta) {
+            estadoDoPainel.string_caminho += ` ➔ ${nomePasta}`;
+        }
         
-        let formData = new FormData();
-        formData.append('nome', nome);
-        formData.append('url', url);
-        // O AJUSTE ESTÁ AQUI ABAIXO:
-        formData.append('bloco', estadoDoPainel.bloco); 
+        sincronizarGrade();
+    }
 
-        fetch('/salvar-site', { method: 'POST', body: formData })
-        .then(res => {
-            if (!res.ok) return res.text().then(text => { throw new Error(text); });
-            return res.json();
-        })
-        .then(data => {
-            if(data.status === 'sucesso') {
-                alert("Site incluído com sucesso!");
+    function volverDiretorio() {
+        let partes = estadoDoPainel.string_caminho.split(' ➔ ');
+        if (partes.length > 2) {
+            partes.pop();
+            estadoDoPainel.string_caminho = partes.join(' ➔ ');
+            // Como o front-end puro não armazena a árvore reversa de IDs, resetamos para a categoria para re-navegar com segurança
+            estadoDoPainel.pasta_pai_id = '';
+            sincronizarGrade();
+        } else if (estadoDoPainel.nivel_atual === 'subpasta') {
+            estadoDoPainel.nivel_atual = 'raiz_bloco';
+            estadoDoPainel.categoria = '';
+            estadoDoPainel.pasta_pai_id = null;
+            estadoDoPainel.string_caminho = estadoDoPainel.bloco.toUpperCase().replace('_', ' ');
+            sincronizarGrade();
+        }
+    }
+
+    function abrirModalNovaPasta() {
+        const modalExistente = document.getElementById('modal-global-overlay-pasta');
+        if (modalExistente) modalExistente.remove();
+
+        let overlay = document.createElement('div');
+        overlay.id = 'modal-global-overlay-pasta';
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.5); z-index: 9999999; display: flex; 
+            align-items: center; justify-content: center; overflow: hidden;
+        `;
+        overlay.innerHTML = `
+            <div style="background:white; padding:30px; border-radius:12px; width:400px; max-width: 90%; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
+                <h4 style="margin-bottom:20px; color:#1e293b; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                    <i class="bi bi-folder-plus"></i> Nova Pasta
+                </h4>
+                <div style="margin-bottom:25px;">
+                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:8px; display:block;">NOME DA PASTA</label>
+                    <input type="text" id="nome_nova_pasta_temp" placeholder="Digite o nome..." 
+                           style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:6px; outline:none; box-sizing: border-box;">
+                </div>
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                    <button id="btn_cancelar_pasta" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; font-weight:600; cursor:pointer; color:#475569;">Cancelar</button>
+                    <button id="btn_criar_pasta" style="padding:10px 20px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Criar Pasta</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        overlay.querySelector('#btn_cancelar_pasta').onclick = () => overlay.remove();
+
+        overlay.querySelector('#btn_criar_pasta').onclick = function() {
+            let nome = overlay.querySelector('#nome_nova_pasta_temp').value;
+            if(!nome) return alert("Digite um nome!");
+            
+            let paiId = estadoDoPainel.pasta_pai_id;
+            if (paiId === null || paiId === undefined) paiId = '';
+
+            fetch('/criar-pasta', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `nome=${encodeURIComponent(nome)}&bloco=${encodeURIComponent(estadoDoPainel.bloco)}&pasta_pai_id=${paiId}` 
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text); });
+                }
+                return response.json();
+            })
+            .then(() => {
                 overlay.remove();
-                sincronizarGrade();
-            } else {
-                alert("Erro: " + data.mensagem);
-            }
-        })
-        .catch(err => {
-            console.error("Erro ao salvar site:", err);
-            alert("Erro ao salvar site.");
-        });
-    };
-}
-function abrirModalUploadLogo() {
-    let modalEl = document.getElementById('uploadLogoModal');
-    if (modalEl) new bootstrap.Modal(modalEl).show();
-}
+                setTimeout(() => { sincronizarGrade(); }, 300);
+            })
+            .catch(err => {
+                console.error("Erro no servidor:", err);
+                alert("Erro ao criar pasta.");
+            });
+        };
+    }
 
-function abrirModalExcluirDireto(event, id) {
-    if(event) { event.preventDefault(); event.stopPropagation(); }
-    console.log("Injetando Modal de Exclusão...");
-
-    let overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:9999999; display:flex; align-items:center; justify-content:center; overflow:hidden;';
-
-    overlay.innerHTML = `
-        <div style="background:white; padding:30px; border-radius:12px; width:400px; max-width: 90%; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
-            <h4 style="margin-bottom:20px; color:#dc2626; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
-                <i class="bi bi-trash"></i> Confirmar Exclusão
-            </h4>
-            <p style="margin-bottom:20px; color:#475569;">Deseja realmente excluir este item? Esta ação não pode ser desfeita.</p>
-            
-            <div style="margin-bottom:20px;">
-                <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">CONFIRME A SENHA</label>
-                <input type="password" id="senha_exclusao_temp" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+    function abrirModalCadastroSite() {
+        let overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:9999999; display:flex; align-items:center; justify-content:center; overflow:hidden;';
+        overlay.innerHTML = `
+            <div style="background:white; padding:30px; border-radius:12px; width:450px; max-width: 90%; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
+                <h4 style="margin-bottom:20px; color:#1e293b; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                    <i class="bi bi-globe"></i> Incluir Site
+                </h4>
+                <div style="margin-bottom:15px;">
+                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">NOME DO SITE</label>
+                    <input type="text" id="site_nome_temp" placeholder="Ex: Meu Portal" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:20px;">
+                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">URL DO SITE</label>
+                    <input type="url" id="site_url_temp" placeholder="https://exemplo.com.br" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+                </div>
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                    <button id="btn_cancelar_site" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; cursor:pointer;">Cancelar</button>
+                    <button id="btn_salvar_site" style="padding:10px 20px; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer;">Salvar Site</button>
+                </div>
             </div>
+        `;
 
-            <div style="display:flex; gap:10px; justify-content:flex-end;">
-                <button id="btn_cancelar_excluir" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; cursor:pointer;">Cancelar</button>
-                <button id="btn_confirmar_excluir" style="padding:10px 20px; background:#dc2626; color:white; border:none; border-radius:6px; cursor:pointer;">Excluir</button>
+        document.body.appendChild(overlay);
+        overlay.querySelector('#btn_cancelar_site').onclick = () => overlay.remove();
+
+        overlay.querySelector('#btn_salvar_site').onclick = function() {
+            let nome = overlay.querySelector('#site_nome_temp').value;
+            let url = overlay.querySelector('#site_url_temp').value;
+
+            if(!nome || !url) return alert("Preencha todos os campos!");
+           
+            let formData = new FormData();
+            formData.append('nome', nome);
+            formData.append('url', url);
+            formData.append('bloco', estadoDoPainel.bloco); 
+
+            fetch('/salvar-site', { method: 'POST', body: formData })
+            .then(res => {
+                if (!res.ok) return res.text().then(text => { throw new Error(text); });
+                return res.json();
+            })
+            .then(data => {
+                if(data.status === 'sucesso') {
+                    alert("Site incluído com sucesso!");
+                    overlay.remove();
+                    sincronizarGrade();
+                } else {
+                    alert("Erro: " + data.mensagem);
+                }
+            })
+            .catch(err => {
+                console.error("Erro ao salvar site:", err);
+                alert("Erro ao salvar site.");
+            });
+        };
+    }
+
+    function abrirModalUploadLogo() {
+        let modalEl = document.getElementById('uploadLogoModal');
+        if (modalEl) new bootstrap.Modal(modalEl).show();
+    }
+
+    function abrirModalExcluirDireto(event, id) {
+        if(event) { event.preventDefault(); event.stopPropagation(); }
+        console.log("Injetando Modal de Exclusão...");
+        let overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:9999999; display:flex; align-items:center; justify-content:center; overflow:hidden;';
+        overlay.innerHTML = `
+            <div style="background:white; padding:30px; border-radius:12px; width:400px; max-width: 90%; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
+                <h4 style="margin-bottom:20px; color:#dc2626; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                    <i class="bi bi-trash"></i> Confirmar Exclusão
+                </h4>
+                <p style="margin-bottom:20px; color:#475569;">Deseja realmente excluir este item? Esta ação não pode ser desfeita.</p>
+                <div style="margin-bottom:20px;">
+                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">CONFIRME A SENHA</label>
+                    <input type="password" id="senha_exclusao_temp" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+                </div>
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                    <button id="btn_cancelar_excluir" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; cursor:pointer;">Cancelar</button>
+                    <button id="btn_confirmar_excluir" style="padding:10px 20px; background:#dc2626; color:white; border:none; border-radius:6px; cursor:pointer;">Excluir</button>
+                </div>
             </div>
-        </div>
-    `;
+        `;
+        document.body.appendChild(overlay);
 
-    document.body.appendChild(overlay);
+        overlay.querySelector('#btn_cancelar_excluir').onclick = () => overlay.remove();
 
-    overlay.querySelector('#btn_cancelar_excluir').onclick = () => overlay.remove();
+        overlay.querySelector('#btn_confirmar_excluir').onclick = function() {
+            let senha = overlay.querySelector('#senha_exclusao_temp').value;
+            let formData = new FormData();
+            formData.append('id', id);
+            formData.append('senha', senha);
 
-    overlay.querySelector('#btn_confirmar_excluir').onclick = function() {
-        let senha = overlay.querySelector('#senha_exclusao_temp').value;
-        
-        let formData = new FormData();
-        // AQUI ESTA O AJUSTE: deve ser exatamente 'id' e 'senha' para casar com seu app.py
-        formData.append('id', id); 
-        formData.append('senha', senha);
+            fetch('/excluir', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'sucesso') {
+                    alert("Item excluído com sucesso!");
+                    overlay.remove();
+                    sincronizarGrade();
+                } else {
+                    alert("Erro: " + (data.mensagem || "Não foi possível excluir."));
+                }
+            })
+            .catch(err => {
+                console.error("Erro na exclusão:", err);
+                alert("Erro de conexão com o servidor.");
+            });
+        };
+    }
 
-        fetch('/excluir', { method: 'POST', body: formData })
-        .then(res => res.json())
-        .then(data => {
-            if(data.status === 'sucesso') {
-                alert("Item excluído com sucesso!");
-                overlay.remove();
-                sincronizarGrade();
-            } else {
-                alert("Erro: " + (data.mensagem || "Não foi possível excluir."));
-            }
-        })
-        .catch(err => {
-            console.error("Erro na exclusão:", err);
-            alert("Erro de conexão com o servidor.");
-        });
-    };
-}
-
-   function abrirModalUploadComContexto() {
+    function abrirModalUploadComContexto() {
         console.log("Injetando formulário completo...");
-        
         let overlay = document.createElement('div');
         overlay.id = 'modal-global-overlay';
         overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999999; display:flex; align-items:center; justify-content:center;';
-
         overlay.innerHTML = `
-    <div style="background:white; padding:30px; border-radius:12px; width:450px; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
-        <h4 style="margin-bottom:20px; color:#1e293b; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
-            <i class="bi bi-cloud-arrow-up"></i> Upload de Arquivo
-        </h4>
-        
-        <div style="margin-bottom:15px;">
-            <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">BLOCO</label>
-            <input type="text" value="${estadoDoPainel.bloco.charAt(0).toUpperCase() + estadoDoPainel.bloco.slice(1)}" 
-             readonly style="width:100%; margin-bottom:10px; padding:5px;">
-        </div>
-
-        <div style="margin-bottom:20px;">
-            <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">SELECIONE O ARQUIVO</label>
-            <input type="file" id="arquivo_temp" style="width:100%; padding:8px; border:1px dashed #cbd5e1; border-radius:6px;">
-        </div>
-
-        <div style="background:#f8fafc; padding:12px; border-radius:6px; margin-bottom:20px; font-size:13px; color:#334155;">
-            Destino: <strong style="color:#2563eb;">${estadoDoPainel.string_caminho}</strong>
-        </div>
-
-        <div style="display:flex; gap:10px; justify-content:flex-end;">
-            <button id="btn_fechar_temp" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; font-weight:600; cursor:pointer;">Cancelar</button>
-            <button id="btn_enviar_temp" style="padding:10px 20px; background:#16a34a; color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Enviar Arquivo</button>
-        </div>
-    </div>
-`;
+            <div style="background:white; padding:30px; border-radius:12px; width:450px; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
+                <h4 style="margin-bottom:20px; color:#1e293b; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                    <i class="bi bi-cloud-arrow-up"></i> Upload de Arquivo
+                </h4>
+                <div style="margin-bottom:15px;">
+                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">BLOCO</label>
+                    <input type="text" value="${estadoDoPainel.bloco.charAt(0).toUpperCase() + estadoDoPainel.bloco.slice(1)}" readonly style="width:100%; margin-bottom:10px; padding:5px;">
+                </div>
+                <div style="margin-bottom:20px;">
+                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">SELECIONE O ARQUIVO</label>
+                    <input type="file" id="arquivo_temp" style="width:100%; padding:8px; border:1px dashed #cbd5e1; border-radius:6px;">
+                </div>
+                <div style="background:#f8fafc; padding:12px; border-radius:6px; margin-bottom:20px; font-size:13px; color:#334155;">
+                    Destino: <strong style="color:#2563eb;">${estadoDoPainel.string_caminho}</strong>
+                </div>
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                    <button id="btn_fechar_temp" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; font-weight:600; cursor:pointer;">Cancelar</button>
+                    <button id="btn_enviar_temp" style="padding:10px 20px; background:#16a34a; color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Enviar Arquivo</button>
+                </div>
+            </div>`;
         
         document.documentElement.appendChild(overlay);
 
@@ -1048,114 +920,197 @@ function abrirModalExcluirDireto(event, id) {
         };
 
         overlay.querySelector('#btn_fechar_temp').onclick = () => overlay.remove();
-    } // <--- ESTA CHAVE FECHA A FUNÇÃO QUE ESTAVA ABERTA
+    }
 
     function dispararUploadAvancado() {
-        let filesInput = document.getElementById('inputArquivos'); let folderInput = document.getElementById('inputPasta'); let formData = new FormData();
-        formData.append('bloco', document.getElementById('uploadBloco').value); formData.append('categoria', document.getElementById('uploadCategoria').value); formData.append('pasta_pai_id', estadoDoPainel.pasta_pai_id);
+        let filesInput = document.getElementById('inputArquivos');
+        let folderInput = document.getElementById('inputPasta'); 
+        let formData = new FormData();
+        formData.append('bloco', document.getElementById('uploadBloco').value); 
+        formData.append('categoria', document.getElementById('uploadCategoria').value); 
+        formData.append('pasta_pai_id', estadoDoPainel.pasta_pai_id || '');
+        
         let inputAtivo = document.getElementById('folder-tab').classList.contains('active') ? folderInput : filesInput;
         if(inputAtivo.files.length === 0) return alert("Selecione os arquivos!");
-        for(let i=0; i < inputAtivo.files.length; i++) { formData.append('arquivos', inputAtivo.files[i]); }
+        
+        for(let i=0; i < inputAtivo.files.length; i++) { 
+            formData.append('arquivos', inputAtivo.files[i]);
+        }
         document.getElementById('containerProgresso').classList.remove('d-none');
-        let xhr = new XMLHttpRequest(); xhr.open('POST', '/upload-avancado', true);
-        xhr.onload = function() { bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide(); document.getElementById('containerProgresso').classList.add('d-none'); filesInput.value = ""; folderInput.value = ""; sincronizarGrade(); };
+        
+        let xhr = new XMLHttpRequest(); 
+        xhr.open('POST', '/upload-avancado', true);
+        xhr.onload = function() { 
+            bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide(); 
+            document.getElementById('containerProgresso').classList.add('d-none'); 
+            filesInput.value = ""; 
+            folderInput.value = ""; 
+            sincronizarGrade(); 
+        };
         xhr.send(formData);
     }
+
+    function abrirConfiguradorAgenda() {
+        let hoje = new Date().toISOString().split('T')[0];
+        let elementos = {
+            'dataReuniaoInput': hoje,
+            'dataInicioEventoInput': hoje,
+            'dataFimEventoInput': hoje,
+            'tituloEvento': "",
+            'tipoEventoSelect': "reuniao"
+        };
+        for (let id in elementos) {
+            let el = document.getElementById(id);
+            if (el) el.value = elementos[id];
+        }
+
+        alternarCamposAgenda("reuniao");
+        let modalEl = document.getElementById('eventoModal');
+        if (modalEl) new bootstrap.Modal(modalEl).show();
+    }
+
+    function alternarCamposAgenda(tipo) {
+        let blocoReuniao = document.getElementById('blocoReuniao');
+        let blocoEvento = document.getElementById('blocoEvento');
+        if (!blocoReuniao || !blocoEvento) return;
+
+        if (tipo === 'evento') {
+            blocoEvento.classList.remove('d-none');
+            blocoReuniao.classList.add('d-none');
+        } else {
+            blocoReuniao.classList.remove('d-none');
+            blocoEvento.classList.add('d-none');
+        }
+    }
+
+    function fecharModalAgendaCorretamente() {
+        const modalEl = document.getElementById('eventoModal');
+        if (modalEl) {
+            modalEl.style.setProperty('display', 'none', 'important');
+            modalEl.classList.remove('show');
+            modalEl.removeAttribute('aria-modal');
+            modalEl.setAttribute('aria-hidden', 'true');
+        }
+        const backdrops = document.getElementsByClassName('modal-backdrop');
+        while(backdrops.length > 0){
+            backdrops[0].parentNode.removeChild(backdrops[0]);
+        }
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+    }
+
+    function salvarEventoFormulario() {
+        let t = document.getElementById('tituloEvento').value.trim();
+        let tipo = document.getElementById('tipoEventoSelect').value;
+        if (!t) return alert("Por favor, digite o título do compromisso!");
+
+        let fd = new URLSearchParams();
+        fd.append('titulo', t);
+        fd.append('tipo_evento', tipo);
+
+        if (tipo === 'reuniao') {
+            let data = document.getElementById('dataReuniaoInput').value;
+            let hora = document.getElementById('horaEventoInput').value;
+            if (!data) return alert("Selecione a data!");
+            fd.append('dataReuniaoInput', data); 
+            fd.append('data_fim', '');
+            fd.append('horario', hora);
+        } else {
+            let dataIni = document.getElementById('dataInicioEventoInput').value;
+            let dataFim = document.getElementById('dataFimEventoInput').value;
+            if (!dataIni || !dataFim) return alert("Preencha o período completo do evento!");
+            fd.append('dataReuniaoInput', dataIni);
+            fd.append('data_fim', dataFim);
+            fd.append('horario', '00:00');
+        }
+
+        fetch('/adicionar-evento', { method: 'POST', body: fd })
+        .then(response => response.json())
+        .then(data => {
+            fecharModalAgendaCorretamente();
+            alert("Compromisso agendado com sucesso!");
+            if (window.location.pathname === '/agenda') {
+                window.location.reload(); 
+            }
+        })
+        .catch(err => {
+            console.error("Erro ao salvar:", err);
+            alert("Erro ao salvar o compromisso.");
+        });
+    }
+
     function abrirConfiguradorComContexto() {
-        // Pega o caminho atual que está na tela
-        let caminhoAtual = estadoDoPainel.string_caminho; 
+        let caminhoAtual = estadoDoPainel.string_caminho;
         let ultimaPasta = caminhoAtual.split(' ➔ ').pop(); 
-        
-        // Chamamos a função de abrir modal diretamente
-        // Removemos a referência ao calendário que não existe mais
         abrirConfiguradorAgenda();
-        
-        // Preenche o título automaticamente se não for a raiz
         if (ultimaPasta !== 'INSTITUTO' && ultimaPasta !== 'JP2 BUSINESS' && ultimaPasta !== 'SITES JP2') {
             document.getElementById('tituloEvento').value = "Reunião: " + ultimaPasta;
         }
     }
-    
   </script>
-  <script src="{{ url_for('static', filename='js/sidebar_fix.js') }}"></script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            fetch('/api/resumo-dashboard')
-            .then(res => res.json())
-            .then(data => {
-                const elArq = document.getElementById('dash-arquivos');
-                const elSoc = document.getElementById('dash-socios');
-                const elAge = document.getElementById('dash-agenda');
-                
-                if(elArq) elArq.innerText = data.total_arquivos || 0;
-                if(elSoc) elSoc.innerText = data.total_socios || 0;
-                if(elAge) elAge.innerText = data.proximo_evento || "Nenhum";
-            })
-            .catch(err => console.error("Erro ao carregar resumo:", err));
-        });
-    </script>
-   <!-- INÍCIO DO MENU CELULAR -->
-<div id="mobile-only-ui">
-    <nav class="mobile-nav">
-      <a href="/" class="nav-item">🏠 Início</a>
-      <a href="/agenda" class="nav-item">📅 Agenda</a>
-      <a href="#" class="nav-item" onclick="toggleMenu()">☰ Mais</a>
-    </nav>
-
-    <div id="mobile-menu" class="mobile-menu-drawer">
-  <div class="menu-header"><span>Menu</span><button onclick="toggleMenu()">X</button></div>
-  <a onclick="clicarBlocoMestre('instituto', this)" style="cursor:pointer;">🏢 Instituto (IBDTEC)</a>
-  <a onclick="clicarBlocoMestre('jp2_business', this)" style="cursor:pointer;">💼 JP2 Business</a>
-  <a href="/admin/usuarios">👥 Gestão de Sócios</a>
-  <a href="/admin/logs">📊 Auditoria (Logs)</a>
-  <a onclick="clicarBlocoMestre('sites_jp2', this)" style="cursor:pointer;">🌐 Sites JP2 Business</a>
-</div>
-    <a href="/agendar" class="fab">+</a>
-</div>
-
-<style>
-  /* 1. Ocultar totalmente para computador */
-   #mobile-only-ui { display: none; }
-
-   /* 2. Só mostrar no celular */
-   @media (max-width: 768px) {
-      #mobile-only-ui { display: block !important; }
-      
-      /* ESCONDE A BARRA LATERAL E FORCE O GRID */
-      .sidebar-enterprise, .sidebar, div[class*="sidebar"] { 
-          display: none !important; 
-      }
-      
-      .explorer-grid { 
-        display: grid !important; 
-        grid-template-columns: 1fr 1fr !important; 
-        gap: 10px !important; 
-        padding: 10px !important;
-        max-height: 70vh !important; /* Limita a altura para sobrar espaço para o menu inferior */
-        overflow-y: auto !important; /* ATIVA A BARRA DE ROLAGEM */
-    }
-    
-    .mobile-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: #001f3f; display: flex; justify-content: space-around; align-items: center; color: white; z-index: 1000; }
-    .nav-item { color: white; text-decoration: none; font-size: 12px; }
-    .fab { position: fixed; bottom: 80px; right: 20px; background: #28a745; color: white; border-radius: 50%; width: 60px; height: 60px; text-align: center; line-height: 60px; font-size: 30px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); z-index: 999; text-decoration: none; }
-    .mobile-menu-drawer { display: none; position: fixed; bottom: 60px; left: 0; width: 100%; background: white; border-top: 2px solid #001f3f; padding: 20px; z-index: 998; }
-    .mobile-menu-drawer a { display: block; padding: 15px; border-bottom: 1px solid #eee; text-decoration: none; color: #333; }
-  }
-</style>
-
-<script>
-  function toggleMenu() {
-    var menu = document.getElementById('mobile-menu');
-    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
-  }
-  // Script para garantir que os botões do menu "Mais" funcionem
-  document.querySelectorAll('.mobile-menu-drawer a').forEach(link => {
-    link.addEventListener('click', function(e) {
-      window.location.href = this.getAttribute('href');
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('/api/resumo-dashboard')
+        .then(res => res.json())
+        .then(data => {
+            const elArq = document.getElementById('dash-arquivos');
+            const elSoc = document.getElementById('dash-socios');
+            const elAge = document.getElementById('dash-agenda');
+            
+            if(elArq) elArq.innerText = data.total_arquivos || 0;
+            if(elSoc) elSoc.innerText = data.total_socios || 0;
+            if(elAge) elAge.innerText = data.proximo_evento || "Nenhum";
+        })
+        .catch(err => console.error("Erro ao carregar resumo:", err));
     });
-  });
-</script>
-<!-- FIM DO MENU CELULAR -->
-</body>
+  </script>
+
+  <div id="mobile-only-ui">
+      <nav class="mobile-nav">
+        <a href="/" class="nav-item">🏠 Início</a>
+        <a href="/agenda" class="nav-item">📅 Agenda</a>
+        <a href="#" class="nav-item" onclick="toggleMenu()">☰ Mais</a>
+      </nav>
+
+      <div id="mobile-menu" class="mobile-menu-drawer">
+        <div class="menu-header"><span>Menu</span><button onclick="toggleMenu()">X</button></div>
+        <a onclick="clicarBlocoMestre('instituto', this)" style="cursor:pointer;">🏢 Instituto (IBDTEC)</a>
+        <a onclick="clicarBlocoMestre('jp2_business', this)" style="cursor:pointer;">💼 JP2 Business</a>
+        <a href="/admin/usuarios">👥 Gestão de Sócios</a>
+        <a href="/admin/logs">📊 Auditoria (Logs)</a>
+        <a onclick="clicarBlocoMestre('sites_jp2', this)" style="cursor:pointer;">🌐 Sites JP2 Business</a>
+      </div>
+      <a href="/agendar" class="fab">+</a>
+  </div>
+
+  <style>
+     #mobile-only-ui { display: none; }
+     @media (max-width: 768px) {
+        #mobile-only-ui { display: block !important; }
+        .sidebar-enterprise, .sidebar, div[class*="sidebar"] { display: none !important; }
+        .explorer-grid { 
+          display: grid !important;
+          grid-template-columns: 1fr 1fr !important; 
+          gap: 10px !important; 
+          padding: 10px !important;
+          max-height: 70vh !important;
+          overflow-y: auto !important;
+        }
+      .mobile-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: #001f3f; display: flex; justify-content: space-around; align-items: center; color: white; z-index: 1000; }
+      .nav-item { color: white; text-decoration: none; font-size: 12px; }
+      .fab { position: fixed; bottom: 80px; right: 20px; background: #28a745; color: white; border-radius: 50%; width: 60px; height: 60px; text-align: center; line-height: 60px; font-size: 30px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); z-index: 999; text-decoration: none; }
+      .mobile-menu-drawer { display: none; position: fixed; bottom: 60px; left: 0; width: 100%; background: white; border-top: 2px solid #001f3f; padding: 20px; z-index: 998; }
+      .mobile-menu-drawer a { display: block; padding: 15px; border-bottom: 1px solid #eee; text-decoration: none; color: #333; }
+    }
+  </style>
+
+  <script>
+    function toggleMenu() {
+      var menu = document.getElementById('mobile-menu');
+      menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+    }
+  </script>
+  </body>
 </html>
