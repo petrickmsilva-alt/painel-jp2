@@ -696,172 +696,96 @@ const mapeamentoLogos = {
 function sincronizarGrade() {
     let gridContainer = document.getElementById("wrapper-explorer-grid");
     let caminhoEl = document.getElementById('txtCaminhoWindows');
-    
-    let divArquivos = document.getElementById('controles-arquivos');
-    let divSites = document.getElementById('controles-sites');
-    
-    let botoes = document.querySelectorAll('button');
-    let btnNovaPasta = null;
-    let btnEnviarArquivo = null;
-
-    botoes.forEach(btn => {
-        if(btn.innerText.includes('Nova Pasta') || btn.innerText.includes('Incluir Site')) {
-            btnNovaPasta = btn;
-            
-            // FORÇANDO O VISUAL AZUL:
-            // Removemos classes claras/neutras e adicionamos a classe 'btn-primary' do Bootstrap
-            btn.classList.remove('btn-light', 'btn-secondary', 'btn-outline-secondary');
-            btn.classList.add('btn-primary'); // Isso garante o azul padrão
-            
-            if (estadoDoPainel.bloco === 'sites_jp2') {
-                btn.innerHTML = '<i class="bi bi-plus-circle"></i> Incluir Site';
-                btn.onclick = () => abrirModalCadastroSite();
-            } else {
-                btn.innerHTML = '<i class="bi bi-folder-plus"></i> Nova Pasta';
-                btn.onclick = () => abrirModalNovaPasta();
-            }
-        }
-        if(btn.innerText.includes('Enviar Arquivo')) {
-            btnEnviarArquivo = btn;
-            btn.innerHTML = '<i class="bi bi-cloud-arrow-up"></i> Enviar Arquivo';
-            btn.onclick = () => abrirModalUploadComContexto();
-        }
-    });
-
-    if (estadoDoPainel.bloco === 'sites_jp2') {
-        if(divArquivos) divArquivos.classList.add('d-none');
-        if(divSites) divSites.classList.remove('d-none');
-        if (btnNovaPasta) btnNovaPasta.innerHTML = '<i class="bi bi-plus-circle"></i> Incluir Site';
-    } else {
-        if(divArquivos) divArquivos.classList.remove('d-none');
-        if(divSites) divSites.classList.add('d-none');
-        if (btnNovaPasta) btnNovaPasta.innerHTML = '<i class="bi bi-folder-plus"></i> Nova Pasta';
-        if (btnEnviarArquivo) btnEnviarArquivo.innerHTML = '<i class="bi bi-cloud-arrow-up"></i> Enviar Arquivo';
-    }
-
     if (!gridContainer || !caminhoEl) return;
 
+    // Atualiza o breadcrumb (caminho)
     caminhoEl.innerText = estadoDoPainel.string_caminho;
-    gridContainer.innerHTML = "";
+    
+    // Limpeza total antes de renderizar
+    gridContainer.innerHTML = '<div class="text-center w-100 py-4"><div class="spinner-border text-primary"></div></div>';
 
-    if (estadoDoPainel.nivel_atual === 'raiz_bloco') {
-        let btnVoltar = document.getElementById('btnVoltarExplorer');
-        if(btnVoltar) btnVoltar.style.visibility = 'hidden';
+    // Ajuste de visibilidade dos botões
+    let isRaiz = estadoDoPainel.nivel_atual === 'raiz_bloco';
+    let btnVoltar = document.getElementById('btnVoltarExplorer');
+    let btnCriar = document.getElementById('btnCriarPastaExplorer');
+    let btnUpload = document.getElementById('btnNovoItemDrive');
+    
+    if(btnVoltar) btnVoltar.style.visibility = isRaiz ? 'hidden' : 'visible';
+    if(btnCriar) btnCriar.style.visibility = isRaiz ? 'hidden' : 'visible';
+    if(btnUpload) btnUpload.disabled = isRaiz;
+
+    fetch(`/listar?bloco=${estadoDoPainel.bloco}&categoria=${estadoDoPainel.categoria || 'raiz'}&pasta_pai_id=${estadoDoPainel.pasta_pai_id}`)
+    .then(res => res.json())
+    .then(data => {
+        gridContainer.innerHTML = "";
         
-        let categorias = subpastasFixas[estadoDoPainel.bloco];
-        categorias.forEach(cat => {
+        if (!data.itens || data.itens.length === 0) {
+            gridContainer.innerHTML = '<div class="text-center w-100 py-4 text-muted">Nenhum item encontrado.</div>';
+            return;
+        }
+
+        data.itens.forEach(item => {
             let card = document.createElement("div");
             card.className = "explorer-card";
-            if (estadoDoPainel.bloco === 'sites_jp2') {
-                let urlDestino = linksDirecionamento[cat] || '#';
-                let nomeArquivo = mapeamentoLogos[cat] || 'default.png';
-                card.onclick = function() { window.open(urlDestino, '_blank'); };
-                card.innerHTML = `<div class="icon-wrapper"><img src="/static/image/${nomeArquivo}" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px;"></div><div class="item-label">${cat}</div><div class="item-author">Portal WEB</div>`;
+            
+            // Define a ação baseada no tipo
+            let acao = "";
+            if (item.tipo === 'pasta') {
+                acao = `onclick="entrarSubpastaReal(${item.id}, '${item.nome}')"`;
+            } else if (item.tipo === 'link') {
+                acao = `onclick="window.open('${item.caminho}', '_blank')"`;
             } else {
-                card.onclick = function() { entrarNaCategoriaFixa(cat); };
-                card.innerHTML = `<div class="icon-wrapper"><i class="bi bi-folder-fill text-warning"></i></div><div class="item-label">${cat}</div><div class="item-author">Diretório</div>`;
+                acao = `onclick="window.open('/baixar/${item.id}', '_blank')"`;
             }
+
+            card.innerHTML = `
+                <div class="action-trigger">
+                    <button class="btn btn-sm btn-light text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button>
+                </div>
+                <div class="icon-wrapper" ${acao} style="cursor:pointer;">
+                    <i class="bi ${item.tipo === 'pasta' ? 'bi-folder-fill text-warning' : 'bi-file-earmark-text-fill text-primary'}"></i>
+                </div>
+                <div class="item-label" ${acao} style="cursor:pointer;">${item.nome}</div>
+            `;
             gridContainer.appendChild(card);
         });
-        
-        fetch(`/listar?bloco=${estadoDoPainel.bloco}&categoria=raiz&pasta_pai_id=null`)
-        .then(res => res.json())
-        .then(data => {
-            if(data && data.itens) {
-                data.itens.forEach(item => {
-                    if (item.tipo === 'link' && estadoDoPainel.bloco !== 'sites_jp2') return;
-
-                    let card = document.createElement("div");
-                    card.className = "explorer-card";
-                    
-                    let iconHtml = item.tipo === 'pasta' ? '<i class="bi bi-folder-fill text-warning"></i>' : '<i class="bi bi-file-earmark-text-fill text-primary"></i>';
-                    let cliqueAcao = item.tipo === 'pasta' ? `onclick="entrarSubpastaReal(${item.id}, '${item.nome}')"` : `onclick="window.open('/baixar/${item.id}', '_blank')"`;
-                    
-                    if (item.tipo === 'link') {
-                        let logoUrl = `https://www.google.com/s2/favicons?domain=${item.caminho}&sz=64`;
-                        iconHtml = `<img src="${logoUrl}" style="width: 40px; height: 40px; border-radius: 8px; object-fit: contain;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/282/282115.png'">`;
-                        cliqueAcao = `onclick="window.open('${item.caminho}', '_blank')"`;
-                    }
-                    
-                    card.innerHTML = `<div class="action-trigger"><button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button></div><div class="icon-wrapper" ${cliqueAcao}>${iconHtml}</div><div class="item-label" ${cliqueAcao} title="${item.nome}">${item.nome}</div><div class="item-author">${item.autor}</div>`;
-                    gridContainer.appendChild(card);
-                });
-            }
-        });
-    } else {
-        let btnVoltar = document.getElementById('btnVoltarExplorer');
-        let btnCriar = document.getElementById('btnCriarPastaExplorer');
-        let btnUpload = document.getElementById('btnNovoItemDrive');
-        if(btnVoltar) btnVoltar.style.visibility = 'visible';
-        if(btnCriar) btnCriar.style.visibility = 'visible';
-        if(btnUpload) btnUpload.removeAttribute('disabled');
-        
-        gridContainer.innerHTML = '<div class="text-center w-100 py-4 text-muted"><div class="spinner-border spinner-border-sm text-primary mb-2"></div><br>Buscando na nuvem...</div>';
-        
-        fetch(`/listar?bloco=${estadoDoPainel.bloco}&categoria=${estadoDoPainel.categoria}&pasta_pai_id=${estadoDoPainel.pasta_pai_id}`)
-        .then(res => res.json())
-        .then(data => {
-            gridContainer.innerHTML = "";
-            if (data.itens.length === 0) {
-                gridContainer.innerHTML = '<div class="text-center w-100 py-4 text-muted"><i class="bi bi-folder-x fs-3"></i><br>Nenhum item ou subpasta aqui.</div>';
-                return;
-            }
-            data.itens.forEach(item => {
-                let card = document.createElement("div");
-                card.className = "explorer-card";
-                let iconHtml = item.tipo === 'pasta' ? '<i class="bi bi-folder-fill text-warning"></i>' : (item.tipo === 'link' ? '<i class="bi bi-globe text-info"></i>' : '<i class="bi bi-file-earmark-text-fill text-primary"></i>');
-                let cliqueAcao = item.tipo === 'pasta' ? `onclick="entrarSubpastaReal(${item.id}, '${item.nome}')"` : (item.tipo === 'link' ? `onclick="window.open('${item.caminho}', '_blank')"` : `onclick="window.open('/baixar/${item.id}', '_blank')"`);
-                
-                if (item.tipo === 'link') {
-                    let logoUrl = `https://www.google.com/s2/favicons?domain=${item.caminho}&sz=64`;
-                    iconHtml = `<img src="${logoUrl}" style="width: 40px; height: 40px; border-radius: 8px; object-fit: contain;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/282/282115.png'">`;
-                    cliqueAcao = `onclick="window.open('${item.caminho}', '_blank')"`;
-                }
-
-                card.innerHTML = `<div class="action-trigger"><button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button></div><div class="icon-wrapper" ${cliqueAcao}>${iconHtml}</div><div class="item-label" ${cliqueAcao} title="${item.nome}">${item.nome}</div><div class="item-author">${item.autor}</div>`;
-                gridContainer.appendChild(card);
-            });
-        });
-    }
+    });
 }
 
-    function entrarNaCategoriaFixa(nomeCategoria) {
-        estadoDoPainel.categoria = nomeCategoria;
-        estadoDoPainel.nivel_atual = 'subpasta';
-        estadoDoPainel.pasta_pai_id = null;
-        estadoDoPainel.string_caminho = `${estadoDoPainel.bloco.toUpperCase().replace('_', ' ')} ➔ ${nomeCategoria}`;
-        sincronizarGrade();
-    }
-
-   function entrarSubpastaReal(id, nomePasta) {
-    // Atualiza o ID do pai para o ID da pasta clicada
-    estadoDoPainel.pasta_pai_id = id;
-    
-    // Acrescenta ao caminho atual em vez de reconstruir do zero
-    estadoDoPainel.string_caminho += ` ➔ ${nomePasta}`; 
-    
+function entrarNaCategoriaFixa(nomeCategoria) {
+    estadoDoPainel.categoria = nomeCategoria;
     estadoDoPainel.nivel_atual = 'subpasta';
+    estadoDoPainel.pasta_pai_id = null; // Categoria inicial não tem pai ID
+    estadoDoPainel.string_caminho = `${estadoDoPainel.bloco.toUpperCase()} ➔ ${nomeCategoria}`;
+    sincronizarGrade();
+}
+
+function entrarSubpastaReal(id, nomePasta) {
+    estadoDoPainel.pasta_pai_id = id;
+    estadoDoPainel.nivel_atual = 'subpasta';
+    
+    // Evita duplicar o nome no caminho se você já estiver nele
+    if (!estadoDoPainel.string_caminho.endsWith(nomePasta)) {
+        estadoDoPainel.string_caminho += ` ➔ ${nomePasta}`;
+    }
     
     sincronizarGrade();
 }
 
-    function voltarDiretorio() {
+function voltarDiretorio() {
+    // Lógica simples: se o caminho tem mais de 2 partes, voltamos uma
     let partes = estadoDoPainel.string_caminho.split(' ➔ ');
-    
     if (partes.length > 2) {
-        // Remove apenas o último nível do caminho
         partes.pop();
         estadoDoPainel.string_caminho = partes.join(' ➔ ');
-        
-        // Aqui você precisaria que o servidor te desse o ID do pai anterior
-        // Como não temos esse ID salvo no front, uma solução rápida é forçar 
-        // o recarregamento da pasta pai via um novo fetch ou lógica de hierarquia.
-        alert("Para voltar níveis profundos, recarregue a página ou volte para a categoria principal.");
+        // Nota: Sem o ID do pai anterior salvo, o voltar fica limitado. 
+        // Para navegação real, o ideal é uma pilha (stack) de IDs.
+        alert("Navegação de volta limitada. Recarregue a categoria.");
     } else {
-        // Se estiver no nível básico, volta para a raiz do bloco
         estadoDoPainel.nivel_atual = 'raiz_bloco';
+        estadoDoPainel.categoria = '';
         estadoDoPainel.pasta_pai_id = null;
-        estadoDoPainel.string_caminho = estadoDoPainel.bloco.toUpperCase().replace('_', ' ');
+        estadoDoPainel.string_caminho = estadoDoPainel.bloco.toUpperCase();
         sincronizarGrade();
     }
 }
