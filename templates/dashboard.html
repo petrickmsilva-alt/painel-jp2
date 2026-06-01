@@ -906,11 +906,12 @@ function abrirModalNovaPasta() {
         let nome = overlay.querySelector('#nome_nova_pasta_temp').value;
         if(!nome) return alert("Digite um nome!");
         
-        fetch('/criar-pasta', { 
+       fetch('/criar-pasta', { 
             method: 'POST', 
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: `nome=${encodeURIComponent(nome)}&bloco=${encodeURIComponent(estadoDoPainel.bloco)}` 
-        })
+    // Aqui estamos enviando o ID explicitamente
+            body: `nome=${encodeURIComponent(nome)}&bloco=${encodeURIComponent(estadoDoPainel.bloco)}&pasta_pai_id=${estadoDoPainel.pasta_pai_id}` 
+       })
         .then(response => {
             // Se o status não for 200, lemos o erro como texto em vez de JSON
             if (!response.ok) {
