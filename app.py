@@ -187,7 +187,6 @@ def criar_pasta():
     nome, bloco = request.form.get('nome'), request.form.get('bloco')
     cat = request.form.get('categoria') or 'raiz'
     pai = request.form.get('pasta_pai_id')
-    print(f"DEBUG: Recebi pasta_pai_id como: '{pai}'")
     p_id = int(pai) if (pai and pai != "null" and pai != "undefined") else None
     conexao = sqlite3.connect(DB_NAME)
     cursor = conexao.cursor()
