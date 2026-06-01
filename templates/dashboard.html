@@ -854,13 +854,13 @@ function sincronizarGrade() {
         }
     }
 function abrirModalNovaPasta() {
-    console.log("Injetando Modal de Nova Pasta (Layout Corrigido)...");
+    // Remove modal anterior caso exista para evitar duplicidade
+    const modalExistente = document.getElementById('modal-global-overlay-pasta');
+    if (modalExistente) modalExistente.remove();
 
-    // 1. Criamos apenas um elemento (o overlay) e usamos ele para centralizar
     let overlay = document.createElement('div');
     overlay.id = 'modal-global-overlay-pasta';
     
-    // Estilo para forçar cobertura total da tela e centralização
     overlay.style.cssText = `
         position: fixed; 
         top: 0; 
@@ -874,9 +874,7 @@ function abrirModalNovaPasta() {
         justify-content: center;
         overflow: hidden;
     `;
-    console.log("Tentando injetar modal. O estado do pai é:", estadoDoPainel.pasta_pai_id);
   
-    // 2. Colocamos o HTML diretamente dentro do overlay
     overlay.innerHTML = `
         <div style="background:white; padding:30px; border-radius:12px; width:400px; max-width: 90%; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
             <h4 style="margin-bottom:20px; color:#1e293b; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
@@ -896,39 +894,32 @@ function abrirModalNovaPasta() {
         </div>
     `;
 
-    // 3. Adicionamos ao body
     document.body.appendChild(overlay);
 
-    // Fechar ao clicar no cancelar
     overlay.querySelector('#btn_cancelar_pasta').onclick = () => overlay.remove();
 
-    // 4. Lógica de Criar
     overlay.querySelector('#btn_criar_pasta').onclick = function() {
-        console.log("Clique detectado no botão Criar Pasta!"); // <--- ADICIONE ISSO
         let nome = overlay.querySelector('#nome_nova_pasta_temp').value;
-      
-       alert("Enviando para o pai ID: " + estadoDoPainel.pasta_pai_id); 
-       fetch('/criar-pasta', { 
+        if(!nome) return alert("Digite um nome!");
+        
+        fetch('/criar-pasta', { 
             method: 'POST', 
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-    // Aqui estamos enviando o ID explicitamente
             body: `nome=${encodeURIComponent(nome)}&bloco=${encodeURIComponent(estadoDoPainel.bloco)}&pasta_pai_id=${estadoDoPainel.pasta_pai_id}` 
-       })
+        })
         .then(response => {
-            // Se o status não for 200, lemos o erro como texto em vez de JSON
             if (!response.ok) {
                 return response.text().then(text => { throw new Error(text); });
             }
             return response.json();
         })
         .then(() => {
-            alert("Pasta criada!");
             overlay.remove();
             setTimeout(() => { sincronizarGrade(); }, 500);
         })
         .catch(err => {
-            console.error("Erro detalhado do servidor:", err);
-            alert("Erro no servidor! Verifique o log do seu terminal Python.");
+            console.error("Erro no servidor:", err);
+            alert("Erro ao criar pasta. Verifique o console.");
         });
     };
 }
