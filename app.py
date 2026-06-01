@@ -4,9 +4,7 @@ from flask import Flask, render_template, jsonify, request, redirect, url_for, s
 from werkzeug.security import generate_password_hash, check_password_hash
 from supabase import create_client
 
-# ==============================================================================
-# CONFIGURAÇÃO DEFINITIVA DO SUPABASE (COM A SUA CHAVE SERVICE_ROLE REAL)
-# ==============================================================================
+# CONFIGURAÇÃO DEFINITIVA DO SUPABASE
 SUPABASE_URL = "https://zkdzgpblxorcxxdrmojo.supabase.co" 
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InprZHpncGJseG9yY3h4ZHJtb2pvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTkyMjkyMiwiZXhwIjoyMDk1NDk4OTIyfQ.wFHo8wZFSnMbz54NLybBkavpdevpvCCij-3m6pz_G0U"
 
@@ -22,6 +20,9 @@ def registrar_log(acao):
     except Exception as e:
         print(f"ERRO AO REGISTRAR LOG: {e}")
 
+# ==============================================================================
+# ROTA DE LOGIN BLINDADA CONTRA ERROS DE VERSÃO DO SUPABASE
+# ==============================================================================
 @app.route('/login', methods=['GET', 'POST'])
 def tela_login():
     if request.method == 'POST':
@@ -29,20 +30,36 @@ def tela_login():
         s = request.form.get('senha')
         
         try:
+            # Busca o usuário no Supabase
             res = supabase.table("usuarios").select("*").eq("usuario", u).execute()
-            user = res.data[0] if res.data else None
             
-            if user and check_password_hash(user['senha'], s):
-                session['usuario_logado'] = user['usuario']
-                session['nome_exibicao'] = user['nome_exibicao']
-                registrar_log("Realizou login no sistema")
-                return redirect(url_for('home'))
+            # Tratamento inteligente para extrair os dados independente da versão da biblioteca
+            dados = []
+            if hasattr(res, 'data'):
+                dados = res.data
+            elif isinstance(res, dict) and 'data' in res:
+                dados = res['data']
             else:
-                flash("Login ou senha inválidos!")
-                return redirect(url_for('tela_login'))
+                dados = list(res)
+                
+            user = dados[0] if dados else None
+            
+            if user:
+                # Compara a senha criptografada
+                if check_password_hash(user['senha'], s):
+                    session['usuario_logado'] = user['usuario']
+                    session['name_exibicao'] = user.get('nome_exibicao', 'Petrick')
+                    session['nome_exibicao'] = user.get('nome_exibicao', 'Petrick')
+                    registrar_log("Realizou login no sistema")
+                    return redirect(url_for('home'))
+                else:
+                    flash("Senha incorreta no banco de dados!")
+            else:
+                flash(f"Usuário '{u}' não foi encontrado nas tabelas do Supabase!")
+                
         except Exception as e:
-            print(f"Erro no Login: {e}")
-            flash("Erro de conexão com o banco de dados. Verifique as chaves de API.")
+            print(f"Erro Crítico no Login: {e}")
+            flash(f"Erro de conexão: {str(e)}")
             return redirect(url_for('tela_login'))
             
     return render_template('login.html')
@@ -84,7 +101,7 @@ def admin_usuarios():
             print(f"DEBUG ERRO CADASTRO SÓCIO: {e}")
             
     res = supabase.table("usuarios").select("id, usuario, nome_exibicao").execute()
-    lista_usuarios = res.data if res.data else []
+    lista_usuarios = res.data if hasattr(res, 'data') else []
     return render_template('admin_usuarios.html', usuarios=lista_usuarios)
 
 @app.route('/admin/excluir_usuario/<int:usuario_id>', methods=['POST'])
@@ -101,7 +118,7 @@ def excluir_usuario(usuario_id):
 def admin_logs():
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
     res = supabase.table("logs_auditoria").select("*").order("data_registro", desc=True).execute()
-    lista_logs = res.data if res.data else []
+    lista_logs = res.data if hasattr(res, 'data') else []
     return render_template('admin_logs.html', logs=lista_logs)
 
 @app.route('/listar')
@@ -120,7 +137,7 @@ def listar_arquivos():
         else:
             res = query.is_("pasta_pai_id", "null").execute()
             
-        linhas = res.data if res.data else []
+        linhas = res.data if hasattr(res, 'data') else []
         
         itens_formatados = []
         for l in linhas:
@@ -155,7 +172,8 @@ def obter_pai_id():
     
     try:
         res = supabase.table("arquivos_painel").select("id").eq("bloco", bloco).eq("nome_original", ultima_pasta_nome).eq("tipo", "pasta").execute()
-        return jsonify({'pasta_pai_id': res.data[0]['id'] if res.data else None})
+        dados = res.data if hasattr(res, 'data') else []
+        return jsonify({'pasta_pai_id': dados[0]['id'] if dados else None})
     except:
         return jsonify({'pasta_pai_id': None})
 
@@ -220,8 +238,9 @@ def baixar_arquivo(arquivo_id):
     if 'usuario_logado' not in session: return "Não autorizado", 401
     try:
         res = supabase.table("arquivos_painel").select("caminho_sistema").eq("id", arquivo_id).execute()
-        if res.data and res.data[0]['caminho_sistema'].startswith('http'):
-            return redirect(res.data[0]['caminho_sistema'])
+        dados = res.data if hasattr(res, 'data') else []
+        if dados and dados[0]['caminho_sistema'].startswith('http'):
+            return redirect(dados[0]['caminho_sistema'])
     except Exception as e:
         print(f"Erro ao baixar: {e}")
     return "Arquivo não encontrado", 404
@@ -233,7 +252,8 @@ def excluir_arquivo():
     
     try:
         res_u = supabase.table("usuarios").select("senha").eq("usuario", session.get('usuario_logado')).execute()
-        user_senha = res_u.data[0]['senha'] if res_u.data else ""
+        dados_u = res_u.data if hasattr(res_u, 'data') else []
+        user_senha = dados_u[0]['senha'] if dados_u else ""
         
         if not user_senha or not check_password_hash(user_senha, senha):
             return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
@@ -266,7 +286,7 @@ def salvar_site():
 def api_listar_eventos():
     try:
         res = supabase.table("agenda_eventos").select("titulo, data_evento, data_fim").execute()
-        eventos = res.data if res.data else []
+        eventos = res.data if hasattr(res, 'data') else []
         
         lista_diaria = []
         for ev in eventos:
@@ -318,7 +338,8 @@ def resumo_dashboard():
 
         hoje = datetime.now().strftime('%Y-%m-%d')
         res_ev = supabase.table("agenda_eventos").select("titulo").gte("data_evento", hoje).order("data_evento", desc=False).limit(1).execute()
-        proximo_evento = res_ev.data[0]['titulo'] if res_ev.data else "Nenhum"
+        dados_ev = res_ev.data if hasattr(res_ev, 'data') else []
+        proximo_evento = dados_ev[0]['titulo'] if dados_ev else "Nenhum"
 
         return jsonify({
             'total_arquivos': total_arquivos,
