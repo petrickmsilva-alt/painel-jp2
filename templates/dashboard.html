@@ -834,11 +834,16 @@ function sincronizarGrade() {
     }
 
     function entrarSubpastaReal(id, nomePasta) {
-        estadoDoPainel.pasta_pai_id = id;
-        estadoDoPainel.nivel_atual = 'subpasta';
+    // Apenas adiciona ao caminho se o último nome não for o mesmo da pasta atual
+    let partes = estadoDoPainel.string_caminho.split(' ➔ ');
+    if (partes[partes.length - 1] !== nomePasta) {
         estadoDoPainel.string_caminho += ` ➔ ${nomePasta}`;
-        sincronizarGrade();
     }
+    
+    estadoDoPainel.pasta_pai_id = id;
+    estadoDoPainel.nivel_atual = 'subpasta';
+    sincronizarGrade();
+   }
 
     function voltarDiretorio() {
         if (estadoDoPainel.pasta_pai_id !== null) {
