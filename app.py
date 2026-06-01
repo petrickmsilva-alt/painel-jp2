@@ -4,11 +4,14 @@ from flask import Flask, render_template, jsonify, request, redirect, url_for, s
 from werkzeug.security import generate_password_hash, check_password_hash
 from supabase import create_client
 
-# Configurações do Supabase (Mantendo suas chaves originais)
+# ==============================================================================
+# CONFIGURAÇÃO DEFINITIVA DO SUPABASE (COM A SUA CHAVE SERVICE_ROLE REAL)
+# ==============================================================================
 SUPABASE_URL = "https://zkdzgpblxorcxxdrmojo.supabase.co" 
-SUPABASE_KEY = "sb_publishable_ehLQ5mAA1T_hBGh1YK4KpA_DQ7dxvM6" 
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InprZHpncGJseG9yY3h4ZHJtb2pvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTkyMjkyMiwiZXhwIjoyMDk1NDk4OTIyfQ.wFHo8wZFSnMbz54NLybBkavpdevpvCCij-3m6pz_G0U"
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 app = Flask(__name__)
 app.secret_key = "chave_secreta_super_segura_jp2"
 
@@ -39,7 +42,7 @@ def tela_login():
                 return redirect(url_for('tela_login'))
         except Exception as e:
             print(f"Erro no Login: {e}")
-            flash("Erro de conexão com o banco de dados.")
+            flash("Erro de conexão com o banco de dados. Verifique as chaves de API.")
             return redirect(url_for('tela_login'))
             
     return render_template('login.html')
