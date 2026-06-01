@@ -2,20 +2,18 @@ import os
 import sqlite3
 import shutil
 from supabase import create_client
-
-# Coloque as suas informações aqui:
-SUPABASE_URL = "https://zkdzgpblxorcxxdrmojo.supabase.co" 
-SUPABASE_KEY = "sb_secret_9004F4w6cyOWErL5RQJTPQ_rfUdEyEb" 
-
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, send_from_directory, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
+# Configurações do Supabase
+SUPABASE_URL = "https://zkdzgpblxorcxxdrmojo.supabase.co" 
+SUPABASE_KEY = "sb_secret_9004F4w6cyOWErL5RQJTPQ_rfUdEyEb" 
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 app = Flask(__name__)
 DB_NAME = "banco_painel.db"
-import os
 print("CAMINHO DO BANCO QUE O FLASK ESTÁ LENDO:", os.path.abspath(DB_NAME))
 UPLOAD_FOLDER = "arquivos_sistema"
 
@@ -25,11 +23,13 @@ app.secret_key = "chave_secreta_super_segura_jp2"
 def inicializar_banco():
     conexao = sqlite3.connect(DB_NAME)
     cursor = conexao.cursor()
+    # Tabela unificada de usuários (removida a duplicidade estrutural)
     cursor.execute('''CREATE TABLE IF NOT EXISTS usuarios (
                         id INTEGER PRIMARY KEY AUTOINCREMENT, 
                         usuario TEXT NOT NULL UNIQUE, 
                         senha TEXT NOT NULL, 
                         nome_exibicao TEXT NOT NULL DEFAULT '')''')
+                        
     cursor.execute('''CREATE TABLE IF NOT EXISTS arquivos_painel (
                         id INTEGER PRIMARY KEY AUTOINCREMENT, 
                         nome_original TEXT NOT NULL, 
@@ -40,6 +40,7 @@ def inicializar_banco():
                         pasta_pai_id INTEGER DEFAULT NULL, 
                         criado_por TEXT, 
                         data_upload TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+                        
     cursor.execute('''CREATE TABLE IF NOT EXISTS agenda_eventos (
                         id INTEGER PRIMARY KEY AUTOINCREMENT, 
                         titulo TEXT NOT NULL, 
@@ -47,18 +48,12 @@ def inicializar_banco():
                         data_fim TEXT, 
                         horario TEXT, 
                         tipo_evento TEXT NOT NULL DEFAULT 'reuniao')''')
+                        
     cursor.execute('''CREATE TABLE IF NOT EXISTS logs_auditoria (
                         id INTEGER PRIMARY KEY AUTOINCREMENT, 
                         usuario TEXT NOT NULL, 
                         acao TEXT NOT NULL, 
                         data_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS usuarios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        usuario TEXT NOT NULL,
-        senha TEXT NOT NULL
-    )
-""")
     conexao.commit()
     conexao.close()
 
@@ -108,17 +103,12 @@ def logout():
     session.clear()
     return redirect(url_for('tela_login'))
 
-import os
-
 @app.route('/')
 def home():
     if 'usuario_logado' not in session: 
         return redirect(url_for('tela_login'))
-    
-    # Debug: Printa o caminho real onde o Flask busca o 'home.html'
     template_path = os.path.join(app.root_path, 'templates', 'home.html')
     print("DEBUG: O Flask está buscando o arquivo em ->", template_path)
-    
     return render_template('home.html', nome_sócio=session.get('nome_exibicao', 'Sócio'))
 
 @app.route('/agenda')
@@ -170,16 +160,47 @@ def excluir_usuario(usuario_id):
     flash("Sócio removido com sucesso!")
     return redirect(url_for('admin_usuarios'))
 
+# ROTA /LISTAR CORRIGIDA CIRURGICAMENTE COM FILTROS AVANÇADOS
 @app.route('/listar')
 def listar_arquivos():
     if 'usuario_logado' not in session: return jsonify({'erro': 'Não autorizado'}), 401
+    
+    bloco = request.args.get('bloco')
+    categoria = request.args.get('categoria', 'raiz')
+    pasta_pai_id = request.args.get('pasta_pai_id')
+
     conexao = sqlite3.connect(DB_NAME)
     conexao.row_factory = sqlite3.Row
     cursor = conexao.cursor()
-    cursor.execute("SELECT * FROM arquivos_painel")
+
+    # Construção inteligente da Query baseado na árvore de diretórios
+    if pasta_pai_id and pasta_pai_id != "null" and pasta_pai_id != "undefined" and pasta_pai_id != "":
+        query = "SELECT * FROM arquivos_painel WHERE bloco = ? AND pasta_pai_id = ?"
+        params = (bloco, int(pasta_pai_id))
+    else:
+        query = "SELECT * FROM arquivos_painel WHERE bloco = ? AND categoria = ? AND (pasta_pai_id IS NULL OR pasta_pai_id = '')"
+        params = (bloco, categoria)
+
+    cursor.execute(query, params)
     linhas = cursor.fetchall()
     conexao.close()
-    return jsonify({'itens': [{'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 'caminho': l['caminho_sistema'], 'autor': l['criado_por'] or 'Sistema', 'bloco': l['bloco']} for l in linhas]})
+    
+    itens_formatados = []
+    for l in linhas:
+        if l['tipo'] == 'link' and bloco != 'sites_jp2': 
+            continue
+        itens_formatados.append({
+            'id': l['id'], 
+            'nome': l['nome_original'], 
+            'tipo': l['tipo'], 
+            'caminho': l['caminho_sistema'], 
+            'autor': l['criado_por'] or 'Sistema', 
+            'bloco': l['bloco'],
+            'categoria': l['categoria'],
+            'pasta_pai_id': l['pasta_pai_id']
+        })
+
+    return jsonify({'itens': itens_formatados})
 
 @app.route('/criar-pasta', methods=['POST'])
 def criar_pasta():
@@ -187,7 +208,9 @@ def criar_pasta():
     nome, bloco = request.form.get('nome'), request.form.get('bloco')
     cat = request.form.get('categoria') or 'raiz'
     pai = request.form.get('pasta_pai_id')
-    p_id = int(pai) if (pai and pai != "null" and pai != "undefined") else None
+    
+    p_id = int(pai) if (pai and pai != "null" and pai != "undefined" and pai != "") else None
+    
     conexao = sqlite3.connect(DB_NAME)
     cursor = conexao.cursor()
     cursor.execute("INSERT INTO arquivos_painel (nome_original, bloco, categoria, tipo, pasta_pai_id, criado_por) VALUES (?, ?, ?, 'pasta', ?, ?)", 
@@ -202,7 +225,7 @@ def upload_avancado():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     arquivos = request.files.getlist('arquivos')
     bloco, cat, pai = request.form.get('bloco'), request.form.get('categoria'), request.form.get('pasta_pai_id')
-    p_id = int(pai) if (pai and pai != "null") else None
+    p_id = int(pai) if (pai and pai != "null" and pai != "undefined" and pai != "") else None
     
     conexao = sqlite3.connect(DB_NAME)
     cursor = conexao.cursor()
@@ -210,17 +233,13 @@ def upload_avancado():
     for arq in arquivos:
         if arq.filename == '': continue
         
-        # Envia para o Supabase (Bucket 'meus-arquivos')
-        # O arquivo é lido como bytes e enviado
         supabase.storage.from_("meus-arquivos").upload(
             path=arq.filename, 
             file=arq.read(),
             file_options={"content-type": arq.content_type}
         )
-        # Pega a URL pública
         link = supabase.storage.from_("meus-arquivos").get_public_url(arq.filename)
         
-        # Salva o LINK no banco
         cursor.execute("INSERT INTO arquivos_painel (nome_original, caminho_sistema, bloco, categoria, tipo, pasta_pai_id, criado_por) VALUES (?, ?, ?, ?, 'arquivo', ?, ?)", 
                        (arq.filename, link, bloco, cat, p_id, session.get('nome_exibicao')))
     
@@ -239,7 +258,6 @@ def baixar_arquivo(arquivo_id):
     conexao.close()
     
     if res and res['caminho_sistema'].startswith('http'):
-        # Redireciona o navegador direto para o arquivo no Supabase
         return redirect(res['caminho_sistema'])
     return "Arquivo não encontrado", 404
 
@@ -251,20 +269,15 @@ def excluir_arquivo():
     conexao = sqlite3.connect(DB_NAME)
     cursor = conexao.cursor()
     
-    # 1. Verifica a senha
     cursor.execute("SELECT senha FROM usuarios WHERE usuario = ?", (session.get('usuario_logado'),))
     u = cursor.fetchone()
     if not u or not check_password_hash(u[0], senha):
         conexao.close()
         return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
 
-    # 2. Executa a deleção na tabela CORRETA (arquivos_painel)
     cursor.execute("DELETE FROM arquivos_painel WHERE id = ?", (arq_id,))
-    
-    # 3. O 'commit' é vital aqui para salvar no arquivo .db
     conexao.commit() 
     conexao.close()
-    
     return jsonify({'status': 'sucesso'})
 
 @app.route('/salvar-site', methods=['POST'])
@@ -299,7 +312,6 @@ def api_listar_eventos():
         except:
             continue
 
-    # O "COMANDO MATADOR" DE CACHE:
     resp = make_response(jsonify(lista_diaria))
     resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     resp.headers['Pragma'] = 'no-cache'
@@ -309,11 +321,9 @@ def api_listar_eventos():
 @app.route('/adicionar-evento', methods=['POST'])
 def calendar_adicionar():
     titulo = request.form.get('titulo')
-    # Pegamos exatamente o que vem do formulário
     data_ini = request.form.get('dataReuniaoInput') 
     data_fim = request.form.get('data_fim') or data_ini
 
-    # Se a data estiver vazia, retorna um erro em vez de salvar errado
     if not data_ini:
         return {"status": "erro", "mensagem": "Data não enviada!"}, 400
 
@@ -327,25 +337,21 @@ def calendar_adicionar():
 @app.route('/api/resumo-dashboard')
 def resumo_dashboard():
     try:
-        # Usando a variável DB_NAME para garantir consistência
         conexao = sqlite3.connect(DB_NAME) 
         cursor = conexao.cursor()
 
-        # Contar Arquivos e Sócios
         cursor.execute("SELECT COUNT(*) FROM arquivos_painel")
         total_arquivos = cursor.fetchone()[0]
 
         cursor.execute("SELECT COUNT(*) FROM usuarios")
         total_socios = cursor.fetchone()[0]
 
-        # Ajuste para a coluna real 'data_evento'
         hoje = datetime.now().strftime('%Y-%m-%d')
         cursor.execute("SELECT titulo FROM agenda_eventos WHERE data_evento >= ? ORDER BY data_evento ASC LIMIT 1", (hoje,))
         evento = cursor.fetchone()
         proximo_evento = evento[0] if evento else "Nenhum"
 
         conexao.close()
-        
         return jsonify({
             'total_arquivos': total_arquivos,
             'total_socios': total_socios,
@@ -362,6 +368,7 @@ def limpar_agenda():
     conexao.commit()
     conexao.close()
     return "Agenda limpa com sucesso! Agora você pode voltar e tentar inserir um novo evento."
+
 @app.route('/manifest.json')
 def manifest():
     return send_from_directory('static', 'manifest.json')    
