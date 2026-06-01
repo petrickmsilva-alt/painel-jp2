@@ -834,16 +834,22 @@ function sincronizarGrade() {
     }
 
     function entrarSubpastaReal(id, nomePasta) {
-    // Apenas adiciona ao caminho se o último nome não for o mesmo da pasta atual
-    let partes = estadoDoPainel.string_caminho.split(' ➔ ');
-    if (partes[partes.length - 1] !== nomePasta) {
-        estadoDoPainel.string_caminho += ` ➔ ${nomePasta}`;
-    }
-    
+    // 1. Atualiza o ID do pai para o ID da pasta que você clicou
     estadoDoPainel.pasta_pai_id = id;
+    
+    // 2. Reseta o caminho visual baseando-se no que já existe, 
+    // mas garante que estamos descendo um nível
+    let base = estadoDoPainel.string_caminho.split(' ➔ ')[0];
+    let categoria = estadoDoPainel.string_caminho.split(' ➔ ')[1] || "";
+    
+    // Constrói um caminho limpo para evitar a repetição
+    estadoDoPainel.string_caminho = `${base} ➔ ${categoria} ➔ ${nomePasta}`;
+    
     estadoDoPainel.nivel_atual = 'subpasta';
+    
+    // 3. Força a sincronização com o novo ID capturado
     sincronizarGrade();
-   }
+}
 
     function voltarDiretorio() {
         if (estadoDoPainel.pasta_pai_id !== null) {
