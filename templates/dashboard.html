@@ -874,7 +874,8 @@ function abrirModalNovaPasta() {
         justify-content: center;
         overflow: hidden;
     `;
-
+    console.log("Tentando injetar modal. O estado do pai é:", estadoDoPainel.pasta_pai_id);
+  
     // 2. Colocamos o HTML diretamente dentro do overlay
     overlay.innerHTML = `
         <div style="background:white; padding:30px; border-radius:12px; width:400px; max-width: 90%; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
@@ -903,8 +904,8 @@ function abrirModalNovaPasta() {
 
     // 4. Lógica de Criar
     overlay.querySelector('#btn_criar_pasta').onclick = function() {
+        console.log("Clique detectado no botão Criar Pasta!"); // <--- ADICIONE ISSO
         let nome = overlay.querySelector('#nome_nova_pasta_temp').value;
-        if(!nome) return alert("Digite um nome!");
       
        alert("Enviando para o pai ID: " + estadoDoPainel.pasta_pai_id); 
        fetch('/criar-pasta', { 
