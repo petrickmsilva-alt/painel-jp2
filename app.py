@@ -115,7 +115,7 @@ def listar_arquivos():
             res = query.is_("pasta_pai_id", "null").execute()
         linhas = res.data if hasattr(res, 'data') else []
         itens_formatados = []
-        for l in linhas:
+        for l in lines:
             if l['tipo'] == 'link' and bloco != 'sites_jp2': continue
             itens_formatados.append({
                 'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
@@ -179,15 +179,12 @@ def upload_avancado():
 def baixar_arquivo(arquivo_id):
     if 'usuario_logado' not in session: return "Não autorizado", 401
     try:
-        res = supabase.table("arquivos_painel").select("caminho_sistema").eq("id", file_id).execute()
+        res = supabase.table("arquivos_painel").select("caminho_sistema").eq("id", arquivo_id).execute()
         dados = res.data if hasattr(res, 'data') else []
         if dados and dados[0]['caminho_sistema'].startswith('http'): return redirect(dados[0]['caminho_sistema'])
     except: pass
     return "Arquivo não encontrado", 404
 
-# ==============================================================================
-# ROTA DE EXCLUSÃO CORRIGIDA PARA SENHA EM TEXTO PURO (DIRETO)
-# ==============================================================================
 @app.route('/excluir', methods=['POST'])
 def excluir_arquivo():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
@@ -196,14 +193,11 @@ def excluir_arquivo():
         res_u = supabase.table("usuarios").select("senha").eq("usuario", session.get('usuario_logado')).execute()
         dados_u = res_u.data if hasattr(res_u, 'data') else (res_u if isinstance(res_u, list) else [])
         user_senha = str(dados_u[0]['senha']) if dados_u else ""
-        
-        # Faz a comparação direta da sua senha 12345 texto puro
         if user_senha == senha:
             supabase.table("arquivos_painel").delete().eq("id", arq_id).execute()
             return jsonify({'status': 'sucesso'})
         return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
-    except Exception as e:
-        print(f"Erro na exclusao: {e}")
+    except:
         return jsonify({'status': 'erro'})
 
 @app.route('/salvar-site', methods=['POST'])
@@ -221,7 +215,7 @@ def salvar_site():
 @app.route('/api/listar-eventos')
 def api_listar_eventos():
     try:
-        res = supabase.table("agenda_eventos").select("titulo, data_evento, data_fim").execute()
+        res = supabase.table("agenda_eventos").select("id, titulo, data_evento, data_fim").execute()
         eventos = res.data if hasattr(res, 'data') else []
         lista_diaria = []
         for ev in eventos:
@@ -231,7 +225,13 @@ def api_listar_eventos():
                 inicio = datetime.strptime(inicio_str, '%Y-%m-%d')
                 fim = datetime.strptime(fim_str, '%Y-%m-%d')
                 for i in range((fim - inicio).days + 1):
-                    lista_diaria.append({'title': titulo, 'start': (inicio + timedelta(days=i)).strftime('%Y-%m-%d'), 'allDay': True, 'color': cor})
+                    lista_diaria.append({
+                        'id': ev.get('id'),
+                        'title': titulo, 
+                        'start': (inicio + timedelta(days=i)).strftime('%Y-%m-%d'), 
+                        'allDay': True, 
+                        'color': cor
+                    })
             except: continue
         resp = make_response(jsonify(lista_diaria))
         resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
@@ -247,6 +247,30 @@ def calendar_adicionar():
         supabase.table("agenda_eventos").insert({"titulo": titulo, "data_evento": data_ini, "data_fim": data_fim}).execute()
         return {"status": "sucesso"}, 200
     except Exception as e: return {"status": "erro", "mensagem": str(e)}, 500
+
+# ==============================================================================
+# ROTA EXCLUSIVA PARA APAGAR COMPROMISSOS DA AGENDA COM SENHA TEXTO PURO
+# ==============================================================================
+@app.route('/excluir-evento', methods=['POST'])
+def excluir_evento():
+    if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
+    titulo = request.form.get('titulo')
+    senha = request.form.get('senha', '').strip()
+    
+    try:
+        res_u = supabase.table("usuarios").select("senha").eq("usuario", session.get('usuario_logado')).execute()
+        dados_u = res_u.data if hasattr(res_u, 'data') else (res_u if isinstance(res_u, list) else [])
+        user_senha = str(dados_u[0]['senha']) if dados_u else ""
+        
+        if user_senha == senha:
+            # Apaga o compromisso pelo título na tabela da agenda
+            supabase.table("agenda_eventos").delete().eq("titulo", titulo).execute()
+            registrar_log(f"Apagou o compromisso da agenda: {titulo}")
+            return jsonify({'status': 'sucesso'})
+        return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
+    except Exception as e:
+        print(f"Erro ao excluir evento: {e}")
+        return jsonify({'status': 'erro'})
 
 @app.route('/api/resumo-dashboard')
 def resumo_dashboard():
