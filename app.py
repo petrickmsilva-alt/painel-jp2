@@ -23,7 +23,6 @@ app.secret_key = "chave_secreta_super_segura_jp2"
 def inicializar_banco():
     conexao = sqlite3.connect(DB_NAME)
     cursor = conexao.cursor()
-    # Tabela unificada de usuários (removida a duplicidade estrutural)
     cursor.execute('''CREATE TABLE IF NOT EXISTS usuarios (
                         id INTEGER PRIMARY KEY AUTOINCREMENT, 
                         usuario TEXT NOT NULL UNIQUE, 
@@ -121,6 +120,7 @@ def admin_usuarios():
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
     conexao = sqlite3.connect(DB_NAME)
     conexao.row_factory = sqlite3.Row
+    cursor = sqlite3.Row
     cursor = conexao.cursor()
     if request.method == 'POST':
         novo_user = request.form.get('novo_usuario', '').lower().strip()
@@ -160,7 +160,6 @@ def excluir_usuario(usuario_id):
     flash("Sócio removido com sucesso!")
     return redirect(url_for('admin_usuarios'))
 
-# ROTA /LISTAR CORRIGIDA CIRURGICAMENTE COM FILTROS AVANÇADOS
 @app.route('/listar')
 def listar_arquivos():
     if 'usuario_logado' not in session: return jsonify({'erro': 'Não autorizado'}), 401
@@ -173,13 +172,12 @@ def listar_arquivos():
     conexao.row_factory = sqlite3.Row
     cursor = conexao.cursor()
 
-    # Construção inteligente da Query baseado na árvore de diretórios
     if pasta_pai_id and pasta_pai_id != "null" and pasta_pai_id != "undefined" and pasta_pai_id != "":
         query = "SELECT * FROM arquivos_painel WHERE bloco = ? AND pasta_pai_id = ?"
         params = (bloco, int(pasta_pai_id))
     else:
-        query = "SELECT * FROM arquivos_painel WHERE bloco = ? AND categoria = ? AND (pasta_pai_id IS NULL OR pasta_pai_id = '')"
-        params = (bloco, categoria)
+        query = "SELECT * FROM arquivos_painel WHERE bloco = ? AND (pasta_pai_id IS NULL OR pasta_pai_id = '')"
+        params = (bloco,)
 
     cursor.execute(query, params)
     linhas = cursor.fetchall()
@@ -201,6 +199,28 @@ def listar_arquivos():
         })
 
     return jsonify({'itens': itens_formatados})
+
+# NOVA ROTA CIRÚRGICA PARA RETORNAR O ID PAI CORRETO AO VOLTAR DE DIRETÓRIO
+@app.route('/obter-pai-id')
+def obter_pai_id():
+    if 'usuario_logado' not in session: return jsonify({'pasta_pai_id': None}), 401
+    bloco = request.args.get('bloco')
+    caminho = request.args.get('caminho', '')
+    
+    partes = caminho.split(' ➔ ')
+    if len(partes) <= 1:
+        return jsonify({'pasta_pai_id': None})
+        
+    ultima_pasta_nome = partes[-1]
+    
+    conexao = sqlite3.connect(DB_NAME)
+    conexao.row_factory = sqlite3.Row
+    cursor = conexao.cursor()
+    cursor.execute("SELECT id FROM arquivos_painel WHERE bloco = ? AND nome_original = ? AND tipo = 'pasta'", (bloco, ultima_pasta_nome))
+    res = cursor.fetchone()
+    conexao.close()
+    
+    return jsonify({'pasta_pai_id': res['id'] if res else None})
 
 @app.route('/criar-pasta', methods=['POST'])
 def criar_pasta():
