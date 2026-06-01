@@ -7,6 +7,7 @@ from supabase import create_client
 # Configurações do Supabase (Mantendo suas chaves originais)
 SUPABASE_URL = "https://zkdzgpblxorcxxdrmojo.supabase.co" 
 SUPABASE_KEY = "sb_publishable_ehLQ5mAA1T_hBGh1YK4KpA_DQ7dxvM6" 
+
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 app = Flask(__name__)
 app.secret_key = "chave_secreta_super_segura_jp2"
