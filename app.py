@@ -31,7 +31,6 @@ def tela_login():
             user = dados[0] if dados else None
             
             if user:
-                # COMPARAÇÃO DIRETA DE TEXTO: Verifica se a senha digitada é igual à do banco
                 if str(user['senha']) == s:
                     session['usuario_logado'] = user['usuario']
                     session['nome_exibicao'] = user.get('nome_exibicao', 'Petrick Martins Silva')
@@ -180,25 +179,31 @@ def upload_avancado():
 def baixar_arquivo(arquivo_id):
     if 'usuario_logado' not in session: return "Não autorizado", 401
     try:
-        res = supabase.table("arquivos_painel").select("caminho_sistema").eq("id", arquivo_id).execute()
+        res = supabase.table("arquivos_painel").select("caminho_sistema").eq("id", file_id).execute()
         dados = res.data if hasattr(res, 'data') else []
         if dados and dados[0]['caminho_sistema'].startswith('http'): return redirect(dados[0]['caminho_sistema'])
     except: pass
     return "Arquivo não encontrado", 404
 
+# ==============================================================================
+# ROTA DE EXCLUSÃO CORRIGIDA PARA SENHA EM TEXTO PURO (DIRETO)
+# ==============================================================================
 @app.route('/excluir', methods=['POST'])
 def excluir_arquivo():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
-    arq_id, senha = request.form.get('id'), request.form.get('senha')
+    arq_id, senha = request.form.get('id'), request.form.get('senha', '').strip()
     try:
         res_u = supabase.table("usuarios").select("senha").eq("usuario", session.get('usuario_logado')).execute()
-        dados_u = res_u.data if hasattr(res_u, 'data') else []
-        user_senha = dados_u[0]['senha'] if dados_u else ""
+        dados_u = res_u.data if hasattr(res_u, 'data') else (res_u if isinstance(res_u, list) else [])
+        user_senha = str(dados_u[0]['senha']) if dados_u else ""
+        
+        # Faz a comparação direta da sua senha 12345 texto puro
         if user_senha == senha:
             supabase.table("arquivos_painel").delete().eq("id", arq_id).execute()
             return jsonify({'status': 'sucesso'})
         return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
-    except:
+    except Exception as e:
+        print(f"Erro na exclusao: {e}")
         return jsonify({'status': 'erro'})
 
 @app.route('/salvar-site', methods=['POST'])
