@@ -618,22 +618,19 @@
         sincronizarGrade();
     }
 
-    // CORREÇÃO CIRÚRGICA: Função voltar pasta nível por nível de verdade
     function volverDiretorio() {
         let partes = estadoDoPainel.string_caminho.split(' ➔ ');
         if (partes.length > 1) {
-            partes.pop(); // Remove a subpasta atual do caminho textual
+            partes.pop();
             let novoCaminho = partes.join(' ➔ ');
             estadoDoPainel.string_caminho = novoCaminho;
             
             if (partes.length === 1) {
-                // Se só sobrou o bloco mestre (ex: INSTITUTO), significa que voltou para a raiz
                 estadoDoPainel.nivel_atual = 'raiz_bloco';
                 estadoDoPainel.categoria = 'raiz';
                 estadoDoPainel.pasta_pai_id = null;
                 sincronizarGrade();
             } else {
-                // Pergunta ao banco qual é o ID da subpasta anterior dinâmica antes de atualizar a grade
                 fetch(`/obter-pai-id?bloco=${estadoDoPainel.bloco}&caminho=${encodeURIComponent(novoCaminho)}`)
                 .then(res => res.json())
                 .then(data => {
@@ -642,7 +639,6 @@
                     sincronizarGrade();
                 })
                 .catch(() => {
-                    // Fallback de segurança em caso de oscilação
                     estadoDoPainel.nivel_atual = 'raiz_bloco';
                     estadoDoPainel.pasta_pai_id = null;
                     sincronizarGrade();
@@ -858,8 +854,8 @@
             formData.append('arquivos', fileInput.files[0]);
             formData.append('bloco', estadoDoPainel.bloco);
             
-            // AJUSTE CIRÚRGICO: Se estiver na raiz, envia 'raiz' como categoria padrão para aceitar na tela inicial
-            formData.append('categoria', estadoDoPainel.nivel_atual === 'raiz_bloco' ? 'raiz' : (estadoDoPainel.categoria || 'raiz'));
+            // CONSECRATED FINAL ADJUSTMENT: Padroniza o envio da categoria como 'raiz' sempre para manter o alinhamento com a rota /listar independente da profundidade da subpasta
+            formData.append('categoria', 'raiz');
             formData.append('pasta_pai_id', estadoDoPainel.pasta_pai_id || '');
 
             fetch('/upload-avancado', { method: 'POST', body: formData })
