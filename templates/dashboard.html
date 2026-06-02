@@ -90,7 +90,7 @@
       text-decoration: none;
       font-size: 14px;
       font-weight: 600;
-      transition: all 0.2s ease;
+ transition: all 0.2s ease;
       cursor: pointer;
       border-left: 4px solid transparent;
     }
@@ -258,7 +258,7 @@
       top: 6px;
       right: 6px;
       opacity: 0;
-      transition: opacity 0.15s;
+ transition: opacity 0.15s;
       z-index: 10;
     }
 
@@ -584,7 +584,7 @@
                     gridContainer.appendChild(card);
                 });
 
-                // 2. AJUSTE INTEGRADO DA LOGO REAL POR URL: Puxa o Favicon oficial de qualquer site corporativo da nuvem
+                // 2. AJUSTE INTEGRADO DA LOGO REAL POR URL: Puxa o Favicon oficial de qualquer site corporativo da nuvem via Google API
                 if (data.itens && data.itens.length > 0) {
                     data.itens.forEach(item => {
                         if (item.tipo === 'link') {
@@ -595,9 +595,9 @@
                             // Remove protocolos e subpáginas para isolar o domínio mestre da empresa
                             let urlLimpa = item.caminho.replace('https://', '').replace('http://', '').replace('www.', '');
                             let dominioPuro = urlLimpa.split('/')[0];
-                            let urlLogoNuvem = `https://logo.clearbit.com/` + dominioPuro;
+                            let urlLogoGoogle = `https://www.google.com/s2/favicons?sz=64&domain=` + dominioPuro;
                                 
-                            let wrapperHtml = `<img src="${urlLogoNuvem}" onerror="this.onerror=null; this.parentNode.innerHTML='<i class=\\'bi bi-globe text-primary\\' style=\\'font-size: 46px;\\'></i>';" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px;">`;
+                            let wrapperHtml = `<img src="${urlLogoGoogle}" onerror="this.onerror=null; this.parentNode.innerHTML='<i class=\\'bi bi-globe text-primary\\' style=\\'font-size: 46px;\\'></i>';" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px; padding: 4px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">`;
                                 
                             card.innerHTML = `
                                 <div class="action-trigger"><button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button></div>
