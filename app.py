@@ -18,7 +18,8 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "chave_secreta_super_segura_
 
 def registrar_log(acao):
     try:
-        usuario = session.get('nome_exibicao', 'Petrick Martins Silva')
+        # AJUSTE 1A: Pega o nome do sócio logado na sessão de forma dinâmica. Se não houver, deixa como Sistema
+        usuario = session.get('nome_exibicao', 'Sistema / Desconhecido')
         ip_usuario = request.headers.get('X-Forwarded-For', request.remote_addr)
         
         supabase.table("logs_auditoria").insert({
@@ -46,7 +47,8 @@ def tela_login():
             if user:
                 if str(user['senha']) == criptografar_sha256(s):
                     session['usuario_logado'] = user['usuario']
-                    session['nome_exibicao'] = "Petrick Martins Silva"
+                    # AJUSTE 1B: Puxa o nome real cadastrado na tabela para o sócio que acabou de logar
+                    session['nome_exibicao'] = user.get('nome_exibicao', user['usuario'])
                     registrar_log("Realizou login no sistema")
                     return redirect(url_for('home'))
                 else:
@@ -69,12 +71,12 @@ def logout():
 @app.route('/')
 def home():
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
-    return render_template('home.html', nome_sócio=session.get('nome_exibicao', 'Petrick Martins Silva'))
+    return render_template('home.html', nome_sócio=session.get('nome_exibicao', 'Sócio'))
 
 @app.route('/agenda')
 def pagina_agenda():
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
-    return render_template('agenda.html', nome_sócio=session.get('nome_exibicao', 'Petrick Martins Silva'))
+    return render_template('agenda.html', nome_sócio=session.get('nome_exibicao', 'Sócio'))
 
 @app.route('/admin/usuarios', methods=['GET', 'POST'])
 def admin_usuarios():
@@ -129,7 +131,6 @@ def listar_arquivos():
     try:
         query = supabase.table("arquivos_painel").select("*").eq("bloco", bloco).eq("deletado", False)
         
-        # Voltou para a lógica antiga super estável que trouxe suas pastas no print
         if pasta_pai_id and pasta_pai_id != "null" and pasta_pai_id != "undefined" and pasta_pai_id != "":
             res = query.eq("pasta_pai_id", int(pasta_pai_id)).execute()
         else:
@@ -138,10 +139,10 @@ def listar_arquivos():
         linhas = res.data if hasattr(res, 'data') else []
         itens_formatados = []
         for l in linhas:
-            if l['tipo'] == 'link' and bloco != 'sites_jp2': continue
+            # AJUSTE 2: Permite que links customizados (sites incluídos pelo botão) passem pelo filtro e vão para a tela
             itens_formatados.append({
                 'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
-                'caminho': l['caminho_sistema'], 'autor': l['criado_por'] or 'Petrick Martins Silva', 
+                'caminho': l['caminho_sistema'], 'autor': l['criado_por'] or 'Sistema', 
                 'bloco': l['bloco'], 'categoria': l['categoria'], 'pasta_pai_id': l['pasta_pai_id']
             })
         return jsonify({'itens': itens_formatados})
@@ -172,7 +173,7 @@ def criar_pasta():
     p_id = int(pai) if (pai and pai != "null" and pai != "undefined" and pai != "") else None
     try:
         supabase.table("arquivos_painel").insert({
-            "nome_original": nome, "bloco": bloco, "categoria": cat, "tipo": "pasta", "pasta_pai_id": p_id, "criado_por": "Petrick Martins Silva"
+            "nome_original": nome, "bloco": bloco, "categoria": cat, "tipo": "pasta", "pasta_pai_id": p_id, "criado_por": session.get('nome_exibicao', 'Sistema')
         }).execute()
         registrar_log(f"Criou a pasta: {nome} no bloco {bloco}")
         return jsonify({'status': 'sucesso'})
@@ -191,7 +192,7 @@ def upload_avancado():
             supabase.storage.from_("meus-arquivos").upload(path=arq.filename, file=arq.read(), file_options={"content-type": arq.content_type})
             link = supabase.storage.from_("meus-arquivos").get_public_url(arq.filename)
             supabase.table("arquivos_painel").insert({
-                "nome_original": arq.filename, "caminho_sistema": link, "bloco": bloco, "categoria": cat, "tipo": "arquivo", "pasta_pai_id": p_id, "criado_por": "Petrick Martins Silva"
+                "nome_original": arq.filename, "caminho_sistema": link, "bloco": bloco, "categoria": cat, "tipo": "arquivo", "pasta_pai_id": p_id, "criado_por": session.get('nome_exibicao', 'Sistema')
             }).execute()
             registrar_log(f"Fez upload do arquivo: {arq.filename} no bloco {bloco}")
         return jsonify({'status': 'sucesso'})
@@ -240,9 +241,11 @@ def salvar_site():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     nome, url, bloco = request.form.get('nome'), request.form.get('url'), request.form.get('bloco')
     try:
+        # AJUSTE 2B: Garante que o site adicionado herde dinamicamente o criador logado na sessão
         supabase.table("arquivos_painel").insert({
-            "nome_original": nome, "bloco": bloco, "tipo": "link", "categoria": "raiz", "caminho_sistema": url, "criado_por": "Petrick Martins Silva"
+            "nome_original": nome, "bloco": bloco, "tipo": "link", "categoria": "raiz", "caminho_sistema": url, "criado_por": session.get('nome_exibicao', 'Sistema')
         }).execute()
+        registrar_log(f"Incluiu o site institucional: {nome} ({url})")
         return jsonify({'status': 'sucesso'})
     except:
         return jsonify({'status': 'erro'})
@@ -265,7 +268,7 @@ def api_listar_eventos():
                         'title': titulo, 
                         'start': (inicio + timedelta(days=i)).strftime('%Y-%m-%d'), 
                         'allDay': True, 
-                        'color': cor
+                        'color': color
                     })
             except: continue
         resp = make_response(jsonify(lista_diaria))
