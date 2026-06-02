@@ -488,7 +488,6 @@
     let estadoDoPainel = { bloco: 'instituto', categoria: 'raiz', pasta_pai_id: null, nivel_atual: 'raiz_bloco', string_caminho: 'INSTITUTO' };
     let instanciaCalendario = null;
 
-    // Retido apenas o bloco de sites corporativos fixos
     const subpastasFixas = {
         sites_jp2: ['IBDTEC', 'Expo Feiras CO', 'Expo Centro Oeste', 'Expo Fashion Brasil', 'Capital Mix', 'Sabor Fest', 'JP2 Ticket', 'Brobond Wear', 'Atacado Brobond', 'Nutrallis']
     };
@@ -544,7 +543,6 @@
         sincronizarGrade();
     }
 
-    // NOVA FUNÇÃO SINCRONIZAR GRADE - 100% DINÂMICA
     function sincronizarGrade() {
         let gridContainer = document.getElementById("wrapper-explorer-grid");
         let caminhoEl = document.getElementById('txtCaminhoWindows');
@@ -563,7 +561,6 @@
             if(divSites) divSites.classList.add('d-none');
         }
 
-        // Se for o módulo de sites, renderiza a lista estática configurada
         if (estadoDoPainel.bloco === 'sites_jp2' && estadoDoPainel.nivel_atual === 'raiz_bloco') {
             let btnVoltar = document.getElementById('btnVoltarExplorer');
             if(btnVoltar) btnVoltar.style.visibility = 'hidden';
@@ -582,7 +579,6 @@
             return;
         }
 
-        // Controle de visibilidade inteligente do botão de Voltar Pasta
         let btnVoltar = document.getElementById('btnVoltarExplorer');
         if(btnVoltar) btnVoltar.style.setProperty('visibility', (estadoDoPainel.nivel_atual === 'raiz_bloco') ? 'hidden' : 'visible', 'important');
         
@@ -622,19 +618,36 @@
         sincronizarGrade();
     }
 
+    // CORREÇÃO CIRÚRGICA: Função voltar pasta nível por nível de verdade
     function volverDiretorio() {
         let partes = estadoDoPainel.string_caminho.split(' ➔ ');
-        if (partes.length > 2) {
-            partes.pop();
-            estadoDoPainel.string_caminho = partes.join(' ➔ ');
-            estadoDoPainel.pasta_pai_id = ''; // Reseta para recalcular via navegação limpa
-            sincronizarGrade();
-        } else {
-            estadoDoPainel.nivel_atual = 'raiz_bloco';
-            estadoDoPainel.categoria = 'raiz';
-            estadoDoPainel.pasta_pai_id = null;
-            estadoDoPainel.string_caminho = estadoDoPainel.bloco.toUpperCase().replace('_', ' ');
-            sincronizarGrade();
+        if (partes.length > 1) {
+            partes.pop(); // Remove a subpasta atual do caminho textual
+            let novoCaminho = partes.join(' ➔ ');
+            estadoDoPainel.string_caminho = novoCaminho;
+            
+            if (partes.length === 1) {
+                // Se só sobrou o bloco mestre (ex: INSTITUTO), significa que voltou para a raiz
+                estadoDoPainel.nivel_atual = 'raiz_bloco';
+                estadoDoPainel.categoria = 'raiz';
+                estadoDoPainel.pasta_pai_id = null;
+                sincronizarGrade();
+            } else {
+                // Pergunta ao banco qual é o ID da subpasta anterior dinâmica antes de atualizar a grade
+                fetch(`/obter-pai-id?bloco=${estadoDoPainel.bloco}&caminho=${encodeURIComponent(novoCaminho)}`)
+                .then(res => res.json())
+                .then(data => {
+                    estadoDoPainel.pasta_pai_id = data.pasta_pai_id;
+                    estadoDoPainel.nivel_atual = 'subpasta';
+                    sincronizarGrade();
+                })
+                .catch(() => {
+                    // Fallback de segurança em caso de oscilação
+                    estadoDoPainel.nivel_atual = 'raiz_bloco';
+                    estadoDoPainel.pasta_pai_id = null;
+                    sincronizarGrade();
+                });
+            }
         }
     }
 
@@ -844,7 +857,9 @@
             let formData = new FormData();
             formData.append('arquivos', fileInput.files[0]);
             formData.append('bloco', estadoDoPainel.bloco);
-            formData.append('categoria', estadoDoPainel.categoria || 'raiz');
+            
+            // AJUSTE CIRÚRGICO: Se estiver na raiz, envia 'raiz' como categoria padrão para aceitar na tela inicial
+            formData.append('categoria', estadoDoPainel.nivel_atual === 'raiz_bloco' ? 'raiz' : (estadoDoPainel.categoria || 'raiz'));
             formData.append('pasta_pai_id', estadoDoPainel.pasta_pai_id || '');
 
             fetch('/upload-avancado', { method: 'POST', body: formData })
