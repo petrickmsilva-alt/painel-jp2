@@ -127,8 +127,8 @@ def listar_arquivos():
     bloco = request.args.get('bloco')
     pasta_pai_id = request.args.get('pasta_pai_id')
     try:
-        # ATUALIZAÇÃO PILAR 3: Filtra para trazer apenas arquivos que NÃO foram enviados para a lixeira (deletado=false)
-        query = supabase.table("arquivos_painel").select("*").eq("bloco", bloco).eq("deletado", False)
+        # CORREÇÃO CRUCIAL PILAR 3: Busca tudo que NÃO é True (traz de volta os valores em branco/NULL)
+        query = supabase.table("arquivos_painel").select("*").eq("bloco", bloco).neq("deletado", True)
         if pasta_pai_id and pasta_pai_id != "null" and pasta_pai_id != "undefined" and pasta_pai_id != "":
             res = query.eq("pasta_pai_id", int(pasta_pai_id)).execute()
         else:
@@ -155,7 +155,7 @@ def obter_pai_id():
     if len(partes) <= 1: return jsonify({'pasta_pai_id': None})
     ultima_pasta_nome = partes[-1]
     try:
-        res = supabase.table("arquivos_painel").select("id").eq("bloco", bloco).eq("nome_original", ultima_pasta_nome).eq("tipo", "pasta").eq("deletado", False).execute()
+        res = supabase.table("arquivos_painel").select("id").eq("bloco", bloco).eq("nome_original", ultima_pasta_nome).eq("tipo", "pasta").neq("deletado", True).execute()
         dados = res.data if hasattr(res, 'data') else []
         return jsonify({'pasta_pai_id': dados[0]['id'] if dados else None})
     except:
@@ -202,7 +202,7 @@ def baixar_arquivo(arquivo_id):
     try:
         res = supabase.table("arquivos_painel").select("caminho_sistema, nome_original, deletado").eq("id", arquivo_id).execute()
         dados = res.data if hasattr(res, 'data') else []
-        if dados and not dados[0]['deletado']:
+        if dados and dados[0]['deletado'] != True:
             registrar_log(f"Fez download do arquivo: {dados[0]['nome_original']}")
             if dados[0]['caminho_sistema'].startswith('http'): 
                 return redirect(dados[0]['caminho_sistema'])
@@ -211,7 +211,6 @@ def baixar_arquivo(arquivo_id):
 
 @app.route('/excluir', methods=['POST'])
 def excluir_arquivo():
-    """ATUALIZAÇÃO PILAR 3: Soft Delete (Move para a Lixeira em vez de apagar do banco)"""
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     arq_id, senha = request.form.get('id'), request.form.get('senha', '').strip()
     try:
@@ -223,7 +222,6 @@ def excluir_arquivo():
             res_arq = supabase.table("arquivos_painel").select("nome_original").eq("id", arq_id).execute()
             nome_arq = res_arq.data[0]['nome_original'] if res_arq.data else "Desconhecido"
             
-            # SOFT DELETE: Em vez de .delete(), fazemos .update() marcando deletado=true e a data atual
             supabase.table("arquivos_painel").update({
                 "deletado": True, 
                 "deletado_em": datetime.now().isoformat()
@@ -310,7 +308,7 @@ def excluir_evento():
 @app.route('/api/resumo-dashboard')
 def resumo_dashboard():
     try:
-        res_arq = supabase.table("arquivos_painel").select("id", count="exact").eq("deletado", False).execute()
+        res_arq = supabase.table("arquivos_painel").select("id", count="exact").neq("deletado", True).execute()
         total_arquivos = res_arq.count if res_arq.count is not None else 0
         res_soc = supabase.table("usuarios").select("id", count="exact").execute()
         total_socios = res_soc.count if res_soc.count is not None else 0
