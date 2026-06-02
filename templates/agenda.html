@@ -8,50 +8,116 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
     
     <style>
-        body { background: #f8fafc; font-family: 'Segoe UI', sans-serif; padding: 20px; }
-        .agenda-container { 
-            background: white; 
-            padding: 15px; 
-            border-radius: 10px; 
-            border: 1px solid #e2e8f0; 
-            max-width: 600px; 
-            margin: auto; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        body { 
+            background: #f8fafc; 
+            font-family: 'Segoe UI', sans-serif; 
+            padding: 30px 20px; 
         }
         
-        h2 { font-size: 1.1rem; color: #000000 !important; font-weight: 700; margin-bottom: 10px; }
+        .agenda-container { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 12px; 
+            border: 1px solid #e2e8f0; 
+            /* EXPANSÃO DO TAMANHO: Mudou de 600px compactos para 95% da tela no Desktop */
+            max-width: 1200px; 
+            width: 95%;
+            margin: auto; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+        }
         
-        /* Ajuste de escala do calendário */
-        .fc { font-size: 0.75rem; } 
-        .fc-toolbar-title { font-size: 0.95rem !important; font-weight: 600; }
+        /* Cabeçalho mais robusto */
+        .agenda-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 15px;
+        }
+
+        h2 { 
+            font-size: 1.6rem; 
+            color: #1e293b !important; 
+            font-weight: 700; 
+            margin: 0;
+        }
         
-        /* Botões */
+        /* Ajuste Geral do Calendário para Desktop */
+        .fc { 
+            font-size: 0.9rem; /* Fonte maior e mais legível */
+        } 
+        
+        .fc-toolbar-title { 
+            font-size: 1.4rem !important; 
+            font-weight: 700; 
+            color: #0f172a;
+            text-transform: capitalize;
+        }
+        
+        /* Customização dos Botões superiores */
         .fc .fc-button-primary { 
             background-color: #16a34a !important; 
             border-color: #16a34a !important;
-            padding: 2px 8px;
-            font-size: 0.75rem;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
         }
         
-        .btn-outline-secondary {
-            padding: 2px 8px; font-size: 0.75rem;
-            background: #fee2e2 !important; color: #b91c1c !important;      
+        .fc .fc-button-primary:hover {
+            background-color: #15803d !important;
+            border-color: #15803d !important;
+        }
+        
+        .btn-voltar {
+            padding: 8px 16px; 
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: #fee2e2 !important; 
+            color: #b91c1c !important;      
             border: 1px solid #fecaca !important;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        .fc .fc-event { border: none; padding: 1px 4px; cursor: pointer; }
-        .fc-day-today { background-color: #f1f5f9 !important; }
+        .btn-voltar:hover {
+            background: #fca5a5 !important;
+        }
+
+        /* Deixando os eventos destacados e bonitos */
+        .fc .fc-event { 
+            border: none; 
+            padding: 4px 8px; 
+            cursor: pointer; 
+            border-radius: 4px;
+            font-weight: 500;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
         
-        /* Altura das células reduzida */
-        .fc .fc-daygrid-body { min-height: 250px !important; }
+        .fc-day-today { 
+            background-color: #f8fafc !important; 
+            border: 2px solid #3b82f6 !important; /* Destaque azul para o dia atual */
+        }
+        
+        /* Altura ideal para preencher monitores Desktop */
+        .fc .fc-daygrid-body { 
+            min-height: 550px !important; 
+        }
     </style>
 </head>
 <body>
     <div class="agenda-container">
-        <a href="/" class="btn btn-sm btn-outline-secondary mb-2">
-            <i class="bi bi-arrow-left"></i> Voltar
-        </a>
-        <h2>Agenda - JP2BUSINESS</h2>
+        <div class="agenda-header">
+            <h2>Agenda - JP2BUSINESS</h2>
+            <a href="/" class="btn-voltar">
+                <i class="bi bi-arrow-left"></i> Voltar ao Painel
+            </a>
+        </div>
+        
         <div id='calendar'></div>
     </div>
 
@@ -61,7 +127,7 @@
     var calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         locale: 'pt-br',
-        height: 400,
+        height: 650, /* Altura expandida para preencher melhor a tela */
         
         events: {
             url: '/api/listar-eventos',
@@ -69,9 +135,9 @@
         },
         
         headerToolbar: {
-            left: 'prev,next',
+            left: 'prev,next today',
             center: 'title',
-            right: 'today'
+            right: ''
         },
         eventDidMount: function(info) {
             if (info.event.extendedProps.color || info.event.color) {
@@ -84,10 +150,9 @@
             if (senha) {
                 let formData = new FormData();
                 formData.append('id', info.event.id);
-                formData.append('titulo', info.event.title); // Envia o título como garantia
+                formData.append('titulo', info.event.title); 
                 formData.append('senha', senha);
 
-                // CORREÇÃO CRUCIAL: Aponta para a rota certa da agenda (/excluir-evento)
                 fetch('/excluir-evento', {
                     method: 'POST',
                     body: formData
