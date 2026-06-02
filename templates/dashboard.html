@@ -253,14 +253,6 @@
       text-overflow: ellipsis;
     }
 
-    .explorer-card .item-author {
-      font-size: 10px;
-      color: #94a3b8;
-      margin-top: 4px;
-      font-weight: bold;
-      text-transform: uppercase;
-    }
-
     .explorer-card .action-trigger {
       position: absolute;
       top: 6px;
@@ -396,6 +388,9 @@
                 </div>
                 <div class="d-flex gap-2">
                    <div id="controles-arquivos" class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-secondary px-3" id="btnVoltarExplorer" onclick="volverDiretorio()">
+                            <i class="bi bi-arrow-left"></i> Voltar Pasta
+                        </button>
                         <button type="button" class="btn btn-sm btn-primary" id="btn-nova-pasta-acao" onclick="abrirModalNovaPasta()">
                           <i class="bi bi-folder-plus"></i> Nova Pasta
                         </button>
@@ -587,9 +582,9 @@
             return;
         }
 
-        // Lógica de busca dinâmica no banco para arquivos e pastas do Instituto e JP2 Business
+        // Controle de visibilidade inteligente do botão de Voltar Pasta
         let btnVoltar = document.getElementById('btnVoltarExplorer');
-        if(btnVoltar) btnVoltar.style.visibility = (estadoDoPainel.nivel_atual === 'raiz_bloco') ? 'hidden' : 'visible';
+        if(btnVoltar) btnVoltar.style.setProperty('visibility', (estadoDoPainel.nivel_atual === 'raiz_bloco') ? 'hidden' : 'visible', 'important');
         
         let urlListar = `/listar?bloco=${estadoDoPainel.bloco}&categoria=${estadoDoPainel.categoria}&pasta_pai_id=${estadoDoPainel.pasta_pai_id || ''}`;
         fetch(urlListar)
@@ -606,7 +601,6 @@
                 let iconHtml = item.tipo === 'pasta' ? '<i class="bi bi-folder-fill text-warning"></i>' : '<i class="bi bi-file-earmark-text-fill text-primary"></i>';
                 let cliqueAcao = item.tipo === 'pasta' ? `entrarSubpastaReal(${item.id}, '${item.nome}')` : `window.open('/baixar/${item.id}', '_blank')`;
                 
-                // CORREÇÃO CIRÚRGICA: Removido o campo class="item-author" para limpar o visual abaixo das pastas
                 card.innerHTML = `
                     <div class="action-trigger"><button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button></div>
                     <div class="icon-wrapper" onclick="${cliqueAcao}">${iconHtml}</div>
