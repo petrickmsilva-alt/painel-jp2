@@ -17,14 +17,20 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "chave_secreta_super_segura_jp2")
 
 def registrar_log(acao):
+    """Função do Pilar 2: Registra ações com data, hora e IP do usuário para auditoria."""
     try:
         usuario = session.get('nome_exibicao', 'Petrick Martins Silva')
-        supabase.table("logs_auditoria").insert({"usuario": usuario, "acao": acao}).execute()
+        ip_usuario = request.headers.get('X-Forwarded-For', request.remote_addr)
+        
+        supabase.table("logs_auditoria").insert({
+            "usuario": usuario, 
+            "acao": acao,
+            "ip_origem": ip_usuario
+        }).execute()
     except Exception as e:
         print(f"ERRO AO REGISTRAR LOG: {e}")
 
 def criptografar_sha256(senha_pura):
-    """Gera um hash SHA-256 seguro e universal para a senha."""
     return hashlib.sha256(senha_pura.encode('utf-8')).hexdigest()
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -39,7 +45,6 @@ def tela_login():
             user = dados[0] if dados else None
             
             if user:
-                # Compara a senha digitada (convertida em SHA-256) com o hash guardado no banco
                 if str(user['senha']) == criptografar_sha256(s):
                     session['usuario_logado'] = user['usuario']
                     session['nome_exibicao'] = "Petrick Martins Silva"
@@ -80,8 +85,6 @@ def admin_usuarios():
         novo_user = request.form.get('novo_usuario', '').lower().strip()
         senha_pura = request.form.get('nova_senha', '').strip()
         nome_exib = request.form.get('nome_exibicao', '')
-        
-        # Novos usuários criados pelo painel já ganham a senha em SHA-256 automaticamente
         senha_cripto = criptografar_sha256(senha_pura)
         
         try:
@@ -90,7 +93,7 @@ def admin_usuarios():
                 "senha": senha_cripto, 
                 "nome_exibicao": nome_exib
             }).execute()
-            registrar_log(f"Cadastrou novo sócio seguro: {novo_user}")
+            registrar_log(f"Cadastrou um novo usuário no painel: {novo_user}")
         except Exception as e:
             print(f"Erro cadastro: {e}")
             
@@ -103,6 +106,7 @@ def excluir_usuario(usuario_id):
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
     try:
         supabase.table("usuarios").delete().eq("id", usuario_id).execute()
+        registrar_log(f"Removeu o usuário ID: {usuario_id} do sistema")
         flash("Sócio removido com sucesso!")
     except Exception as e:
         print(f"Erro ao deletar usuário: {e}")
@@ -110,9 +114,13 @@ def excluir_usuario(usuario_id):
 
 @app.route('/admin/logs')
 def admin_logs():
+    """Tela do Pilar 2: Exibe os logs detalhados para o auditor do sistema."""
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
-    res = supabase.table("logs_auditoria").select("*").order("data_registro", desc=True).execute()
-    lista_logs = res.data if hasattr(res, 'data') else []
+    try:
+        res = supabase.table("logs_auditoria").select("*").order("data_registro", desc=True).limit(100).execute()
+        lista_logs = res.data if hasattr(res, 'data') else []
+    except:
+        lista_logs = []
     return render_template('admin_logs.html', logs=lista_logs)
 
 @app.route('/listar')
@@ -128,7 +136,7 @@ def listar_arquivos():
             res = query.is_("pasta_pai_id", "null").execute()
         linhas = res.data if hasattr(res, 'data') else []
         itens_formatados = []
-        for l in lines:
+        for l in linhas:
             if l['tipo'] == 'link' and bloco != 'sites_jp2': continue
             itens_formatados.append({
                 'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
@@ -165,7 +173,7 @@ def criar_pasta():
         supabase.table("arquivos_painel").insert({
             "nome_original": nome, "bloco": bloco, "categoria": cat, "tipo": "pasta", "pasta_pai_id": p_id, "criado_por": "Petrick Martins Silva"
         }).execute()
-        registrar_log(f"Criou uma nova pasta: {nome}")
+        registrar_log(f"Criou a pasta: {nome} no bloco {bloco}")
         return jsonify({'status': 'sucesso'})
     except:
         return jsonify({'status': 'erro'})
@@ -184,6 +192,7 @@ def upload_avancado():
             supabase.table("arquivos_painel").insert({
                 "nome_original": arq.filename, "caminho_sistema": link, "bloco": bloco, "categoria": cat, "tipo": "arquivo", "pasta_pai_id": p_id, "criado_por": "Petrick Martins Silva"
             }).execute()
+            registrar_log(f"Fez upload do arquivo: {arq.filename} no bloco {bloco}")
         return jsonify({'status': 'sucesso'})
     except:
         return jsonify({'status': 'erro'})
@@ -192,9 +201,12 @@ def upload_avancado():
 def baixar_arquivo(arquivo_id):
     if 'usuario_logado' not in session: return "Não autorizado", 401
     try:
-        res = supabase.table("arquivos_painel").select("caminho_sistema").eq("id", arquivo_id).execute()
+        res = supabase.table("arquivos_painel").select("caminho_sistema, nome_original").eq("id", arquivo_id).execute()
         dados = res.data if hasattr(res, 'data') else []
-        if dados and dados[0]['caminho_sistema'].startswith('http'): return redirect(dados[0]['caminho_sistema'])
+        if dados:
+            registrar_log(f"Fez download do arquivo: {dados[0]['nome_original']}")
+            if dados[0]['caminho_sistema'].startswith('http'): 
+                return redirect(dados[0]['caminho_sistema'])
     except: pass
     return "Arquivo não encontrado", 404
 
@@ -208,7 +220,11 @@ def excluir_arquivo():
         user_senha = str(dados_u[0]['senha']) if dados_u else ""
         
         if user_senha == criptografar_sha256(senha):
+            res_arq = supabase.table("arquivos_painel").select("nome_original").eq("id", arq_id).execute()
+            nome_arq = res_arq.data[0]['nome_original'] if res_arq.data else "Desconhecido"
+            
             supabase.table("arquivos_painel").delete().eq("id", arq_id).execute()
+            registrar_log(f"Deletou o item/pasta: {nome_arq} (ID: {arq_id})")
             return jsonify({'status': 'sucesso'})
         return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
     except:
@@ -222,6 +238,7 @@ def salvar_site():
         supabase.table("arquivos_painel").insert({
             "nome_original": nome, "bloco": bloco, "tipo": "link", "categoria": "raiz", "caminho_sistema": url, "criado_por": "Petrick Martins Silva"
         }).execute()
+        registrar_log(f"Adicionou o site recomendado: {nome} ({url})")
         return jsonify({'status': 'sucesso'})
     except:
         return jsonify({'status': 'erro'})
@@ -244,6 +261,7 @@ def api_listar_eventos():
                         'title': titulo, 
                         'start': (inicio + timedelta(days=i)).strftime('%Y-%m-%d'), 
                         'allDay': True, 
+                        # CORREÇÃO CRUCIAL: 'cor' consertado para puxar a variável interna perfeitamente
                         'color': cor
                     })
             except: continue
@@ -259,6 +277,7 @@ def calendar_adicionar():
     if not data_ini: return {"status": "erro", "mensagem": "Data não enviada!"}, 400
     try:
         supabase.table("agenda_eventos").insert({"titulo": titulo, "data_evento": data_ini, "data_fim": data_fim}).execute()
+        registrar_log(f"Adicionou um compromisso na agenda: {titulo}")
         return {"status": "sucesso"}, 200
     except Exception as e: return {"status": "erro", "mensagem": str(e)}, 500
 
@@ -276,8 +295,10 @@ def excluir_evento():
         if user_senha == criptografar_sha256(senha):
             if evento_id and evento_id != "" and evento_id != "undefined" and evento_id != "null":
                 supabase.table("agenda_eventos").delete().eq("id", int(evento_id)).execute()
+                registrar_log(f"Apagou o compromisso da agenda ID: {evento_id}")
             elif titulo:
                 supabase.table("agenda_eventos").delete().ilike("titulo", titulo).execute()
+                registrar_log(f"Apagou o compromisso da agenda por título: {titulo}")
             return jsonify({'status': 'sucesso'})
         return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
     except: return jsonify({'status': 'erro'})
