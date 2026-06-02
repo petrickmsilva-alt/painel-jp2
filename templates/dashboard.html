@@ -321,7 +321,7 @@
                         <span id="dash-arquivos" style="font-size: 0.7rem; font-weight: bold;">...</span>
                     </div>
                     <div class="d-flex justify-content-between mb-1">
-                         <small style="font-size: 0.6rem;">SÓCIOS:</small>
+                        <small style="font-size: 0.6rem;">SÓCIOS:</small>
                         <span id="dash-socios" style="font-size: 0.7rem; font-weight: bold;">...</span>
                     </div>
                     <div class="d-flex justify-content-between">
@@ -386,11 +386,11 @@
         <div class="content-workspace-viewport">
             <div class="mb-4 bg-white p-3 rounded shadow-sm border">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                     <div id="caminho-area" class="d-flex align-items-center">
+                    <div id="caminho-area" class="d-flex align-items-center">
                         <i class="bi bi-folder2-open me-2 text-primary"></i>
                         <span id="txtCaminhoWindows" class="fw-bold text-secondary" style="font-size: 13px;"></span>
                     </div>
-                     <button class="btn btn-sm btn-outline-secondary" onclick="sincronizarGrade()">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="sincronizarGrade()">
                         <i class="bi bi-arrow-clockwise"></i> Sincronizar
                     </button>
                 </div>
@@ -510,7 +510,6 @@
         'JP2 Ticket': 'https://jp2ticket.com.br',
         'Expo Fashion Brasil': 'https://expofashion.expofeirasco.com.br'
     };
-
     const mapeamentoLogos = {
         'Expo Feiras CO': 'ExpoFeirasCO.jpeg',
         'Brobond Wear': 'BrobondWear.jpeg',
@@ -533,11 +532,9 @@
             console.error("Erro: Elemento 'menu-bloco-instituto' não encontrado no menu!");
         }
     });
-
     function clicarBlocoMestre(bloco, elementoDom) {
         document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
         if (elementoDom) elementoDom.classList.add('active');
-        
         let explorer = document.getElementById('viewport-explorer');
         let agenda = document.getElementById('viewport-agenda');
         
@@ -563,7 +560,6 @@
 
         caminhoEl.innerText = estadoDoPainel.string_caminho;
         gridContainer.innerHTML = '<div class="text-center w-100 py-4"><div class="spinner-border text-primary"></div><br>Buscando na nuvem...</div>';
-
         if (estadoDoPainel.bloco === 'sites_jp2') {
             if(divArquivos) divArquivos.classList.add('d-none');
             if(divSites) divSites.classList.remove('d-none');
@@ -591,12 +587,11 @@
             return;
         }
 
-        // Lógica de busca dinâmica no banco SQLite para arquivos e pastas do Instituto e JP2 Business
+        // Lógica de busca dinâmica no banco para arquivos e pastas do Instituto e JP2 Business
         let btnVoltar = document.getElementById('btnVoltarExplorer');
         if(btnVoltar) btnVoltar.style.visibility = (estadoDoPainel.nivel_atual === 'raiz_bloco') ? 'hidden' : 'visible';
         
         let urlListar = `/listar?bloco=${estadoDoPainel.bloco}&categoria=${estadoDoPainel.categoria}&pasta_pai_id=${estadoDoPainel.pasta_pai_id || ''}`;
-        
         fetch(urlListar)
         .then(res => res.json())
         .then(data => {
@@ -611,11 +606,11 @@
                 let iconHtml = item.tipo === 'pasta' ? '<i class="bi bi-folder-fill text-warning"></i>' : '<i class="bi bi-file-earmark-text-fill text-primary"></i>';
                 let cliqueAcao = item.tipo === 'pasta' ? `entrarSubpastaReal(${item.id}, '${item.nome}')` : `window.open('/baixar/${item.id}', '_blank')`;
                 
+                // CORREÇÃO CIRÚRGICA: Removido o campo class="item-author" para limpar o visual abaixo das pastas
                 card.innerHTML = `
                     <div class="action-trigger"><button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button></div>
                     <div class="icon-wrapper" onclick="${cliqueAcao}">${iconHtml}</div>
-                    <div class="item-label" onclick="${cliqueAcao}" title="${item.nome}">${item.nome}</div>
-                    <div class="item-author">${item.autor}</div>`;
+                    <div class="item-label" onclick="${cliqueAcao}" title="${item.nome}">${item.nome}</div>`;
                 gridContainer.appendChild(card);
             });
         });
@@ -656,7 +651,8 @@
         let overlay = document.createElement('div');
         overlay.id = 'modal-global-overlay-pasta';
         overlay.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
             background: rgba(0,0,0,0.5); z-index: 9999999; display: flex; 
             align-items: center; justify-content: center; overflow: hidden;
         `;
@@ -781,7 +777,7 @@
                 <h4 style="margin-bottom:20px; color:#dc2626; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
                     <i class="bi bi-trash"></i> Confirmar Exclusão
                 </h4>
-                <p style="margin-bottom:20px; color:#475569;">Deseja realmente excluir este item? Esta ação não pode ser desfeita.</p>
+                <p style="margin-bottom:20px; color:#475569;">Deseja realmente excluir este item? <br>Esta ação não pode ser desfeita.</p>
                 <div style="margin-bottom:20px;">
                     <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">CONFIRME A SENHA</label>
                     <input type="password" id="senha_exclusao_temp" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
@@ -795,7 +791,6 @@
         document.body.appendChild(overlay);
 
         overlay.querySelector('#btn_cancelar_excluir').onclick = () => overlay.remove();
-
         overlay.querySelector('#btn_confirmar_excluir').onclick = function() {
             let senha = overlay.querySelector('#senha_exclusao_temp').value;
             let formData = new FormData();
@@ -881,10 +876,8 @@
         formData.append('bloco', document.getElementById('uploadBloco').value); 
         formData.append('categoria', document.getElementById('uploadCategoria').value); 
         formData.append('pasta_pai_id', estadoDoPainel.pasta_pai_id || '');
-        
         let inputAtivo = document.getElementById('folder-tab').classList.contains('active') ? folderInput : filesInput;
         if(inputAtivo.files.length === 0) return alert("Selecione os arquivos!");
-        
         for(let i=0; i < inputAtivo.files.length; i++) { 
             formData.append('arquivos', inputAtivo.files[i]);
         }
@@ -894,7 +887,7 @@
         xhr.open('POST', '/upload-avancado', true);
         xhr.onload = function() { 
             bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide(); 
-            document.getElementById('containerProgresso').classList.add('d-none'); 
+            document.getElementById('containerProgresso').classList.add('d-none');
             filesInput.value = ""; 
             folderInput.value = ""; 
             sincronizarGrade(); 
