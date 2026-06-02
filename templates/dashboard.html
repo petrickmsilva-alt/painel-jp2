@@ -376,6 +376,7 @@
                 <div style="height: 25px; width: 1px; background-color: #cbd5e1;"></div>
                 <div class="text-end">
                     <span class="text-dark" style="font-size: 13.5px; font-weight: 600;">{{ nome_sócio }}</span>
+                    <small class="text-muted d-block" style="font-size: 10px;">Sócio Logado</small>
                 </div>
                 <div style="height: 25px; width: 1px; background-color: #cbd5e1;"></div>
                 <a href="/logout" class="btn btn-sm btn-outline-danger px-2 py-1" style="font-size:12px;">Sair</a>
@@ -385,11 +386,8 @@
         <div class="content-workspace-viewport">
             <div class="mb-4 bg-white p-3 rounded shadow-sm border">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                     <div id="caminho-area" class="d-flex align-items-center gap-2">
-                        <button class="btn btn-sm btn-light border py-1 px-2 fw-bold" id="btnVoltarExplorer" onclick="voltarDiretorio()" style="visibility: hidden; font-size: 12px;">
-                            <i class="bi bi-arrow-left"></i> Voltar
-                        </button>
-                        <i class="bi bi-folder2-open text-primary"></i>
+                     <div id="caminho-area" class="d-flex align-items-center">
+                        <i class="bi bi-folder2-open me-2 text-primary"></i>
                         <span id="txtCaminhoWindows" class="fw-bold text-secondary" style="font-size: 13px;"></span>
                     </div>
                      <button class="btn btn-sm btn-outline-secondary" onclick="sincronizarGrade()">
@@ -495,6 +493,7 @@
     let estadoDoPainel = { bloco: 'instituto', categoria: 'raiz', pasta_pai_id: null, nivel_atual: 'raiz_bloco', string_caminho: 'INSTITUTO' };
     let instanciaCalendario = null;
 
+    // Retido apenas o bloco de sites corporativos fixos
     const subpastasFixas = {
         sites_jp2: ['IBDTEC', 'Expo Feiras CO', 'Expo Centro Oeste', 'Expo Fashion Brasil', 'Capital Mix', 'Sabor Fest', 'JP2 Ticket', 'Brobond Wear', 'Atacado Brobond', 'Nutrallis']
     };
@@ -553,6 +552,7 @@
         sincronizarGrade();
     }
 
+    // NOVA FUNÇÃO SINCRONIZAR GRADE - 100% DINÂMICA
     function sincronizarGrade() {
         let gridContainer = document.getElementById("wrapper-explorer-grid");
         let caminhoEl = document.getElementById('txtCaminhoWindows');
@@ -572,6 +572,7 @@
             if(divSites) divSites.classList.add('d-none');
         }
 
+        // Se for o módulo de sites, renderiza a lista estática configurada
         if (estadoDoPainel.bloco === 'sites_jp2' && estadoDoPainel.nivel_atual === 'raiz_bloco') {
             let btnVoltar = document.getElementById('btnVoltarExplorer');
             if(btnVoltar) btnVoltar.style.visibility = 'hidden';
@@ -590,7 +591,7 @@
             return;
         }
 
-        // CONTROLE VISUAL DO BOTÃO VOLTAR
+        // Lógica de busca dinâmica no banco SQLite para arquivos e pastas do Instituto e JP2 Business
         let btnVoltar = document.getElementById('btnVoltarExplorer');
         if(btnVoltar) btnVoltar.style.visibility = (estadoDoPainel.nivel_atual === 'raiz_bloco') ? 'hidden' : 'visible';
         
@@ -614,6 +615,7 @@
                     <div class="action-trigger"><button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button></div>
                     <div class="icon-wrapper" onclick="${cliqueAcao}">${iconHtml}</div>
                     <div class="item-label" onclick="${cliqueAcao}" title="${item.nome}">${item.nome}</div>
+                    <div class="item-author">${item.autor}</div>`;
                 gridContainer.appendChild(card);
             });
         });
@@ -631,23 +633,19 @@
         sincronizarGrade();
     }
 
-    // FUNÇÃO VOLTAR DIRETÓRIO ADAPTADA PARA PEDIR A ATUALIZAÇÃO DO PAI AO BACKEND
-    function voltarDiretorio() {
+    function volverDiretorio() {
         let partes = estadoDoPainel.string_caminho.split(' ➔ ');
-        if (partes.length > 1) {
+        if (partes.length > 2) {
             partes.pop();
             estadoDoPainel.string_caminho = partes.join(' ➔ ');
-            
-            // Enviamos uma requisição ao backend para saber qual é o ID da pasta pai deste novo nível
-            fetch(`/obter-pai-id?bloco=${estadoDoPainel.bloco}&caminho=${encodeURIComponent(estadoDoPainel.string_caminho)}`)
-            .then(res => res.json())
-            .then(data => {
-                estadoDoPainel.pasta_pai_id = data.pasta_pai_id;
-                if (partes.length === 1) {
-                    estadoDoPainel.nivel_atual = 'raiz_bloco';
-                }
-                sincronizarGrade();
-            });
+            estadoDoPainel.pasta_pai_id = ''; // Reseta para recalcular via navegação limpa
+            sincronizarGrade();
+        } else {
+            estadoDoPainel.nivel_atual = 'raiz_bloco';
+            estadoDoPainel.categoria = 'raiz';
+            estadoDoPainel.pasta_pai_id = null;
+            estadoDoPainel.string_caminho = estadoDoPainel.bloco.toUpperCase().replace('_', ' ');
+            sincronizarGrade();
         }
     }
 
