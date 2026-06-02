@@ -523,7 +523,7 @@
         if(el) {
             clicarBlocoMestre('instituto', el);
         } else {
-            console.error("Erro: Elemento 'menu-bloco-instituto' não encontrado no menu!");
+            console.error("Erro: Elemento 'menu-bloco-instituto' not found mestre!");
         }
     });
     function clicarBlocoMestre(bloco, elementoDom) {
@@ -543,6 +543,7 @@
         sincronizarGrade();
     }
 
+    // AJUSTE REALIZADO NA FUNÇÃO DE SINCRONIZAÇÃO
     function sincronizarGrade() {
         let gridContainer = document.getElementById("wrapper-explorer-grid");
         let caminhoEl = document.getElementById('txtCaminhoWindows');
@@ -561,24 +562,6 @@
             if(divSites) divSites.classList.add('d-none');
         }
 
-        if (estadoDoPainel.bloco === 'sites_jp2' && estadoDoPainel.nivel_atual === 'raiz_bloco') {
-            let btnVoltar = document.getElementById('btnVoltarExplorer');
-            if(btnVoltar) btnVoltar.style.visibility = 'hidden';
-            
-            gridContainer.innerHTML = "";
-            let categorias = subpastasFixas['sites_jp2'];
-            categorias.forEach(cat => {
-                let card = document.createElement("div");
-                card.className = "explorer-card";
-                let urlDestino = linksDirecionamento[cat] || '#';
-                let nomeArquivo = mapeamentoLogos[cat] || 'default.png';
-                card.onclick = function() { window.open(urlDestino, '_blank'); };
-                card.innerHTML = `<div class="icon-wrapper"><img src="/static/image/${nomeArquivo}" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px;"></div><div class="item-label">${cat}</div><div class="item-author">Portal WEB</div>`;
-                gridContainer.appendChild(card);
-            });
-            return;
-        }
-
         let btnVoltar = document.getElementById('btnVoltarExplorer');
         if(btnVoltar) btnVoltar.style.setProperty('visibility', (estadoDoPainel.nivel_atual === 'raiz_bloco') ? 'hidden' : 'visible', 'important');
         
@@ -587,6 +570,41 @@
         .then(res => res.json())
         .then(data => {
             gridContainer.innerHTML = "";
+            
+            // SE FOR O MÓDULO DE SITES NA TELA INICIAL: Une a lista fixa antiga com os novos sites cadastrados dinamicamente no banco
+            if (estadoDoPainel.bloco === 'sites_jp2' && estadoDoPainel.nivel_atual === 'raiz_bloco') {
+                let categorias = subpastasFixas['sites_jp2'];
+                
+                // 1. Renderiza os 10 sites corporativos fixos padrão
+                categorias.forEach(cat => {
+                    let card = document.createElement("div");
+                    card.className = "explorer-card";
+                    let urlDestino = linksDirecionamento[cat] || '#';
+                    let nomeArquivo = mapeamentoLogos[cat] || 'default.png';
+                    card.onclick = function() { window.open(urlDestino, '_blank'); };
+                    card.innerHTML = `<div class="icon-wrapper"><img src="/static/image/${nomeArquivo}" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px;"></div><div class="item-label">${cat}</div><div class="item-author">Portal WEB</div>`;
+                    gridContainer.appendChild(card);
+                });
+
+                // 2. Renderiza os novos sites customizados que seu sócio ou você adicionaram via formulário
+                if (data.itens && data.itens.length > 0) {
+                    data.itens.forEach(item => {
+                        if (item.tipo === 'link') {
+                            let card = document.createElement("div");
+                            card.className = "explorer-card";
+                            card.onclick = function() { window.open(item.caminho, '_blank'); };
+                            card.innerHTML = `
+                                <div class="action-trigger"><button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button></div>
+                                <div class="icon-wrapper"><i class="bi bi-globe text-success" style="font-size: 46px;"></i></div>
+                                <div class="item-label" title="${item.nome}">${item.nome}</div>`;
+                            gridContainer.appendChild(card);
+                        }
+                    });
+                }
+                return;
+            }
+
+            // Lógica padrão de renderização para pastas corporativas comuns (Instituto / JP2)
             if (!data.itens || data.itens.length === 0) {
                 gridContainer.innerHTML = '<div class="text-center w-100 py-4 text-muted"><i class="bi bi-folder-x fs-3"></i><br>Nenhum item ou subpasta aqui. Use os botões acima para incluir.</div>';
                 return;
@@ -853,8 +871,6 @@
             let formData = new FormData();
             formData.append('arquivos', fileInput.files[0]);
             formData.append('bloco', estadoDoPainel.bloco);
-            
-            // CONSECRATED FINAL ADJUSTMENT: Padroniza o envio da categoria como 'raiz' sempre para manter o alinhamento com a rota /listar independente da profundidade da subpasta
             formData.append('categoria', 'raiz');
             formData.append('pasta_pai_id', estadoDoPainel.pasta_pai_id || '');
 
