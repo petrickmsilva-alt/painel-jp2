@@ -127,7 +127,7 @@ def listar_arquivos():
     bloco = request.args.get('bloco')
     pasta_pai_id = request.args.get('pasta_pai_id')
     try:
-        # CORREÇÃO CRUCIAL PILAR 3: Busca tudo que NÃO é True (traz de volta os valores em branco/NULL)
+        # Traz tudo que não está explicitamente marcado como deletado
         query = supabase.table("arquivos_painel").select("*").eq("bloco", bloco).neq("deletado", True)
         if pasta_pai_id and pasta_pai_id != "null" and pasta_pai_id != "undefined" and pasta_pai_id != "":
             res = query.eq("pasta_pai_id", int(pasta_pai_id)).execute()
@@ -169,8 +169,9 @@ def criar_pasta():
     pai = request.form.get('pasta_pai_id')
     p_id = int(pai) if (pai and pai != "null" and pai != "undefined" and pai != "") else None
     try:
+        # CORREÇÃO: Removido o campo "deletado" do insert para evitar conflito com o Supabase
         supabase.table("arquivos_painel").insert({
-            "nome_original": nome, "bloco": bloco, "categoria": cat, "tipo": "pasta", "pasta_pai_id": p_id, "criado_por": "Petrick Martins Silva", "deletado": False
+            "nome_original": nome, "bloco": bloco, "categoria": cat, "tipo": "pasta", "pasta_pai_id": p_id, "criado_por": "Petrick Martins Silva"
         }).execute()
         registrar_log(f"Criou a pasta: {nome} no bloco {bloco}")
         return jsonify({'status': 'sucesso'})
@@ -188,8 +189,9 @@ def upload_avancado():
             if arq.filename == '': continue
             supabase.storage.from_("meus-arquivos").upload(path=arq.filename, file=arq.read(), file_options={"content-type": arq.content_type})
             link = supabase.storage.from_("meus-arquivos").get_public_url(arq.filename)
+            # CORREÇÃO: Removido o campo "deletado" do insert para o upload também
             supabase.table("arquivos_painel").insert({
-                "nome_original": arq.filename, "caminho_sistema": link, "bloco": bloco, "categoria": cat, "tipo": "arquivo", "pasta_pai_id": p_id, "criado_por": "Petrick Martins Silva", "deletado": False
+                "nome_original": arq.filename, "caminho_sistema": link, "bloco": bloco, "categoria": cat, "tipo": "arquivo", "pasta_pai_id": p_id, "criado_por": "Petrick Martins Silva"
             }).execute()
             registrar_log(f"Fez upload do arquivo: {arq.filename} no bloco {bloco}")
         return jsonify({'status': 'sucesso'})
@@ -239,9 +241,8 @@ def salvar_site():
     nome, url, bloco = request.form.get('nome'), request.form.get('url'), request.form.get('bloco')
     try:
         supabase.table("arquivos_painel").insert({
-            "nome_original": nome, "bloco": bloco, "tipo": "link", "categoria": "raiz", "caminho_sistema": url, "criado_por": "Petrick Martins Silva", "deletado": False
+            "nome_original": nome, "bloco": bloco, "tipo": "link", "categoria": "raiz", "caminho_sistema": url, "criado_por": "Petrick Martins Silva"
         }).execute()
-        registrar_log(f"Adicionou o site recomendado: {nome} ({url})")
         return jsonify({'status': 'sucesso'})
     except:
         return jsonify({'status': 'erro'})
