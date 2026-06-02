@@ -129,12 +129,11 @@ def listar_arquivos():
     try:
         query = supabase.table("arquivos_painel").select("*").eq("bloco", bloco).eq("deletado", False)
         
-        # CORREÇÃO INTEGRADA: Aceita múltiplos formatos de "raiz" (nulo, vazio, ou string 'null')
+        # Voltou para a lógica antiga super estável que trouxe suas pastas no print
         if pasta_pai_id and pasta_pai_id != "null" and pasta_pai_id != "undefined" and pasta_pai_id != "":
             res = query.eq("pasta_pai_id", int(pasta_pai_id)).execute()
         else:
-            # Se não houver ID de pasta pai, traz tudo que é da raiz do bloco
-            res = query.or_("pasta_pai_id.is.null,pasta_pai_id.eq.''").execute()
+            res = query.is_("pasta_pai_id", "null").execute()
             
         linhas = res.data if hasattr(res, 'data') else []
         itens_formatados = []
