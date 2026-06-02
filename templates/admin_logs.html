@@ -42,6 +42,7 @@
             gap: 5px;
         }
         .btn-voltar:hover { background: #e2e8f0 !important; }
+        .data-log { font-weight: 500; color: #64748b; }
     </style>
 </head>
 <body>
@@ -58,7 +59,7 @@
             <table class="table table-hover">
                 <thead class="table-thead">
                     <tr>
-                        <th>Data / Hora</th>
+                        <th>Data / Hora (Brasília)</th>
                         <th>Usuário</th>
                         <th>Ação Executada</th>
                         <th>IP de Origem</th>
@@ -67,7 +68,8 @@
                 <tbody>
                     {% for log in logs %}
                     <tr>
-                        <td class="text-muted">{{ log.data_registro }}</td>
+                        <!-- Guardamos a data bruta no atributo 'data-raw' para o script formatar localmente -->
+                        <td class="data-log" data-raw="{{ log.data_registro }}">{{ log.data_registro }}</td>
                         <td><strong>{{ log.usuario }}</strong></td>
                         <td>{{ log.acao }}</td>
                         <td><span class="badge badge-ip p-2">{{ log.ip_origem or '127.0.0.1' }}</span></td>
@@ -82,5 +84,30 @@
         </div>
     </div>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Conversor inteligente de fuso horário e formato no navegador do usuário
+            document.querySelectorAll(".data-log").forEach(function(el) {
+                let dataBruta = el.getAttribute("data-raw");
+                if (dataBruta) {
+                    try {
+                        let dataObjeto = new Date(dataBruta);
+                        // Formata para o padrão brasileiro e ajusta o fuso horário automaticamente
+                        let dataFormatada = dataObjeto.toLocaleString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        });
+                        el.textContent = dataFormatada.replace(', ', ' às ');
+                    } catch (e) {
+                        console.error("Erro ao formatar data: ", e);
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>
