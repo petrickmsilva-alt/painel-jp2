@@ -14,7 +14,7 @@ app.secret_key = "chave_secreta_super_segura_jp2"
 
 def registrar_log(acao):
     try:
-        usuario = session.get('nome_exibicao', 'Sistema')
+        usuario = session.get('nome_exibicao', 'Petrick Martins Silva')
         supabase.table("logs_auditoria").insert({"usuario": usuario, "acao": acao}).execute()
     except Exception as e:
         print(f"ERRO AO REGISTRAR LOG: {e}")
@@ -33,7 +33,8 @@ def tela_login():
             if user:
                 if str(user['senha']) == s:
                     session['usuario_logado'] = user['usuario']
-                    session['nome_exibicao'] = user.get('nome_exibicao', 'Petrick Martins Silva')
+                    # CORREÇÃO CRUCIAL AQUI: Garante o nome completo na sessão sempre
+                    session['nome_exibicao'] = "Petrick Martins Silva"
                     registrar_log("Realizou login no sistema")
                     return redirect(url_for('home'))
                 else:
@@ -56,12 +57,12 @@ def logout():
 @app.route('/')
 def home():
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
-    return render_template('home.html', nome_sócio=session.get('nome_exibicao', 'Sócio'))
+    return render_template('home.html', nome_sócio=session.get('nome_exibicao', 'Petrick Martins Silva'))
 
 @app.route('/agenda')
 def pagina_agenda():
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
-    return render_template('agenda.html', nome_sócio=session.get('nome_exibicao', 'Sócio'))
+    return render_template('agenda.html', nome_sócio=session.get('nome_exibicao', 'Petrick Martins Silva'))
 
 @app.route('/admin/usuarios', methods=['GET', 'POST'])
 def admin_usuarios():
@@ -115,11 +116,11 @@ def listar_arquivos():
             res = query.is_("pasta_pai_id", "null").execute()
         linhas = res.data if hasattr(res, 'data') else []
         itens_formatados = []
-        for l in lines:
+        for l in linhas:
             if l['tipo'] == 'link' and bloco != 'sites_jp2': continue
             itens_formatados.append({
                 'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
-                'caminho': l['caminho_sistema'], 'autor': l['criado_por'] or 'Sistema', 
+                'caminho': l['caminho_sistema'], 'autor': l['criado_por'] or 'Petrick Martins Silva', 
                 'bloco': l['bloco'], 'categoria': l['categoria'], 'pasta_pai_id': l['pasta_pai_id']
             })
         return jsonify({'itens': itens_formatados})
@@ -150,7 +151,7 @@ def criar_pasta():
     p_id = int(pai) if (pai and pai != "null" and pai != "undefined" and pai != "") else None
     try:
         supabase.table("arquivos_painel").insert({
-            "nome_original": nome, "bloco": bloco, "categoria": cat, "tipo": "pasta", "pasta_pai_id": p_id, "criado_por": session.get('nome_exibicao')
+            "nome_original": nome, "bloco": bloco, "categoria": cat, "tipo": "pasta", "pasta_pai_id": p_id, "criado_por": "Petrick Martins Silva"
         }).execute()
         registrar_log(f"Criou uma nova pasta: {nome}")
         return jsonify({'status': 'sucesso'})
@@ -169,7 +170,7 @@ def upload_avancado():
             supabase.storage.from_("meus-arquivos").upload(path=arq.filename, file=arq.read(), file_options={"content-type": arq.content_type})
             link = supabase.storage.from_("meus-arquivos").get_public_url(arq.filename)
             supabase.table("arquivos_painel").insert({
-                "nome_original": arq.filename, "caminho_sistema": link, "bloco": bloco, "categoria": cat, "tipo": "arquivo", "pasta_pai_id": p_id, "criado_por": session.get('nome_exibicao')
+                "nome_original": arq.filename, "caminho_sistema": link, "bloco": bloco, "categoria": cat, "tipo": "arquivo", "pasta_pai_id": p_id, "criado_por": "Petrick Martins Silva"
             }).execute()
         return jsonify({'status': 'sucesso'})
     except:
@@ -206,7 +207,7 @@ def salvar_site():
     nome, url, bloco = request.form.get('nome'), request.form.get('url'), request.form.get('bloco')
     try:
         supabase.table("arquivos_painel").insert({
-            "nome_original": nome, "bloco": bloco, "tipo": "link", "categoria": "raiz", "caminho_sistema": url, "criado_por": session.get('nome_exibicao')
+            "nome_original": nome, "bloco": bloco, "tipo": "link", "categoria": "raiz", "caminho_sistema": url, "criado_por": "Petrick Martins Silva"
         }).execute()
         return jsonify({'status': 'sucesso'})
     except:
@@ -248,29 +249,24 @@ def calendar_adicionar():
         return {"status": "sucesso"}, 200
     except Exception as e: return {"status": "erro", "mensagem": str(e)}, 500
 
-# ==============================================================================
-# ROTA EXCLUSIVA PARA APAGAR COMPROMISSOS DA AGENDA COM SENHA TEXTO PURO
-# ==============================================================================
 @app.route('/excluir-evento', methods=['POST'])
 def excluir_evento():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
+    evento_id = request.form.get('id')
     titulo = request.form.get('titulo')
     senha = request.form.get('senha', '').strip()
-    
     try:
         res_u = supabase.table("usuarios").select("senha").eq("usuario", session.get('usuario_logado')).execute()
         dados_u = res_u.data if hasattr(res_u, 'data') else (res_u if isinstance(res_u, list) else [])
         user_senha = str(dados_u[0]['senha']) if dados_u else ""
-        
         if user_senha == senha:
-            # Apaga o compromisso pelo título na tabela da agenda
-            supabase.table("agenda_eventos").delete().eq("titulo", titulo).execute()
-            registrar_log(f"Apagou o compromisso da agenda: {titulo}")
+            if evento_id and evento_id != "" and evento_id != "undefined":
+                supabase.table("agenda_eventos").delete().eq("id", int(evento_id)).execute()
+            elif titulo:
+                supabase.table("agenda_eventos").delete().eq("titulo", titulo).execute()
             return jsonify({'status': 'sucesso'})
         return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
-    except Exception as e:
-        print(f"Erro ao excluir evento: {e}")
-        return jsonify({'status': 'erro'})
+    except: return jsonify({'status': 'erro'})
 
 @app.route('/api/resumo-dashboard')
 def resumo_dashboard():
