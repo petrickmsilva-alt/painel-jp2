@@ -1,10 +1,10 @@
 import os
+import hashlib
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory
-from werkzeug.security import generate_password_hash, check_password_hash
 from supabase import create_client
 
-# CONFIGURAÇÃO SEGURA: O sistema busca as chaves direto das Variáveis de Ambiente da Render
+# CONFIGURAÇÃO SEGURA: Busca as chaves direto das Variáveis de Ambiente da Render
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://zkdzgpblxorcxxdrmojo.supabase.co")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
@@ -14,7 +14,6 @@ if not SUPABASE_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = Flask(__name__)
-# Busca a chave secreta da sessão da Render ou usa uma padrão caso não exista
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "chave_secreta_super_segura_jp2")
 
 def registrar_log(acao):
@@ -23,6 +22,10 @@ def registrar_log(acao):
         supabase.table("logs_auditoria").insert({"usuario": usuario, "acao": acao}).execute()
     except Exception as e:
         print(f"ERRO AO REGISTRAR LOG: {e}")
+
+def criptografar_sha256(senha_pura):
+    """Gera um hash SHA-256 seguro e universal para a senha."""
+    return hashlib.sha256(senha_pura.encode('utf-8')).hexdigest()
 
 @app.route('/login', methods=['GET', 'POST'])
 def tela_login():
@@ -36,8 +39,8 @@ def tela_login():
             user = dados[0] if dados else None
             
             if user:
-                # CRIPTOGRAFIA ATIVADA: Verifica se a senha digitada bate com o hash seguro do banco
-                if check_password_hash(str(user['senha']), s):
+                # Compara a senha digitada (convertida em SHA-256) com o hash guardado no banco
+                if str(user['senha']) == criptografar_sha256(s):
                     session['usuario_logado'] = user['usuario']
                     session['nome_exibicao'] = "Petrick Martins Silva"
                     registrar_log("Realizou login no sistema")
@@ -78,8 +81,8 @@ def admin_usuarios():
         senha_pura = request.form.get('nova_senha', '').strip()
         nome_exib = request.form.get('nome_exibicao', '')
         
-        # Na criação de um novo usuário pelo painel, a senha já nasce criptografada!
-        senha_cripto = generate_password_hash(senha_pura)
+        # Novos usuários criados pelo painel já ganham a senha em SHA-256 automaticamente
+        senha_cripto = criptografar_sha256(senha_pura)
         
         try:
             supabase.table("usuarios").insert({
@@ -204,8 +207,7 @@ def excluir_arquivo():
         dados_u = res_u.data if hasattr(res_u, 'data') else (res_u if isinstance(res_u, list) else [])
         user_senha = str(dados_u[0]['senha']) if dados_u else ""
         
-        # CRIPTOGRAFIA NA EXCLUSÃO DE ARQUIVOS
-        if check_password_hash(user_senha, senha):
+        if user_senha == criptografar_sha256(senha):
             supabase.table("arquivos_painel").delete().eq("id", arq_id).execute()
             return jsonify({'status': 'sucesso'})
         return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
@@ -271,8 +273,7 @@ def excluir_evento():
         dados_u = res_u.data if hasattr(res_u, 'data') else (res_u if isinstance(res_u, list) else [])
         user_senha = str(dados_u[0]['senha']) if dados_u else ""
         
-        # CRIPTOGRAFIA NA EXCLUSÃO DA AGENDA
-        if check_password_hash(user_senha, senha):
+        if user_senha == criptografar_sha256(senha):
             if evento_id and evento_id != "" and evento_id != "undefined" and evento_id != "null":
                 supabase.table("agenda_eventos").delete().eq("id", int(evento_id)).execute()
             elif titulo:
