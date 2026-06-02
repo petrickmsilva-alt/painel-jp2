@@ -127,12 +127,15 @@ def listar_arquivos():
     bloco = request.args.get('bloco')
     pasta_pai_id = request.args.get('pasta_pai_id')
     try:
-        # CORREÇÃO DEFINITIVA: Filtro direto por False alinhado com a nova tabela limpa
+        # Busca base filtrando apenas os ativos do bloco atual
         query = supabase.table("arquivos_painel").select("*").eq("bloco", bloco).eq("deletado", False)
+        
+        # AJUSTE CIRÚRGICO: Se estiver na raiz, traz tudo que não tem pasta pai definida (afasta a trava de categoria)
         if pasta_pai_id and pasta_pai_id != "null" and pasta_pai_id != "undefined" and pasta_pai_id != "":
             res = query.eq("pasta_pai_id", int(pasta_pai_id)).execute()
         else:
             res = query.is_("pasta_pai_id", "null").execute()
+            
         linhas = res.data if hasattr(res, 'data') else []
         itens_formatados = []
         for l in linhas:
