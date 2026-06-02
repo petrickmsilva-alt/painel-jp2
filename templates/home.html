@@ -57,6 +57,26 @@
     <div class="explorer-grid" id="wrapper-explorer-grid"></div>
 </section>
 
+<div class="modal fade" id="modalCriarNovaPasta" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-folder-plus text-primary"></i> Criar Nova Pasta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNovaPastaNativa">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Nome da pasta:</label>
+                        <input type="text" class="form-control" id="inputNomePastaNativa" placeholder="Ex: Relatórios Fiscais" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">Criar Pasta</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="modalUploadArquivo" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -78,10 +98,15 @@
 </div>
 
 <script>
-    // Mantém as suas funções originais de controle de janelas sem alterar nada
+    // Ativa a nova janela de criação de pasta de forma direta e independente
     function abrirModalNovaPasta() {
-        if (typeof window.abrirModalNovaPastaOriginal === 'function') { window.abrirModalNovaPastaOriginal(); } 
-        else { alert("Função para nova pasta carregando..."); }
+        const modalEl = document.getElementById('modalCriarNovaPasta');
+        if (modalEl) {
+            const myModal = new bootstrap.Modal(modalEl);
+            myModal.show();
+        } else {
+            alert("Aguardando inicialização dos componentes gráficos...");
+        }
     }
 
     function abrirModalUploadComContexto() {
@@ -93,6 +118,43 @@
             alert("Aguardando carregamento dos componentes gráficos...");
         }
     }
+
+    // PROCESSAMENTO DO ENVIO DA NOVA PASTA VIA AJAX
+    document.getElementById('formNovaPastaNativa').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const nomePasta = document.getElementById('inputNomePastaNativa').value.strip ? document.getElementById('inputNomePastaNativa').value.strip() : document.getElementById('inputNomePastaNativa').value;
+        if (!nomePasta) return;
+
+        const blocoAtual = window.currentBloco || 'arquivos_gerais';
+        const categoriaAtual = window.currentCategoria || 'raiz';
+        const pastaPaiId = window.currentPastaPaiId || '';
+
+        const formData = new FormData();
+        formData.append('nome', nomePasta);
+        formData.append('bloco', blocoAtual);
+        formData.append('categoria', categoriaAtual);
+        formData.append('pasta_pai_id', pastaPaiId);
+
+        const modalEl = document.getElementById('modalCriarNovaPasta');
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (modalInstance) modalInstance.hide();
+
+        fetch('/criar-pasta', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(resposta => {
+            if (resposta.status === 'sucesso') {
+                document.getElementById('inputNomePastaNativa').value = '';
+                if (typeof window.atualizarExplorer === 'function') { window.atualizarExplorer(); }
+                else { window.location.reload(); }
+            } else {
+                alert('Erro ao tentar criar a pasta no servidor.');
+            }
+        })
+        .catch(() => alert('Erro crítico na rede ao criar pasta.'));
+    });
 
     // INTERCEPTAÇÃO INTELIGENTE DO FORMULÁRIO PARA EXIBIR A BARRA DE PROGRESSO
     document.getElementById('formUploadAvancado').addEventListener('submit', function(e) {
@@ -106,7 +168,6 @@
             formData.append('arquivos', input.files[i]);
         }
 
-        // Captura o contexto atual da pasta onde você está navegando no explorer
         const blocoAtual = window.currentBloco || 'arquivos_gerais';
         const categoriaAtual = window.currentCategoria || 'raiz';
         const pastaPaiId = window.currentPastaPaiId || '';
@@ -115,12 +176,10 @@
         formData.append('categoria', categoriaAtual);
         formData.append('pasta_pai_id', pastaPaiId);
 
-        // Fecha a modal de escolha para mostrar a tela principal
         const modalEl = document.getElementById('modalUploadArquivo');
         const modalInstance = bootstrap.Modal.getInstance(modalEl);
         if (modalInstance) modalInstance.hide();
 
-        // Ativa a Barra de Progresso visual na tela
         const progressoContainer = document.getElementById('progresso-container');
         const barraReal = document.getElementById('barra-progresso-real');
         const labelProgresso = document.getElementById('progresso-label');
@@ -130,7 +189,6 @@
         barraReal.innerText = '0%';
         labelProgresso.innerText = 'Enviando arquivo: 0%';
 
-        // Envia os dados usando Ajax nativo para medir o progresso
         const xhr = new XMLHttpRequest();
         xhr.open('POST', '/upload-avancado', true);
 
@@ -173,7 +231,6 @@
     });
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Criar o botão flutuante de forma "agressiva" como você configurou
         const btnVoltar = document.createElement('a');
         btnVoltar.href = '/';
         btnVoltar.innerHTML = '⬅ VOLTAR AO PAINEL';
@@ -191,7 +248,6 @@
         
         document.body.appendChild(btnVoltar);
 
-        // Busca dados da API para alimentar o topo
         fetch('/api/resumo-dashboard')
         .then(res => res.json())
         .then(data => {
