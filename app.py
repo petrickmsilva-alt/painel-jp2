@@ -17,7 +17,6 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "chave_secreta_super_segura_jp2")
 
 def registrar_log(acao):
-    """Função do Pilar 2: Registra ações com data, hora e IP do usuário para auditoria."""
     try:
         usuario = session.get('nome_exibicao', 'Petrick Martins Silva')
         ip_usuario = request.headers.get('X-Forwarded-For', request.remote_addr)
@@ -114,7 +113,6 @@ def excluir_usuario(usuario_id):
 
 @app.route('/admin/logs')
 def admin_logs():
-    """Tela do Pilar 2: Exibe os logs detalhados para o auditor do sistema."""
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
     try:
         res = supabase.table("logs_auditoria").select("*").order("data_registro", desc=True).limit(100).execute()
@@ -129,14 +127,15 @@ def listar_arquivos():
     bloco = request.args.get('bloco')
     pasta_pai_id = request.args.get('pasta_pai_id')
     try:
-        query = supabase.table("arquivos_painel").select("*").eq("bloco", bloco)
+        # ATUALIZAÇÃO PILAR 3: Filtra para trazer apenas arquivos que NÃO foram enviados para a lixeira (deletado=false)
+        query = supabase.table("arquivos_painel").select("*").eq("bloco", bloco).eq("deletado", False)
         if pasta_pai_id and pasta_pai_id != "null" and pasta_pai_id != "undefined" and pasta_pai_id != "":
             res = query.eq("pasta_pai_id", int(pasta_pai_id)).execute()
         else:
             res = query.is_("pasta_pai_id", "null").execute()
         linhas = res.data if hasattr(res, 'data') else []
         itens_formatados = []
-        for l in linhas:
+        for l in lines:
             if l['tipo'] == 'link' and bloco != 'sites_jp2': continue
             itens_formatados.append({
                 'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
@@ -156,7 +155,7 @@ def obter_pai_id():
     if len(partes) <= 1: return jsonify({'pasta_pai_id': None})
     ultima_pasta_nome = partes[-1]
     try:
-        res = supabase.table("arquivos_painel").select("id").eq("bloco", bloco).eq("nome_original", ultima_pasta_nome).eq("tipo", "pasta").execute()
+        res = supabase.table("arquivos_painel").select("id").eq("bloco", bloco).eq("nome_original", ultima_pasta_nome).eq("tipo", "pasta").eq("deletado", False).execute()
         dados = res.data if hasattr(res, 'data') else []
         return jsonify({'pasta_pai_id': dados[0]['id'] if dados else None})
     except:
@@ -171,7 +170,7 @@ def criar_pasta():
     p_id = int(pai) if (pai and pai != "null" and pai != "undefined" and pai != "") else None
     try:
         supabase.table("arquivos_painel").insert({
-            "nome_original": nome, "bloco": bloco, "categoria": cat, "tipo": "pasta", "pasta_pai_id": p_id, "criado_por": "Petrick Martins Silva"
+            "nome_original": nome, "bloco": bloco, "categoria": cat, "tipo": "pasta", "pasta_pai_id": p_id, "criado_por": "Petrick Martins Silva", "deletado": False
         }).execute()
         registrar_log(f"Criou a pasta: {nome} no bloco {bloco}")
         return jsonify({'status': 'sucesso'})
@@ -190,7 +189,7 @@ def upload_avancado():
             supabase.storage.from_("meus-arquivos").upload(path=arq.filename, file=arq.read(), file_options={"content-type": arq.content_type})
             link = supabase.storage.from_("meus-arquivos").get_public_url(arq.filename)
             supabase.table("arquivos_painel").insert({
-                "nome_original": arq.filename, "caminho_sistema": link, "bloco": bloco, "categoria": cat, "tipo": "arquivo", "pasta_pai_id": p_id, "criado_por": "Petrick Martins Silva"
+                "nome_original": arq.filename, "caminho_sistema": link, "bloco": bloco, "categoria": cat, "tipo": "arquivo", "pasta_pai_id": p_id, "criado_por": "Petrick Martins Silva", "deletado": False
             }).execute()
             registrar_log(f"Fez upload do arquivo: {arq.filename} no bloco {bloco}")
         return jsonify({'status': 'sucesso'})
@@ -201,9 +200,9 @@ def upload_avancado():
 def baixar_arquivo(arquivo_id):
     if 'usuario_logado' not in session: return "Não autorizado", 401
     try:
-        res = supabase.table("arquivos_painel").select("caminho_sistema, nome_original").eq("id", arquivo_id).execute()
+        res = supabase.table("arquivos_painel").select("caminho_sistema, nome_original, deletado").eq("id", arquivo_id).execute()
         dados = res.data if hasattr(res, 'data') else []
-        if dados:
+        if dados and not dados[0]['deletado']:
             registrar_log(f"Fez download do arquivo: {dados[0]['nome_original']}")
             if dados[0]['caminho_sistema'].startswith('http'): 
                 return redirect(dados[0]['caminho_sistema'])
@@ -212,6 +211,7 @@ def baixar_arquivo(arquivo_id):
 
 @app.route('/excluir', methods=['POST'])
 def excluir_arquivo():
+    """ATUALIZAÇÃO PILAR 3: Soft Delete (Move para a Lixeira em vez de apagar do banco)"""
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     arq_id, senha = request.form.get('id'), request.form.get('senha', '').strip()
     try:
@@ -223,8 +223,13 @@ def excluir_arquivo():
             res_arq = supabase.table("arquivos_painel").select("nome_original").eq("id", arq_id).execute()
             nome_arq = res_arq.data[0]['nome_original'] if res_arq.data else "Desconhecido"
             
-            supabase.table("arquivos_painel").delete().eq("id", arq_id).execute()
-            registrar_log(f"Deletou o item/pasta: {nome_arq} (ID: {arq_id})")
+            # SOFT DELETE: Em vez de .delete(), fazemos .update() marcando deletado=true e a data atual
+            supabase.table("arquivos_painel").update({
+                "deletado": True, 
+                "deletado_em": datetime.now().isoformat()
+            }).eq("id", arq_id).execute()
+            
+            registrar_log(f"Enviou para a lixeira o item/pasta: {nome_arq} (ID: {arq_id})")
             return jsonify({'status': 'sucesso'})
         return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
     except:
@@ -236,7 +241,7 @@ def salvar_site():
     nome, url, bloco = request.form.get('nome'), request.form.get('url'), request.form.get('bloco')
     try:
         supabase.table("arquivos_painel").insert({
-            "nome_original": nome, "bloco": bloco, "tipo": "link", "categoria": "raiz", "caminho_sistema": url, "criado_por": "Petrick Martins Silva"
+            "nome_original": nome, "bloco": bloco, "tipo": "link", "categoria": "raiz", "caminho_sistema": url, "criado_por": "Petrick Martins Silva", "deletado": False
         }).execute()
         registrar_log(f"Adicionou o site recomendado: {nome} ({url})")
         return jsonify({'status': 'sucesso'})
@@ -261,7 +266,6 @@ def api_listar_eventos():
                         'title': titulo, 
                         'start': (inicio + timedelta(days=i)).strftime('%Y-%m-%d'), 
                         'allDay': True, 
-                        # CORREÇÃO CRUCIAL: 'cor' consertado para puxar a variável interna perfeitamente
                         'color': cor
                     })
             except: continue
@@ -306,7 +310,7 @@ def excluir_evento():
 @app.route('/api/resumo-dashboard')
 def resumo_dashboard():
     try:
-        res_arq = supabase.table("arquivos_painel").select("id", count="exact").execute()
+        res_arq = supabase.table("arquivos_painel").select("id", count="exact").eq("deletado", False).execute()
         total_arquivos = res_arq.count if res_arq.count is not None else 0
         res_soc = supabase.table("usuarios").select("id", count="exact").execute()
         total_socios = res_soc.count if res_soc.count is not None else 0
