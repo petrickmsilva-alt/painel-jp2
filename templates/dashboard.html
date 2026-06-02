@@ -592,12 +592,13 @@
                             card.className = "explorer-card";
                             card.onclick = function() { window.open(item.caminho, '_blank'); };
                             
-                            // NOVA LINHA INTELIGENTE: Puxa a logo real do site automaticamente pela URL cadastrada
-                            let linkLimpo = item.caminho.replace('https://', '').replace('http://', '').split('/')[0];
-                            let urlLogoAutomatica = `https://favicons.githubusercontent.com/` + linkLimpo;
+                            // EXTRAÇÃO BLINDADA DA LOGO: Isola o domínio puro do site para garantir o carregamento da imagem
+                            let urlLimpa = item.caminho.replace('https://', '').replace('http://', '').replace('www.', '');
+                            let dominioPuro = urlLimpa.split('/')[0];
+                            let urlLogoAutomatica = `https://favicons.githubusercontent.com/` + dominioPuro;
 
                             let wrapperHtml = `<img src="${urlLogoAutomatica}" onerror="this.onerror=null; this.parentNode.innerHTML='<i class=\\'bi bi-globe text-primary\\' style=\\'font-size: 46px;\\'></i>';" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px;">`;
-                                
+                          
                             card.innerHTML = `
                                 <div class="action-trigger"><button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button></div>
                                 <div class="icon-wrapper">${wrapperHtml}</div>
