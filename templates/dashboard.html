@@ -543,7 +543,6 @@
         sincronizarGrade();
     }
 
-    // AJUSTE REALIZADO NA FUNÇÃO DE SINCRONIZAÇÃO
     function sincronizarGrade() {
         let gridContainer = document.getElementById("wrapper-explorer-grid");
         let caminhoEl = document.getElementById('txtCaminhoWindows');
@@ -571,7 +570,6 @@
         .then(data => {
             gridContainer.innerHTML = "";
             
-            // SE FOR O MÓDULO DE SITES NA TELA INICIAL: Une a lista fixa antiga com os novos sites cadastrados dinamicamente no banco
             if (estadoDoPainel.bloco === 'sites_jp2' && estadoDoPainel.nivel_atual === 'raiz_bloco') {
                 let categorias = subpastasFixas['sites_jp2'];
                 
@@ -586,16 +584,22 @@
                     gridContainer.appendChild(card);
                 });
 
-                // 2. Renderiza os novos sites customizados que seu sócio ou você adicionaram via formulário
+                // 2. CORREÇÃO CIRÚRGICA DA LOGO DINÂMICA: Verifica se há imagem correspondente cadastrada no dicionário, senão usa a logo estruturada de internet global
                 if (data.itens && data.itens.length > 0) {
                     data.itens.forEach(item => {
                         if (item.tipo === 'link') {
                             let card = document.createElement("div");
                             card.className = "explorer-card";
                             card.onclick = function() { window.open(item.caminho, '_blank'); };
+                            
+                            let logoSugerida = mapeamentoLogos[item.nome];
+                            let wrapperHtml = logoSugerida 
+                                ? `<img src="/static/image/${logoSugerida}" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px;">`
+                                : `<i class="bi bi-globe text-success" style="font-size: 46px;"></i>`;
+                                
                             card.innerHTML = `
                                 <div class="action-trigger"><button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button></div>
-                                <div class="icon-wrapper"><i class="bi bi-globe text-success" style="font-size: 46px;"></i></div>
+                                <div class="icon-wrapper">${wrapperHtml}</div>
                                 <div class="item-label" title="${item.nome}">${item.nome}</div>`;
                             gridContainer.appendChild(card);
                         }
@@ -604,7 +608,6 @@
                 return;
             }
 
-            // Lógica padrão de renderização para pastas corporativas comuns (Instituto / JP2)
             if (!data.itens || data.itens.length === 0) {
                 gridContainer.innerHTML = '<div class="text-center w-100 py-4 text-muted"><i class="bi bi-folder-x fs-3"></i><br>Nenhum item ou subpasta aqui. Use os botões acima para incluir.</div>';
                 return;
@@ -1055,7 +1058,7 @@
      #mobile-only-ui { display: none; }
      @media (max-width: 768px) {
         #mobile-only-ui { display: block !important; }
-        .sidebar-enterprise, .sidebar, div[class*="sidebar"] { display: none !important; }
+        .sidebar-enterprise, .sidebar, div[class*=\"sidebar\"] { display: none !important; }
         .explorer-grid { 
           display: grid !important;
           grid-template-columns: 1fr 1fr !important; 
