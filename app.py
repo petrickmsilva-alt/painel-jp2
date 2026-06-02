@@ -33,7 +33,6 @@ def tela_login():
             if user:
                 if str(user['senha']) == s:
                     session['usuario_logado'] = user['usuario']
-                    # CORREÇÃO CRUCIAL AQUI: Garante o nome completo na sessão sempre
                     session['nome_exibicao'] = "Petrick Martins Silva"
                     registrar_log("Realizou login no sistema")
                     return redirect(url_for('home'))
@@ -231,7 +230,7 @@ def api_listar_eventos():
                         'title': titulo, 
                         'start': (inicio + timedelta(days=i)).strftime('%Y-%m-%d'), 
                         'allDay': True, 
-                        'color': cor
+                        'color': color
                     })
             except: continue
         resp = make_response(jsonify(lista_diaria))
@@ -249,24 +248,40 @@ def calendar_adicionar():
         return {"status": "sucesso"}, 200
     except Exception as e: return {"status": "erro", "mensagem": str(e)}, 500
 
+# ==============================================================================
+# ROTA DE EXCLUSÃO ULTRA BLINDADA: APAGA USANDO FILTROS ELÁSTICOS DE TEXTO
+# ==============================================================================
 @app.route('/excluir-evento', methods=['POST'])
 def excluir_evento():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
+    
     evento_id = request.form.get('id')
-    titulo = request.form.get('titulo')
+    titulo = request.form.get('titulo', '').strip()
     senha = request.form.get('senha', '').strip()
+    
     try:
         res_u = supabase.table("usuarios").select("senha").eq("usuario", session.get('usuario_logado')).execute()
         dados_u = res_u.data if hasattr(res_u, 'data') else (res_u if isinstance(res_u, list) else [])
         user_senha = str(dados_u[0]['senha']) if dados_u else ""
+        
         if user_senha == senha:
-            if evento_id and evento_id != "" and evento_id != "undefined":
+            # 1. Tenta apagar pelo ID numérico primeiro
+            if evento_id and evento_id != "" and evento_id != "undefined" and evento_id != "null":
                 supabase.table("agenda_eventos").delete().eq("id", int(evento_id)).execute()
-            elif titulo:
-                supabase.table("agenda_eventos").delete().eq("titulo", titulo).execute()
-            return jsonify({'status': 'sucesso'})
+                registrar_log(f"Apagou o compromisso por ID: {evento_id}")
+                return jsonify({'status': 'sucesso'})
+                
+            # 2. Se falhar ou não tiver ID, busca pelo Título usando filtro elástico (ilike)
+            if titulo:
+                supabase.table("agenda_eventos").delete().ilike("titulo", titulo).execute()
+                registrar_log(f"Apagou o compromisso por Título elástico: {titulo}")
+                return jsonify({'status': 'sucesso'})
+                
+            return jsonify({'status': 'erro', 'mensagem': 'Nenhum identificador de evento enviado.'})
         return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
-    except: return jsonify({'status': 'erro'})
+    except Exception as e:
+        print(f"Erro ao excluir evento: {e}")
+        return jsonify({'status': 'erro'})
 
 @app.route('/api/resumo-dashboard')
 def resumo_dashboard():
