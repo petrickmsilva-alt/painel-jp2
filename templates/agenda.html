@@ -11,10 +11,10 @@
         body { background: #f8fafc; font-family: 'Segoe UI', sans-serif; padding: 20px; }
         .agenda-container { 
             background: white; 
-            padding: 15px; /* Reduzido */
+            padding: 15px; 
             border-radius: 10px; 
             border: 1px solid #e2e8f0; 
-            max-width: 600px; /* Reduzido para ficar mais compacto */
+            max-width: 600px; 
             margin: auto; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
@@ -63,10 +63,9 @@
         locale: 'pt-br',
         height: 400,
         
-        // SUBSTITUA A LINHA ANTIGA POR ESTA:
         events: {
             url: '/api/listar-eventos',
-            cache: false // Isso força o calendário a buscar dados novos sempre
+            cache: false 
         },
         
         headerToolbar: {
@@ -85,9 +84,11 @@
             if (senha) {
                 let formData = new FormData();
                 formData.append('id', info.event.id);
+                formData.append('titulo', info.event.title); // Envia o título como garantia
                 formData.append('senha', senha);
 
-                fetch('/excluir', {
+                // CORREÇÃO CRUCIAL: Aponta para a rota certa da agenda (/excluir-evento)
+                fetch('/excluir-evento', {
                     method: 'POST',
                     body: formData
                 })
@@ -96,6 +97,7 @@
                     if (data.status === 'sucesso') {
                         info.event.remove();
                         console.log("Evento excluído com sucesso!");
+                        alert("Compromisso removido com sucesso!");
                     } else {
                         alert("Erro: " + (data.mensagem || "Senha incorreta ou erro no servidor."));
                     }
@@ -106,10 +108,10 @@
                 });
             }
         }
-    }); // Fecha o new FullCalendar.Calendar
+    });
     
-    calendar.render(); // Renderiza o calendário
-}); // Fecha o document.addEventListener
+    calendar.render(); 
+});
     </script>
 </body>
 </html>
