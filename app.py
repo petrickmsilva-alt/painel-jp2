@@ -1,16 +1,21 @@
 import os
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory
+from werkzeug.security import generate_password_hash, check_password_hash
 from supabase import create_client
 
-# CONFIGURAÇÃO DO SUPABASE
-SUPABASE_URL = "https://zkdzgpblxorcxxdrmojo.supabase.co" 
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InprZHpncGJseG9yY3h4ZHJtb2pvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTkyMjkyMiwiZXhwIjoyMDk1NDk4OTIyfQ.wFHo8wZFSnMbz54NLybBkavpdevpvCCij-3m6pz_G0U"
+# CONFIGURAÇÃO SEGURA: O sistema busca as chaves direto das Variáveis de Ambiente da Render
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://zkdzgpblxorcxxdrmojo.supabase.co")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+
+if not SUPABASE_KEY:
+    raise ValueError("ERRO CRÍTICO: A chave SUPABASE_KEY não foi configurada nas Variáveis de Ambiente da Render!")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = Flask(__name__)
-app.secret_key = "chave_secreta_super_segura_jp2"
+# Busca a chave secreta da sessão da Render ou usa uma padrão caso não exista
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "chave_secreta_super_segura_jp2")
 
 def registrar_log(acao):
     try:
@@ -31,7 +36,8 @@ def tela_login():
             user = dados[0] if dados else None
             
             if user:
-                if str(user['senha']) == s:
+                # CRIPTOGRAFIA ATIVADA: Verifica se a senha digitada bate com o hash seguro do banco
+                if check_password_hash(str(user['senha']), s):
                     session['usuario_logado'] = user['usuario']
                     session['nome_exibicao'] = "Petrick Martins Silva"
                     registrar_log("Realizou login no sistema")
@@ -71,13 +77,17 @@ def admin_usuarios():
         novo_user = request.form.get('novo_usuario', '').lower().strip()
         senha_pura = request.form.get('nova_senha', '').strip()
         nome_exib = request.form.get('nome_exibicao', '')
+        
+        # Na criação de um novo usuário pelo painel, a senha já nasce criptografada!
+        senha_cripto = generate_password_hash(senha_pura)
+        
         try:
             supabase.table("usuarios").insert({
                 "usuario": novo_user, 
-                "senha": senha_pura, 
+                "senha": senha_cripto, 
                 "nome_exibicao": nome_exib
             }).execute()
-            registrar_log(f"Cadastrou novo sócio: {novo_user}")
+            registrar_log(f"Cadastrou novo sócio seguro: {novo_user}")
         except Exception as e:
             print(f"Erro cadastro: {e}")
             
@@ -115,7 +125,7 @@ def listar_arquivos():
             res = query.is_("pasta_pai_id", "null").execute()
         linhas = res.data if hasattr(res, 'data') else []
         itens_formatados = []
-        for l in linhas:
+        for l in lines:
             if l['tipo'] == 'link' and bloco != 'sites_jp2': continue
             itens_formatados.append({
                 'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
@@ -193,7 +203,9 @@ def excluir_arquivo():
         res_u = supabase.table("usuarios").select("senha").eq("usuario", session.get('usuario_logado')).execute()
         dados_u = res_u.data if hasattr(res_u, 'data') else (res_u if isinstance(res_u, list) else [])
         user_senha = str(dados_u[0]['senha']) if dados_u else ""
-        if user_senha == senha:
+        
+        # CRIPTOGRAFIA NA EXCLUSÃO DE ARQUIVOS
+        if check_password_hash(user_senha, senha):
             supabase.table("arquivos_painel").delete().eq("id", arq_id).execute()
             return jsonify({'status': 'sucesso'})
         return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
@@ -230,7 +242,7 @@ def api_listar_eventos():
                         'title': titulo, 
                         'start': (inicio + timedelta(days=i)).strftime('%Y-%m-%d'), 
                         'allDay': True, 
-                        'color': color
+                        'color': cor
                     })
             except: continue
         resp = make_response(jsonify(lista_diaria))
@@ -248,40 +260,26 @@ def calendar_adicionar():
         return {"status": "sucesso"}, 200
     except Exception as e: return {"status": "erro", "mensagem": str(e)}, 500
 
-# ==============================================================================
-# ROTA DE EXCLUSÃO ULTRA BLINDADA: APAGA USANDO FILTROS ELÁSTICOS DE TEXTO
-# ==============================================================================
 @app.route('/excluir-evento', methods=['POST'])
 def excluir_evento():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
-    
     evento_id = request.form.get('id')
     titulo = request.form.get('titulo', '').strip()
     senha = request.form.get('senha', '').strip()
-    
     try:
         res_u = supabase.table("usuarios").select("senha").eq("usuario", session.get('usuario_logado')).execute()
         dados_u = res_u.data if hasattr(res_u, 'data') else (res_u if isinstance(res_u, list) else [])
         user_senha = str(dados_u[0]['senha']) if dados_u else ""
         
-        if user_senha == senha:
-            # 1. Tenta apagar pelo ID numérico primeiro
+        # CRIPTOGRAFIA NA EXCLUSÃO DA AGENDA
+        if check_password_hash(user_senha, senha):
             if evento_id and evento_id != "" and evento_id != "undefined" and evento_id != "null":
                 supabase.table("agenda_eventos").delete().eq("id", int(evento_id)).execute()
-                registrar_log(f"Apagou o compromisso por ID: {evento_id}")
-                return jsonify({'status': 'sucesso'})
-                
-            # 2. Se falhar ou não tiver ID, busca pelo Título usando filtro elástico (ilike)
-            if titulo:
+            elif titulo:
                 supabase.table("agenda_eventos").delete().ilike("titulo", titulo).execute()
-                registrar_log(f"Apagou o compromisso por Título elástico: {titulo}")
-                return jsonify({'status': 'sucesso'})
-                
-            return jsonify({'status': 'erro', 'mensagem': 'Nenhum identificador de evento enviado.'})
+            return jsonify({'status': 'sucesso'})
         return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
-    except Exception as e:
-        print(f"Erro ao excluir evento: {e}")
-        return jsonify({'status': 'erro'})
+    except: return jsonify({'status': 'erro'})
 
 @app.route('/api/resumo-dashboard')
 def resumo_dashboard():
