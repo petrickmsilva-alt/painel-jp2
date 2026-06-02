@@ -127,15 +127,15 @@ def listar_arquivos():
     bloco = request.args.get('bloco')
     pasta_pai_id = request.args.get('pasta_pai_id')
     try:
-        # Traz tudo que não está explicitamente marcado como deletado
-        query = supabase.table("arquivos_painel").select("*").eq("bloco", bloco).neq("deletado", True)
+        # CORREÇÃO DEFINITIVA: Filtro direto por False alinhado com a nova tabela limpa
+        query = supabase.table("arquivos_painel").select("*").eq("bloco", bloco).eq("deletado", False)
         if pasta_pai_id and pasta_pai_id != "null" and pasta_pai_id != "undefined" and pasta_pai_id != "":
             res = query.eq("pasta_pai_id", int(pasta_pai_id)).execute()
         else:
             res = query.is_("pasta_pai_id", "null").execute()
         linhas = res.data if hasattr(res, 'data') else []
         itens_formatados = []
-        for l in lines:
+        for l in linhas:
             if l['tipo'] == 'link' and bloco != 'sites_jp2': continue
             itens_formatados.append({
                 'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
@@ -155,7 +155,7 @@ def obter_pai_id():
     if len(partes) <= 1: return jsonify({'pasta_pai_id': None})
     ultima_pasta_nome = partes[-1]
     try:
-        res = supabase.table("arquivos_painel").select("id").eq("bloco", bloco).eq("nome_original", ultima_pasta_nome).eq("tipo", "pasta").neq("deletado", True).execute()
+        res = supabase.table("arquivos_painel").select("id").eq("bloco", bloco).eq("nome_original", ultima_pasta_nome).eq("tipo", "pasta").eq("deletado", False).execute()
         dados = res.data if hasattr(res, 'data') else []
         return jsonify({'pasta_pai_id': dados[0]['id'] if dados else None})
     except:
@@ -169,7 +169,6 @@ def criar_pasta():
     pai = request.form.get('pasta_pai_id')
     p_id = int(pai) if (pai and pai != "null" and pai != "undefined" and pai != "") else None
     try:
-        # CORREÇÃO: Removido o campo "deletado" do insert para evitar conflito com o Supabase
         supabase.table("arquivos_painel").insert({
             "nome_original": nome, "bloco": bloco, "categoria": cat, "tipo": "pasta", "pasta_pai_id": p_id, "criado_por": "Petrick Martins Silva"
         }).execute()
@@ -189,7 +188,6 @@ def upload_avancado():
             if arq.filename == '': continue
             supabase.storage.from_("meus-arquivos").upload(path=arq.filename, file=arq.read(), file_options={"content-type": arq.content_type})
             link = supabase.storage.from_("meus-arquivos").get_public_url(arq.filename)
-            # CORREÇÃO: Removido o campo "deletado" do insert para o upload também
             supabase.table("arquivos_painel").insert({
                 "nome_original": arq.filename, "caminho_sistema": link, "bloco": bloco, "categoria": cat, "tipo": "arquivo", "pasta_pai_id": p_id, "criado_por": "Petrick Martins Silva"
             }).execute()
@@ -309,7 +307,7 @@ def excluir_evento():
 @app.route('/api/resumo-dashboard')
 def resumo_dashboard():
     try:
-        res_arq = supabase.table("arquivos_painel").select("id", count="exact").neq("deletado", True).execute()
+        res_arq = supabase.table("arquivos_painel").select("id", count="exact").eq("deletado", False).execute()
         total_arquivos = res_arq.count if res_arq.count is not None else 0
         res_soc = supabase.table("usuarios").select("id", count="exact").execute()
         total_socios = res_soc.count if res_soc.count is not None else 0
