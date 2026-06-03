@@ -18,7 +18,6 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "chave_secreta_super_segura_
 
 def registrar_log(acao):
     try:
-        # AJUSTE 1A: Pega o nome do sócio logado na sessão de forma dinâmica. Se não houver, deixa como Sistema
         usuario = session.get('nome_exibicao', 'Sistema / Desconhecido')
         ip_usuario = request.headers.get('X-Forwarded-For', request.remote_addr)
         
@@ -47,7 +46,6 @@ def tela_login():
             if user:
                 if str(user['senha']) == criptografar_sha256(s):
                     session['usuario_logado'] = user['usuario']
-                    # AJUSTE 1B: Puxa o nome real cadastrado na tabela para o sócio que acabou de logar
                     session['nome_exibicao'] = user.get('nome_exibicao', user['usuario'])
                     registrar_log("Realizou login no sistema")
                     return redirect(url_for('home'))
@@ -131,7 +129,8 @@ def listar_arquivos():
     try:
         query = supabase.table("arquivos_painel").select("*").eq("bloco", bloco).eq("deletado", False)
         
-        if pasta_pai_id and pasta_pai_id != "null" and pasta_pai_id != "undefined" and pasta_pai_id != "":
+        # AJUSTE DE CONVERSÃO SEGURO: Garante a tipagem correta na busca profunda
+        if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
             res = query.eq("pasta_pai_id", int(pasta_pai_id)).execute()
         else:
             res = query.is_("pasta_pai_id", "null").execute()
@@ -139,14 +138,14 @@ def listar_arquivos():
         linhas = res.data if hasattr(res, 'data') else []
         itens_formatados = []
         for l in linhas:
-            # AJUSTE 2: Permite que links customizados (sites incluídos pelo botão) passem pelo filtro e vão para a tela
             itens_formatados.append({
                 'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
                 'caminho': l['caminho_sistema'], 'autor': l['criado_por'] or 'Sistema', 
                 'bloco': l['bloco'], 'categoria': l['categoria'], 'pasta_pai_id': l['pasta_pai_id']
             })
         return jsonify({'itens': itens_formatados})
-    except:
+    except Exception as e:
+        print(f"Erro ao listar: {e}")
         return jsonify({'itens': []})
 
 @app.route('/obter-pai-id')
@@ -170,7 +169,7 @@ def criar_pasta():
     nome, bloco = request.form.get('nome'), request.form.get('bloco')
     cat = request.form.get('categoria') or 'raiz'
     pai = request.form.get('pasta_pai_id')
-    p_id = int(pai) if (pai and pai != "null" and pai != "undefined" and pai != "") else None
+    p_id = int(pai) if (pai and str(pai).strip() not in ["null", "undefined", ""]) else None
     try:
         supabase.table("arquivos_painel").insert({
             "nome_original": nome, "bloco": bloco, "categoria": cat, "tipo": "pasta", "pasta_pai_id": p_id, "criado_por": session.get('nome_exibicao', 'Sistema')
@@ -185,7 +184,7 @@ def upload_avancado():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     arquivos = request.files.getlist('arquivos')
     bloco, cat, pai = request.form.get('bloco'), request.form.get('categoria'), request.form.get('pasta_pai_id')
-    p_id = int(pai) if (pai and pai != "null" and pai != "undefined" and pai != "") else None
+    p_id = int(pai) if (pai and str(pai).strip() not in ["null", "undefined", ""]) else None
     try:
         for arq in arquivos:
             if arq.filename == '': continue
@@ -241,7 +240,6 @@ def salvar_site():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     nome, url, bloco = request.form.get('nome'), request.form.get('url'), request.form.get('bloco')
     try:
-        # AJUSTE 2B: Garante que o site adicionado herde dinamicamente o criador logado na sessão
         supabase.table("arquivos_painel").insert({
             "nome_original": nome, "bloco": bloco, "tipo": "link", "categoria": "raiz", "caminho_sistema": url, "criado_por": session.get('nome_exibicao', 'Sistema')
         }).execute()
@@ -268,7 +266,7 @@ def api_listar_eventos():
                         'title': titulo, 
                         'start': (inicio + timedelta(days=i)).strftime('%Y-%m-%d'), 
                         'allDay': True, 
-                        'color': color
+                        'color': cor
                     })
             except: continue
         resp = make_response(jsonify(lista_diaria))
