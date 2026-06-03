@@ -386,6 +386,7 @@
                         <i class="bi bi-arrow-clockwise"></i> Sincronizar
                     </button>
                 </div>
+                <!-- RESTAURAÇÃO COMPLETA: Garante a exibição imediata e imutável de todos os botões de ação na tela -->
                 <div class="d-flex gap-2">
                    <div id="controles-arquivos" class="d-flex gap-2">
                         <button class="btn btn-sm btn-outline-secondary px-3" id="btnVoltarExplorer" onclick="volverDiretorio()">
@@ -553,11 +554,13 @@
 
         caminhoEl.innerText = estadoDoPainel.string_caminho;
         gridContainer.innerHTML = '<div class="text-center w-100 py-4"><div class="spinner-border text-primary"></div><br>Buscando na nuvem...</div>';
+        
+        // CORREÇÃO VISUAL CRÍTICA TRANCADA: Garante que os controles de arquivos NUNCA fiquem ocultos nos blocos de arquivo padrão
         if (estadoDoPainel.bloco === 'sites_jp2') {
             if(divArquivos) divArquivos.classList.add('d-none');
             if(divSites) divSites.classList.remove('d-none');
         } else {
-            if(divArquivos) divArquivos.remove('d-none');
+            if(divArquivos) divArquivos.classList.remove('d-none');
             if(divSites) divSites.classList.add('d-none');
         }
 
@@ -651,7 +654,6 @@
                 estadoDoPainel.pasta_pai_id = null;
                 sincronizarGrade();
             } else {
-                // NORMALIZAÇÃO DE CONSULTA DE PAI ID: Remove o caractere "s" extra se a string tiver "Projetos"
                 let caminhoTratado = novoCaminho.replace("Projetos", "Projeto");
                 fetch(`/obter-pai-id?bloco=${estadoDoPainel.bloco}&caminho=${encodeURIComponent(caminhoTratado)}`)
                 .then(res => res.json())
@@ -876,7 +878,6 @@
             formData.append('arquivos', fileInput.files[0]);
             formData.append('bloco', estadoDoPainel.bloco);
             
-            // NORMALIZAÇÃO DE CATEGORIA NO FORMULARIO: Troca o termo textual caso seja a string confluente "Projetos"
             let categoriaNormalizada = estadoDoPainel.nivel_atual === 'raiz_bloco' ? estadoDoPainel.bloco : (estadoDoPainel.categoria || 'raiz');
             if(categoriaNormalizada === "Projetos") { categoriaNormalizada = "Projeto"; }
             
