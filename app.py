@@ -188,19 +188,38 @@ def upload_avancado():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     arquivos = request.files.getlist('arquivos')
     bloco, cat, pai = request.form.get('bloco'), request.form.get('categoria'), request.form.get('pasta_pai_id')
+    
+    # Converte o ID para int, garantindo que seja um número válido
     p_id = int(pai) if (pai and str(pai).strip() not in ["null", "undefined", ""]) else None
+    
     try:
         for arq in arquivos:
             if arq.filename == '': continue
+            
+            # Upload do arquivo para o storage
             supabase.storage.from_("meus-arquivos").upload(path=arq.filename, file=arq.read(), file_options={"content-type": arq.content_type})
             link = supabase.storage.from_("meus-arquivos").get_public_url(arq.filename)
-            supabase.table("arquivos_painel").insert({
-                "nome_original": arq.filename, "caminho_sistema": link, "bloco": bloco, "categoria": cat, "tipo": "arquivo", "pasta_pai_id": p_id, "criado_por": session.get('nome_exibicao', 'Sistema')
-            }).execute()
+            
+            # Montagem dinâmica do dicionário de inserção
+            dados_insercao = {
+                "nome_original": arq.filename, 
+                "caminho_sistema": link, 
+                "bloco": bloco, 
+                "categoria": cat, 
+                "tipo": "arquivo", 
+                "criado_por": session.get('nome_exibicao', 'Sistema')
+            }
+            
+            # Só adiciona o pasta_pai_id se ele for um número válido
+            if p_id is not None:
+                dados_insercao["pasta_pai_id"] = p_id
+            
+            supabase.table("arquivos_painel").insert(dados_insercao).execute()
             registrar_log(f"Fez upload do arquivo: {arq.filename} no bloco {bloco}")
+            
         return jsonify({'status': 'sucesso'})
     except Exception as e:
-        print(f"ERRO CRÍTICO NO UPLOAD: {e}") 
+        print(f"ERRO CRÍTICO NO UPLOAD: {e}")
         return jsonify({'status': 'erro', 'mensagem': str(e)})
         
 @app.route('/baixar/<int:arquivo_id>')
