@@ -526,8 +526,6 @@
             console.error("Erro: Elemento 'menu-bloco-instituto' not found mestre!");
         }
     });
-    
-    // CORREÇÃO CIRÚRGICA DE ENCAIXE DE CATEGORIA NA RAIZ MESTRE
     function clicarBlocoMestre(bloco, elementoDom) {
         document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
         if (elementoDom) elementoDom.classList.add('active');
@@ -538,7 +536,7 @@
         if (agenda) agenda.classList.add('d-none');
         
         estadoDoPainel.bloco = bloco;
-        estadoDoPainel.categoria = bloco; // Ajustado para injetar 'instituto' ou 'jp2_business' sem travar no Supabase
+        estadoDoPainel.categoria = bloco;
         estadoDoPainel.pasta_pai_id = null;
         estadoDoPainel.nivel_atual = 'raiz_bloco';
         estadoDoPainel.string_caminho = bloco.toUpperCase().replace('_', ' ');
@@ -559,7 +557,7 @@
             if(divArquivos) divArquivos.classList.add('d-none');
             if(divSites) divSites.classList.remove('d-none');
         } else {
-            if(divArquivos) divArquivos.classList.remove('d-none');
+            if(divArquivos) divArquivos.remove('d-none');
             if(divSites) divSites.classList.add('d-none');
         }
 
@@ -640,7 +638,6 @@
         sincronizarGrade();
     }
 
-    // CORREÇÃO CIRÚRGICA DE RETORNO À RAIZ RESETANDO A CATEGORIA PARA O NOME DO BLOCO
     function volverDiretorio() {
         let partes = estadoDoPainel.string_caminho.split(' ➔ ');
         if (partes.length > 1) {
@@ -650,11 +647,13 @@
             
             if (partes.length === 1) {
                 estadoDoPainel.nivel_atual = 'raiz_bloco';
-                estadoDoPainel.categoria = estadoDoPainel.bloco; // Mantém alinhado com o nome do bloco ('instituto' ou 'jp2_business')
+                estadoDoPainel.categoria = estadoDoPainel.bloco;
                 estadoDoPainel.pasta_pai_id = null;
                 sincronizarGrade();
             } else {
-                fetch(`/obter-pai-id?bloco=${estadoDoPainel.bloco}&caminho=${encodeURIComponent(novoCaminho)}`)
+                // NORMALIZAÇÃO DE CONSULTA DE PAI ID: Remove o caractere "s" extra se a string tiver "Projetos"
+                let caminhoTratado = novoCaminho.replace("Projetos", "Projeto");
+                fetch(`/obter-pai-id?bloco=${estadoDoPainel.bloco}&caminho=${encodeURIComponent(caminhoTratado)}`)
                 .then(res => res.json())
                 .then(data => {
                     estadoDoPainel.pasta_pai_id = data.pasta_pai_id;
@@ -876,7 +875,12 @@
             let formData = new FormData();
             formData.append('arquivos', fileInput.files[0]);
             formData.append('bloco', estadoDoPainel.bloco);
-            formData.append('categoria', estadoDoPainel.nivel_atual === 'raiz_bloco' ? estadoDoPainel.bloco : (estadoDoPainel.categoria || 'raiz'));
+            
+            // NORMALIZAÇÃO DE CATEGORIA NO FORMULARIO: Troca o termo textual caso seja a string confluente "Projetos"
+            let categoriaNormalizada = estadoDoPainel.nivel_atual === 'raiz_bloco' ? estadoDoPainel.bloco : (estadoDoPainel.categoria || 'raiz');
+            if(categoriaNormalizada === "Projetos") { categoriaNormalizada = "Projeto"; }
+            
+            formData.append('categoria', categoriaNormalizada);
             formData.append('pasta_pai_id', estadoDoPainel.pasta_pai_id || '');
 
             fetch('/upload-avancado', { method: 'POST', body: formData })
