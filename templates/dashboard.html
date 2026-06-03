@@ -565,10 +565,9 @@
         let btnVoltar = document.getElementById('btnVoltarExplorer');
         if(btnVoltar) btnVoltar.style.setProperty('visibility', (estadoDoPainel.nivel_atual === 'raiz_bloco') ? 'hidden' : 'visible', 'important');
         
-        // CORREÇÃO: Se estivermos em subpasta (pasta_pai_id existe), buscamos apenas pelo pai_id.
-        // Se estivermos na raiz, buscamos pelo bloco e categoria.
+        // A chave aqui é o timestamp &t=... que força o navegador a buscar do servidor real
         const catBusca = (estadoDoPainel.pasta_pai_id === null || estadoDoPainel.pasta_pai_id === '') ? estadoDoPainel.bloco : 'raiz';
-        let urlListar = `/listar?bloco=${estadoDoPainel.bloco}&categoria=${catBusca}&pasta_pai_id=${estadoDoPainel.pasta_pai_id || ''}`;
+        let urlListar = `/listar?bloco=${estadoDoPainel.bloco}&categoria=${catBusca}&pasta_pai_id=${estadoDoPainel.pasta_pai_id || ''}&t=${new Date().getTime()}`;
         
         fetch(urlListar)
         .then(res => res.json())
