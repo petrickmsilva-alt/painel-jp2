@@ -879,41 +879,43 @@
     }
 
     function dispararUploadAvancado() {
-        let filesInput = document.getElementById('inputArquivosAvancado'); // Nome do ID no seu HTML
+        let filesInput = document.getElementById('inputArquivosAvancado');
         let formData = new FormData();
         
         if (filesInput.files.length === 0) return alert("Selecione os arquivos!");
         
-        // Loop para enviar múltiplos arquivos conforme sua estrutura original
         for(let i = 0; i < filesInput.files.length; i++) { 
             formData.append('arquivos', filesInput.files[i]);
         }
 
         formData.append('bloco', estadoDoPainel.bloco);
         
-        // A LÓGICA CORRETIVA:
-        // Se pasta_pai_id for nulo, categoria é o bloco. Se não, categoria é 'raiz'.
-        const catFinal = (estadoDoPainel.pasta_pai_id === null || estadoDoPainel.pasta_pai_id === '') ? estadoDoPainel.bloco : 'raiz';
+        // CORREÇÃO TÉCNICA:
+        // O Supabase e o seu app.py esperam que, se estiver dentro de uma pasta (pai_id existe), 
+        // a categoria seja 'raiz'. Se for a raiz do bloco (pai_id null), a categoria é o nome do bloco.
+        const paiId = estadoDoPainel.pasta_pai_id;
+        const catFinal = (paiId !== null && paiId !== undefined && paiId !== '') ? 'raiz' : estadoDoPainel.bloco;
+        
         formData.append('categoria', catFinal);
-        formData.append('pasta_pai_id', estadoDoPainel.pasta_pai_id || '');
+        formData.append('pasta_pai_id', paiId || '');
 
         document.getElementById('containerProgresso').classList.remove('d-none');
         
         let xhr = new XMLHttpRequest(); 
         xhr.open('POST', '/upload-avancado', true);
         xhr.onload = function() { 
-            // Fecha o modal conforme sua estrutura original
             let modalEl = document.getElementById('modalUploadArquivo');
             let modalInstance = bootstrap.Modal.getInstance(modalEl);
             if(modalInstance) modalInstance.hide();
             
             document.getElementById('containerProgresso').classList.add('d-none');
             filesInput.value = ""; 
+            
+            // Garantir que a grade seja sincronizada com o mesmo filtro usado no upload
             sincronizarGrade(); 
         };
         xhr.send(formData);
     }
-
     function abrirConfiguradorAgenda() {
         let hoje = new Date().toISOString().split('T')[0];
         let elementos = {
