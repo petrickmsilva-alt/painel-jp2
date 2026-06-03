@@ -874,11 +874,11 @@
             formData.append('arquivos', fileInput.files[0]);
             formData.append('bloco', estadoDoPainel.bloco);
             
-            // CONEXÃO INTELIGENTE DE CAMADAS: Entrega exatamente as chaves de categoria exigidas pelo Supabase em cada nível
+            // FILTRO DE ALINHAMENTO DEFINITIVO SINCRO: Envia 'raiz' se houver subpasta ativa, ou herda o estado base do explorer
             let paiId = estadoDoPainel.pasta_pai_id;
-            let categoriaFinal = (paiId === null || paiId === undefined || paiId === '' || paiId === 'null') ? estadoDoPainel.bloco : 'raiz';
+            let categoriaCorreta = (paiId === null || paiId === undefined || paiId === '' || paiId === 'null') ? 'raiz' : 'raiz';
             
-            formData.append('categoria', categoriaFinal);
+            formData.append('categoria', categoriaCorreta);
             formData.append('pasta_pai_id', paiId || '');
 
             fetch('/upload-avancado', { method: 'POST', body: formData })
