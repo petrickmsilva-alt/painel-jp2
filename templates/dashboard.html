@@ -485,7 +485,7 @@
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
   <script>
-    let estadoDoPainel = { bloco: 'instituto', categoria: 'raiz', pasta_pai_id: null, nivel_atual: 'raiz_bloco', string_caminho: 'INSTITUTO' };
+    let estadoDoPainel = { bloco: 'instituto', categoria: 'instituto', pasta_pai_id: null, nivel_atual: 'raiz_bloco', string_caminho: 'INSTITUTO' };
     let instanciaCalendario = null;
 
     const subpastasFixas = {
@@ -536,7 +536,7 @@
         if (agenda) agenda.classList.add('d-none');
         
         estadoDoPainel.bloco = bloco;
-        estadoDoPainel.categoria = 'raiz';
+        estadoDoPainel.categoria = bloco;
         estadoDoPainel.pasta_pai_id = null;
         estadoDoPainel.nivel_atual = 'raiz_bloco';
         estadoDoPainel.string_caminho = bloco.toUpperCase().replace('_', ' ');
@@ -650,7 +650,7 @@
             
             if (partes.length === 1) {
                 estadoDoPainel.nivel_atual = 'raiz_bloco';
-                estadoDoPainel.categoria = 'raiz';
+                estadoDoPainel.categoria = estadoDoPainel.bloco;
                 estadoDoPainel.pasta_pai_id = null;
                 sincronizarGrade();
             } else {
@@ -877,8 +877,8 @@
             formData.append('arquivos', fileInput.files[0]);
             formData.append('bloco', estadoDoPainel.bloco);
             
-            // CORREÇÃO CIRÚRGICA DE RECEPTOR DE CATEGORIAS: Elimina o conflito estático da palavra genérica 'raiz' nas subpastas mestre
-            let catDinamica = estadoDoPainel.nivel_atual === 'raiz_bloco' ? 'raiz' : (estadoDoPainel.bloco || 'raiz');
+            // CONEXÃO DE CAMADAS CRÍTICAS: Envia dinamicamente a categoria correspondente para alinhar com as travas do Supabase
+            let catDinamica = estadoDoPainel.nivel_atual === 'raiz_bloco' ? estadoDoPainel.bloco : (estadoDoPainel.categoria || 'raiz');
             formData.append('categoria', catDinamica);
             formData.append('pasta_pai_id', estadoDoPainel.pasta_pai_id || '');
 
