@@ -197,11 +197,17 @@ def upload_avancado():
         for arq in arquivos:
             if arq.filename == '': continue
             
-            # SANITIZAÇÃO: Remove espaços, parênteses e caracteres especiais
+            # Sanitização de nome para evitar erros no Storage
             nome_limpo = re.sub(r'[^a-zA-Z0-9._-]', '', arq.filename.replace(' ', '_'))
             nome_unico = f"{uuid.uuid4().hex}_{nome_limpo}"
             
-            supabase.storage.from_("meus-arquivos").upload(path=nome_unico, file=arq.read(), file_options={"content-type": arq.content_type})
+            # STREAMING: O arq.stream envia o arquivo em pedaços, evitando estouro de RAM
+            supabase.storage.from_("meus-arquivos").upload(
+                path=nome_unico, 
+                file=arq.stream, 
+                file_options={"content-type": arq.content_type}
+            )
+            
             link = supabase.storage.from_("meus-arquivos").get_public_url(nome_unico)
             
             dados_insercao = {
@@ -215,6 +221,7 @@ def upload_avancado():
             if p_id is not None: dados_insercao["pasta_pai_id"] = p_id
             
             supabase.table("arquivos_painel").insert(dados_insercao).execute()
+            registrar_log(f"Upload via Streaming: {arq.filename}")
             
         return jsonify({'status': 'sucesso'})
     except Exception as e:
