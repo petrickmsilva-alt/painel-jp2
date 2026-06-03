@@ -126,19 +126,16 @@ def listar_arquivos():
     if 'usuario_logado' not in session: return jsonify({'erro': 'Não autorizado'}), 401
     bloco = request.args.get('bloco')
     pasta_pai_id = request.args.get('pasta_pai_id')
-    categoria = request.args.get('categoria')
     
     try:
-        # A query base filtra por bloco e deletado
+        # Query base: filtra apenas pelo bloco e deletado
         query = supabase.table("arquivos_painel").select("*").eq("bloco", bloco).eq("deletado", False)
         
-        # Filtro inteligente para o pasta_pai_id
+        # Filtro flexível: se tem pasta_pai_id, busca nele. Se não, busca o que é null.
         if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
-            # Se for subpasta, busca pelo ID e ignora categoria (pois o pai já define o lugar)
             query = query.eq("pasta_pai_id", int(pasta_pai_id))
         else:
-            # Se não for subpasta, busca na raiz filtrando pela categoria enviada
-            query = query.is_("pasta_pai_id", "null").eq("categoria", categoria)
+            query = query.is_("pasta_pai_id", "null")
             
         res = query.execute()
         linhas = res.data if hasattr(res, 'data') else []
