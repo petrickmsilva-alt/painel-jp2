@@ -99,16 +99,31 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        fetch('/api/resumo-dashboard')
-        .then(res => res.json())
-        .then(data => {
-            if(data.total_arquivos !== undefined) {
-                document.getElementById('dash-arquivos').innerText = data.total_arquivos;
-                document.getElementById('dash-socios').innerText = data.total_socios;
-                document.getElementById('dash-agenda').innerText = data.proximo_evento;
-            }
-        });
-    });
+    document.getElementById('formUploadAvancado').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const input = document.getElementById('inputArquivosAvancado');
+    if (input.files.length === 0) return;
+
+    const formData = new FormData();
+    formData.append('arquivos', input.files[0]);
+    formData.append('bloco', estadoDoPainel.bloco);
+    
+    // Envia o ID da pasta pai que está armazenado no estado global do dashboard
+    formData.append('pasta_pai_id', estadoDoPainel.pasta_pai_id || '');
+    
+    // Lógica correta de categoria para o app.py
+    const catFinal = (estadoDoPainel.pasta_pai_id === null || estadoDoPainel.pasta_pai_id === '') ? estadoDoPainel.bloco : 'raiz';
+    formData.append('categoria', catFinal);
+
+    fetch('/upload-avancado', { method: 'POST', body: formData })
+    .then(res => res.json())
+    .then(data => {
+        alert('Upload concluído!');
+        bootstrap.Modal.getInstance(document.getElementById('modalUploadArquivo')).hide();
+        input.value = '';
+        sincronizarGrade();
+    })
+    .catch(() => alert('Erro no upload.'));
+});
 </script>
 {% endblock %}
