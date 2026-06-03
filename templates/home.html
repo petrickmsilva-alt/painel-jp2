@@ -89,7 +89,7 @@
                 <form id="formUploadAvancado">
                     <div class="mb-3">
                         <label class="form-label text-muted">Selecione o arquivo para upload:</label>
-                        <input type="file" class="form-control" id="inputArquivosAvancado" name="arquivos" required>
+                        <input type="file" class="form-control" id="inputArquivosAvancado" required>
                     </div>
                     <button type="submit" class="btn btn-success w-100 fw-bold">Iniciar Upload</button>
                 </form>
@@ -155,15 +155,17 @@
         .catch(() => alert('Erro crítico na rede ao criar pasta.'));
     });
 
-    // CORREÇÃO CIRÚRGICA DE SUBPASTAS PROFUNDAS via FormData Nativo
+    // CORREÇÃO CIRÚRGICA DE ENCAIXE DE IDS E FORMATO DE LISTA MULTIPLA
     document.getElementById('formUploadAvancado').addEventListener('submit', function(e) {
         e.preventDefault();
         
         const input = document.getElementById('inputArquivosAvancado');
         if (input.files.length === 0) return;
 
-        // Captura o formulário de forma crua para que o navegador envie o Array completo esperado pelo Python
-        const formData = new FormData(this);
+        const formData = new FormData();
+        
+        // CORREÇÃO CRÍTICA: Passa explicitamente a chave 'arquivos' no append para o request.files.getlist('arquivos') receber com sucesso
+        formData.append('arquivos', input.files[0]);
 
         const blocoAtual = estadoDoPainel.bloco || 'instituto';
         const categoriaAtual = estadoDoPainel.nivel_atual === 'raiz_bloco' ? 'raiz' : (estadoDoPainel.categoria || 'raiz');
@@ -171,7 +173,13 @@
 
         formData.append('bloco', blocoAtual);
         formData.append('categoria', categoriaAtual);
-        formData.append('pasta_pai_id', pastaPaiId);
+        
+        // Garante o envio do ID correto da subpasta profunda sem distorções de tipo
+        if (pastaPaiId && pastaPaiId !== 'null' && pastaPaiId !== 'undefined') {
+            formData.append('pasta_pai_id', pastaPaiId);
+        } else {
+            formData.append('pasta_pai_id', '');
+        }
 
         const modalEl = document.getElementById('modalUploadArquivo');
         const modalInstance = bootstrap.Modal.getInstance(modalEl);
