@@ -898,26 +898,36 @@
     }
 
     function dispararUploadAvancado() {
-        let filesInput = document.getElementById('inputArquivos');
-        let folderInput = document.getElementById('inputPasta'); 
+        let filesInput = document.getElementById('inputArquivosAvancado'); // Nome do ID no seu HTML
         let formData = new FormData();
-        formData.append('bloco', document.getElementById('uploadBloco').value); 
-        formData.append('categoria', document.getElementById('uploadCategoria').value); 
-        formData.append('pasta_pai_id', estadoDoPainel.pasta_pai_id || '');
-        let inputAtivo = document.getElementById('folder-tab').classList.contains('active') ? folderInput : filesInput;
-        if(inputAtivo.files.length === 0) return alert("Selecione os arquivos!");
-        for(let i=0; i < inputAtivo.files.length; i++) { 
-            formData.append('arquivos', inputAtivo.files[i]);
+        
+        if (filesInput.files.length === 0) return alert("Selecione os arquivos!");
+        
+        // Loop para enviar múltiplos arquivos conforme sua estrutura original
+        for(let i = 0; i < filesInput.files.length; i++) { 
+            formData.append('arquivos', filesInput.files[i]);
         }
+
+        formData.append('bloco', estadoDoPainel.bloco);
+        
+        // A LÓGICA CORRETIVA:
+        // Se pasta_pai_id for nulo, categoria é o bloco. Se não, categoria é 'raiz'.
+        const catFinal = (estadoDoPainel.pasta_pai_id === null || estadoDoPainel.pasta_pai_id === '') ? estadoDoPainel.bloco : 'raiz';
+        formData.append('categoria', catFinal);
+        formData.append('pasta_pai_id', estadoDoPainel.pasta_pai_id || '');
+
         document.getElementById('containerProgresso').classList.remove('d-none');
         
         let xhr = new XMLHttpRequest(); 
         xhr.open('POST', '/upload-avancado', true);
         xhr.onload = function() { 
-            bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide(); 
+            // Fecha o modal conforme sua estrutura original
+            let modalEl = document.getElementById('modalUploadArquivo');
+            let modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if(modalInstance) modalInstance.hide();
+            
             document.getElementById('containerProgresso').classList.add('d-none');
             filesInput.value = ""; 
-            folderInput.value = ""; 
             sincronizarGrade(); 
         };
         xhr.send(formData);
