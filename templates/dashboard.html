@@ -565,7 +565,8 @@
         let btnVoltar = document.getElementById('btnVoltarExplorer');
         if(btnVoltar) btnVoltar.style.setProperty('visibility', (estadoDoPainel.nivel_atual === 'raiz_bloco') ? 'hidden' : 'visible', 'important');
         
-        // CORREÇÃO: A lógica de categoria no GET deve ser: 'raiz' se estivermos em subpasta, 'bloco' se for a raiz do bloco
+        // CORREÇÃO: Se estivermos em subpasta (pasta_pai_id existe), buscamos apenas pelo pai_id.
+        // Se estivermos na raiz, buscamos pelo bloco e categoria.
         const catBusca = (estadoDoPainel.pasta_pai_id === null || estadoDoPainel.pasta_pai_id === '') ? estadoDoPainel.bloco : 'raiz';
         let urlListar = `/listar?bloco=${estadoDoPainel.bloco}&categoria=${catBusca}&pasta_pai_id=${estadoDoPainel.pasta_pai_id || ''}`;
         
