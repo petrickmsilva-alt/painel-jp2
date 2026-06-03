@@ -183,7 +183,8 @@ def criar_pasta():
     except:
         return jsonify({'status': 'erro'})
 
-import uuid # Adicione isso no topo do seu app.py
+import uuid
+import re
 
 @app.route('/upload-avancado', methods=['POST'])
 def upload_avancado():
@@ -196,14 +197,15 @@ def upload_avancado():
         for arq in arquivos:
             if arq.filename == '': continue
             
-            # CRIA UM NOME ÚNICO: Previne o erro de duplicidade
-            nome_unico = f"{uuid.uuid4().hex}_{arq.filename}"
+            # SANITIZAÇÃO: Remove espaços, parênteses e caracteres especiais
+            nome_limpo = re.sub(r'[^a-zA-Z0-9._-]', '', arq.filename.replace(' ', '_'))
+            nome_unico = f"{uuid.uuid4().hex}_{nome_limpo}"
             
             supabase.storage.from_("meus-arquivos").upload(path=nome_unico, file=arq.read(), file_options={"content-type": arq.content_type})
             link = supabase.storage.from_("meus-arquivos").get_public_url(nome_unico)
             
             dados_insercao = {
-                "nome_original": arq.filename, # Mantém o nome original para o usuário
+                "nome_original": arq.filename, 
                 "caminho_sistema": link, 
                 "bloco": bloco, 
                 "categoria": cat, 
