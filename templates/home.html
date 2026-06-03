@@ -88,8 +88,8 @@
             <div class="modal-body">
                 <form id="formUploadAvancado">
                     <div class="mb-3">
-                        <label class="form-label text-muted">Selecione um arquivo para upload:</label>
-                        <input type="file" class="form-control" id="inputArquivosAvancado" required>
+                        <label class="form-label text-muted">Selecione um ou mais arquivos para upload:</label>
+                        <input type="file" class="form-control" id="inputArquivosAvancado" multiple required>
                     </div>
                     <button type="submit" class="btn btn-success w-100 fw-bold">Iniciar Upload</button>
                 </form>
@@ -155,7 +155,7 @@
         .catch(() => alert('Erro crítico na rede ao criar pasta.'));
     });
 
-    // AJUSTE CIRÚRGICO INTEGRADO DE UPLOAD PROFUNDO
+    // CORREÇÃO DEFINITIVA: Vincula múltiplos arquivos no append para conversar com o getlist() do Python
     document.getElementById('formUploadAvancado').addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -163,9 +163,12 @@
         if (input.files.length === 0) return;
 
         const formData = new FormData();
-        formData.append('arquivos', input.files[0]);
+        
+        // Loop obrigatório para transformar o envio em lista aceita pelo app.py
+        for (let i = 0; i < input.files.length; i++) {
+            formData.append('arquivos', input.files[i]);
+        }
 
-        // Sincroniza dinamicamente com o estado de navegação mestre do painel corporativo
         const blocoAtual = estadoDoPainel.bloco || 'instituto';
         const categoriaAtual = estadoDoPainel.nivel_atual === 'raiz_bloco' ? 'raiz' : (estadoDoPainel.categoria || 'raiz');
         const pastaPaiId = estadoDoPainel.pasta_pai_id || '';
