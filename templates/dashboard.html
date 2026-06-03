@@ -874,11 +874,11 @@
             formData.append('arquivos', fileInput.files[0]);
             formData.append('bloco', estadoDoPainel.bloco);
             
-            // FILTRO DE PADRONIZAÇÃO MATEMÁTICO: Resolve a brecha das camadas intermediárias 2 e 3 de forma definitiva e automática
+            // CONEXÃO DE CAMADAS DEFINITIVA UNIFICADA
             let paiId = estadoDoPainel.pasta_pai_id;
-            let categoriaDinamicaUnificada = (paiId === null || paiId === undefined || paiId === '' || paiId === 'null') ? estadoDoPainel.bloco : 'raiz';
+            let categoriaFinal = (paiId === null || paiId === undefined || paiId === '' || paiId === 'null') ? estadoDoPainel.bloco : 'raiz';
             
-            formData.append('categoria', categoriaDinamicaUnificada);
+            formData.append('categoria', categoriaFinal);
             formData.append('pasta_pai_id', paiId || '');
 
             fetch('/upload-avancado', { method: 'POST', body: formData })
