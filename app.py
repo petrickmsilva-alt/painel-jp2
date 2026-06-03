@@ -199,9 +199,10 @@ def upload_avancado():
             }).execute()
             registrar_log(f"Fez upload do arquivo: {arq.filename} no bloco {bloco}")
         return jsonify({'status': 'sucesso'})
-    except:
-        return jsonify({'status': 'erro'})
-
+    except Exception as e:
+        print(f"ERRO CRÍTICO NO UPLOAD: {e}") 
+        return jsonify({'status': 'erro', 'mensagem': str(e)})
+        
 @app.route('/baixar/<int:arquivo_id>')
 def baixar_arquivo(arquivo_id):
     if 'usuario_logado' not in session: return "Não autorizado", 401
