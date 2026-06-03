@@ -485,7 +485,7 @@
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
   <script>
-    let estadoDoPainel = { bloco: 'instituto', categoria: 'raiz', pasta_pai_id: null, nivel_atual: 'raiz_bloco', string_caminho: 'INSTITUTO' };
+    let estadoDoPainel = { bloco: 'instituto', categoria: 'instituto', pasta_pai_id: null, nivel_atual: 'raiz_bloco', string_caminho: 'INSTITUTO' };
     let instanciaCalendario = null;
 
     const subpastasFixas = {
@@ -526,6 +526,8 @@
             console.error("Erro: Elemento 'menu-bloco-instituto' not found mestre!");
         }
     });
+    
+    // CORREÇÃO CIRÚRGICA DE ENCAIXE DE CATEGORIA NA RAIZ MESTRE
     function clicarBlocoMestre(bloco, elementoDom) {
         document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
         if (elementoDom) elementoDom.classList.add('active');
@@ -536,7 +538,7 @@
         if (agenda) agenda.classList.add('d-none');
         
         estadoDoPainel.bloco = bloco;
-        estadoDoPainel.categoria = 'raiz';
+        estadoDoPainel.categoria = bloco; // Ajustado para injetar 'instituto' ou 'jp2_business' sem travar no Supabase
         estadoDoPainel.pasta_pai_id = null;
         estadoDoPainel.nivel_atual = 'raiz_bloco';
         estadoDoPainel.string_caminho = bloco.toUpperCase().replace('_', ' ');
@@ -573,7 +575,6 @@
             if (estadoDoPainel.bloco === 'sites_jp2' && estadoDoPainel.nivel_atual === 'raiz_bloco') {
                 let sortedFixos = subpastasFixas['sites_jp2'];
                 
-                // 1. Renderiza os 10 sites corporativos fixos padrão
                 sortedFixos.forEach(cat => {
                     let card = document.createElement("div");
                     card.className = "explorer-card";
@@ -584,7 +585,6 @@
                     gridContainer.appendChild(card);
                 });
 
-                // 2. AJUSTE INTEGRADO DA LOGO REAL POR URL: Puxa o Favicon oficial de qualquer site corporativo da nuvem via Google API
                 if (data.itens && data.itens.length > 0) {
                     data.itens.forEach(item => {
                         if (item.tipo === 'link') {
@@ -592,7 +592,6 @@
                             card.className = "explorer-card";
                             card.onclick = function() { window.open(item.caminho, '_blank'); };
                             
-                            // Remove protocolos e subpáginas para isolar o domínio mestre da empresa
                             let urlLimpa = item.caminho.replace('https://', '').replace('http://', '').replace('www.', '');
                             let dominioPuro = urlLimpa.split('/')[0];
                             let urlLogoGoogle = `https://www.google.com/s2/favicons?sz=64&domain=` + dominioPuro;
@@ -641,6 +640,7 @@
         sincronizarGrade();
     }
 
+    // CORREÇÃO CIRÚRGICA DE RETORNO À RAIZ RESETANDO A CATEGORIA PARA O NOME DO BLOCO
     function volverDiretorio() {
         let partes = estadoDoPainel.string_caminho.split(' ➔ ');
         if (partes.length > 1) {
@@ -650,7 +650,7 @@
             
             if (partes.length === 1) {
                 estadoDoPainel.nivel_atual = 'raiz_bloco';
-                estadoDoPainel.categoria = 'raiz';
+                estadoDoPainel.categoria = estadoDoPainel.bloco; // Mantém alinhado com o nome do bloco ('instituto' ou 'jp2_business')
                 estadoDoPainel.pasta_pai_id = null;
                 sincronizarGrade();
             } else {
@@ -876,9 +876,7 @@
             let formData = new FormData();
             formData.append('arquivos', fileInput.files[0]);
             formData.append('bloco', estadoDoPainel.bloco);
-            
-            // CORREÇÃO CONSOLIDADA: Envia a categoria dinamicamente com base no nível atual (mantendo o upload profundo totalmente liberado)
-            formData.append('categoria', estadoDoPainel.nivel_atual === 'raiz_bloco' ? 'raiz' : (estadoDoPainel.categoria || 'raiz'));
+            formData.append('categoria', estadoDoPainel.nivel_atual === 'raiz_bloco' ? estadoDoPainel.bloco : (estadoDoPainel.categoria || 'raiz'));
             formData.append('pasta_pai_id', estadoDoPainel.pasta_pai_id || '');
 
             fetch('/upload-avancado', { method: 'POST', body: formData })
