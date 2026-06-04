@@ -14,6 +14,8 @@ if not SUPABASE_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = Flask(__name__)
+# Aumenta o limite para 100MB e força o salvamento em disco, não na RAM
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "chave_secreta_super_segura_jp2")
 
 def registrar_log(acao):
@@ -201,17 +203,14 @@ def upload_avancado():
             nome_limpo = re.sub(r'[^a-zA-Z0-9._-]', '', arq.filename.replace(' ', '_'))
             nome_unico = f"{uuid.uuid4().hex}_{nome_limpo}"
             
-            # CORREÇÃO: Lemos o conteúdo do stream para bytes, que o Supabase aceita
-            file_content = arq.read()
-            
+            # Envia diretamente o objeto 'arq' que já é um stream aberto
             supabase.storage.from_("meus-arquivos").upload(
                 path=nome_unico, 
-                file=file_content, 
+                file=arq, # Passamos o objeto do arquivo diretamente
                 file_options={"content-type": arq.content_type}
             )
             
             link = supabase.storage.from_("meus-arquivos").get_public_url(nome_unico)
-            # ... resto do seu código de inserção no banco ...
             
             dados_insercao = {
                 "nome_original": arq.filename, 
@@ -224,9 +223,9 @@ def upload_avancado():
             if p_id is not None: dados_insercao["pasta_pai_id"] = p_id
             
             supabase.table("arquivos_painel").insert(dados_insercao).execute()
-            registrar_log(f"Upload via Streaming: {arq.filename}")
-            
+        
         return jsonify({'status': 'sucesso'})
+        
     except Exception as e:
         print(f"ERRO CRÍTICO NO UPLOAD: {e}")
         return jsonify({'status': 'erro', 'mensagem': str(e)})
