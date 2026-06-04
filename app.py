@@ -203,10 +203,13 @@ def upload_avancado():
             nome_limpo = re.sub(r'[^a-zA-Z0-9._-]', '', arq.filename.replace(' ', '_'))
             nome_unico = f"{uuid.uuid4().hex}_{nome_limpo}"
             
-            # Envia diretamente o objeto 'arq' que já é um stream aberto
+            # STREAMING CORRETO: O SDK do Supabase precisa acessar o stream de bytes diretamente
+            # Usamos o arq.stream.read() ou garantimos que passamos apenas os bytes
+            file_data = arq.read() 
+            
             supabase.storage.from_("meus-arquivos").upload(
                 path=nome_unico, 
-                file=arq, # Passamos o objeto do arquivo diretamente
+                file=file_data, 
                 file_options={"content-type": arq.content_type}
             )
             
