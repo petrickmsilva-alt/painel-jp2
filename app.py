@@ -331,16 +331,49 @@ def excluir_arquivo():
     except:
         return jsonify({'status': 'erro'})
 
+import urllib.request
+from bs4 import BeautifulSoup
+import re
+
 @app.route('/salvar-site', methods=['POST'])
 def salvar_site():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     nome, url, bloco = request.form.get('nome'), request.form.get('url'), request.form.get('bloco')
     
-    # BLINDAGEM: Se o bloco vier em branco, nulo ou com o nome visível da tela, força o ID correto do banco
+    if not url.startswith('http://') and not url.startswith('https://'):
+        url = 'https://' + url
+
     if not bloco or str(bloco).strip().lower() in ["", "null", "undefined", "sites jp2 business"]:
         bloco_final = 'sites_jp2'
     else:
         bloco_final = str(bloco).strip()
+
+    # --- ROBÔ DE CAPTURA AUTOMÁTICA DE LOGO (FAVICON) ---
+    nome_limpo = "".join(x for x in nome if x.isalnum())
+    nome_arquivo_imagem = f"{nome_limpo}.jpeg"
+    caminho_salvar_imagem = os.path.join(app.root_path, 'static', 'image', nome_arquivo_imagem)
+    
+    try:
+        # 1. Conecta no site para ler o HTML
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        html = urllib.request.urlopen(req, timeout=5).read()
+        soup = BeautifulSoup(html, 'html.parser')
+        
+        # 2. Procura pelo link do Favicon no código do site
+        icon_link = soup.find('link', rel=re.compile(r'^(shortcut )?icon$', re.I))
+        
+        if icon_link and icon_link.get('href'):
+            url_icon = icon_link.get('href')
+            # Ajusta caso o link do ícone seja relativo (ex: /favicon.ico)
+            if not url_icon.startswith('http'):
+                from urllib.parse import urljoin
+                url_icon = urljoin(url, url_icon)
+            
+            # 3. Baixa o ícone e salva fisicamente na HostGator/Render
+            urllib.request.urlretrieve(url_icon, caminho_salvar_imagem)
+    except Exception as e:
+        print(f"Robô não conseguiu extrair a logo do site: {e}")
+    # ----------------------------------------------------
 
     try:
         conn = get_db_connection()
@@ -355,7 +388,7 @@ def salvar_site():
         return jsonify({'status': 'sucesso'})
     except:
         return jsonify({'status': 'erro'})
-
+        
 @app.route('/api/listar-eventos')
 def api_listar_eventos():
     try:
