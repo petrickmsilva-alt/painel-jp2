@@ -53,7 +53,7 @@ def tela_login():
         u = request.form.get('usuario', '').lower().strip()
         s = request.form.get('senha', '').strip()
         
-        # ACESSO MESTRE TEMPORÁRIO PARA O SEU CONTROLE
+        # ACESSO MESTRE TEMPORÁRIO
         if u == 'petrick':
             session['usuario_logado'] = 'petrick'
             session['nome_exibicao'] = 'Petrick Martins'
@@ -173,30 +173,24 @@ def listar_arquivos():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # SOLUÇÃO MÁGICA: Se o front-end chamar por sites_jp2 OU se perder no console tentando renderizar, traz os links de uma vez só
-        if bloco == 'sites_jp2' or bloco == 'instituto':
+        # RETORNO AO PADRÃO ORIGINAL DA QUERY DO SUPABASE PARA PRESERVAR SUAS PASTAS
+        if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
             cur.execute("""
                 SELECT * FROM arquivos_painel 
-                WHERE (bloco = 'sites_jp2' OR bloco = 'instituto') AND tipo = 'link' AND (deletado = False OR deletado IS NULL)
-            """)
+                WHERE bloco = %s AND (deletado = False OR deletado IS NULL) AND pasta_pai_id = %s
+            """, (bloco, int(pasta_pai_id)))
         else:
-            if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
-                cur.execute("""
-                    SELECT * FROM arquivos_painel 
-                    WHERE bloco = %s AND (deletado = False OR deletado IS NULL) AND pasta_pai_id = %s
-                """, (bloco, int(pasta_pai_id)))
-            else:
-                cur.execute("""
-                    SELECT * FROM arquivos_painel 
-                    WHERE bloco = %s AND (deletado = False OR deletado IS NULL) AND pasta_pai_id IS NULL
-                """, (bloco,))
+            cur.execute("""
+                SELECT * FROM arquivos_painel 
+                WHERE bloco = %s AND (deletado = False OR deletado IS NULL) AND pasta_pai_id IS NULL
+            """, (bloco,))
             
         linhas = cur.fetchall()
         cur.close()
         conn.close()
         
         itens_formatados = []
-        for l in linhas:
+        for l in lines:
             itens_formatados.append({
                 'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
                 'caminho': l['caminho_sistema'], 'autor': l['criado_por'] or 'Sistema', 
