@@ -324,9 +324,10 @@ def salvar_site():
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
+            # Corrigido para gravar a categoria como 'sites_jp2' para bater com a busca da sua interface
             cur.execute("""
                 INSERT INTO arquivos_painel (nome_original, bloco, tipo, categoria, caminho_sistema, criado_por, deletado)
-                VALUES (%s, %s, 'link', 'raiz', %s, %s, 0)
+                VALUES (%s, %s, 'link', 'sites_jp2', %s, %s, 0)
             """, (nome, bloco_final, url, session.get('nome_exibicao', 'Sistema')))
         conn.commit()
         conn.close()
