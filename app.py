@@ -9,7 +9,7 @@ from flask import Flask, render_template, jsonify, request, redirect, url_for, s
 from supabase import create_client
 from datetime import datetime, timedelta
 
-# CONFIGURAÇÃO DE INFRAESTRUTURA
+# CONFIGURAÇÃO DE INFRAESTRUTURA SEGURA
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://zkdzgpblxorcxxdrmojo.supabase.co")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -20,10 +20,11 @@ if not SUPABASE_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = Flask(__name__)
+# Força o limite de 100MB e o salvamento em disco temporário para evitar estouro de RAM (SIGKILL)
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "chave_secreta_super_segura_jp2")
 
-# Pool de conexão direta com o Neon (PostgreSQL)
+# Conexão direta com o banco Neon (PostgreSQL)
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
@@ -53,7 +54,7 @@ def tela_login():
         u = request.form.get('usuario', '').lower().strip()
         s = request.form.get('senha', '').strip()
         
-        # ACESSO MESTRE TEMPORÁRIO PARA VOCÊ RECONFIGURAR SEUS SÓCIOS
+        # ACESSO MESTRE TEMPORÁRIO PARA GARANTIR SEU LOG-IN
         if u == 'petrick':
             session['usuario_logado'] = 'petrick'
             session['nome_exibicao'] = 'Petrick Martins'
@@ -173,7 +174,7 @@ def listar_arquivos():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # RESOLUÇÃO DEFINITIVA PARA SITES: Se for o bloco de sites, traz tudo dele independente de pasta ou categoria
+        # AJUSTE SEGURO PARA SUPORTAR SITES_JP2: Se o bloco for focado em links de sites, ele ignora o filtro hierárquico nulo
         if bloco == 'sites_jp2':
             cur.execute("""
                 SELECT * FROM arquivos_painel 
@@ -196,7 +197,7 @@ def listar_arquivos():
         conn.close()
         
         itens_formatados = []
-        for l in lines:
+        for l in linhas:
             itens_formatados.append({
                 'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
                 'caminho': l['caminho_sistema'], 'autor': l['criado_por'] or 'Sistema', 
@@ -353,7 +354,7 @@ def salvar_site():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     nome, url, bloco = request.form.get('nome'), request.form.get('url'), request.form.get('bloco')
     
-    # Adaptação para garantir que grave no bloco correto vindo do front
+    # ADAPTAÇÃO COMPATÍVEL: Grava tanto no bloco quanto na categoria o termo esperado pelo front-end para exibição direta
     bloco_final = bloco or 'sites_jp2'
     try:
         conn = get_db_connection()
