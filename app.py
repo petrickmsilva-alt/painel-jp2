@@ -20,10 +20,11 @@ if not SUPABASE_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = Flask(__name__)
+# Mantém a proteção de memória e o limite configurado para uploads grandes
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "chave_secreta_super_segura_jp2")
 
-# Conexão Pool com o Neon (PostgreSQL)
+# Pool de conexão direta com o Neon (PostgreSQL)
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
@@ -53,7 +54,7 @@ def tela_login():
         u = request.form.get('usuario', '').lower().strip()
         s = request.form.get('senha', '').strip()
         
-        # TRUQUE DE ACESSO TEMPORÁRIO PARA O SEU PRIMEIRO ACESSO
+        # ACESSO MESTRE TEMPORÁRIO PARA VOCÊ RECONFIGURAR SEUS SÓCIOS
         if u == 'petrick':
             session['usuario_logado'] = 'petrick'
             session['nome_exibicao'] = 'Petrick Martins'
@@ -173,7 +174,7 @@ def listar_arquivos():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # CORREÇÃO: Garante a busca correta incluindo links e tratando valores nulos ou falsos de exclusão
+        # Filtro corrigido: busca o que não está deletado ou que está nulo (para dados legados)
         if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
             cur.execute("""
                 SELECT * FROM arquivos_painel 
@@ -349,7 +350,7 @@ def salvar_site():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        # CORREÇÃO: Força explicitamente a gravação de deletado=False para aparecer no filtro da listagem
+        # CORREÇÃO CRÍTICA: Definindo explicitamente o campo deletado como False para os novos sites criados no Neon
         cur.execute("""
             INSERT INTO arquivos_painel (nome_original, bloco, tipo, categoria, caminho_sistema, criado_por, deletado)
             VALUES (%s, %s, %s, %s, %s, %s, False)
@@ -447,7 +448,7 @@ def resumo_dashboard():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # CORREÇÃO: Conta apenas arquivos reais que não estão deletados
+        # CORREÇÃO DO CONTADOR: Busca arquivos cujo estado não seja explicitamente deletado e que sejam do tipo 'arquivo'
         cur.execute("SELECT COUNT(id) as total FROM arquivos_painel WHERE (deletado = False OR deletado IS NULL) AND tipo = 'arquivo'")
         total_arquivos = cur.fetchone()['total']
         
