@@ -3,29 +3,29 @@ import uuid
 import re
 import tempfile
 import hashlib
-import psycopg2
-from psycopg2.extras import RealDictCursor
-from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory
-from supabase import create_client
+import pymysql
 from datetime import datetime, timedelta
-
-# CONFIGURAÇÃO DE INFRAESTRUTURA
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://zkdzgpblxorcxxdrmojo.supabase.co")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-DATABASE_URL = os.environ.get("DATABASE_URL")
-
-if not SUPABASE_KEY:
-    raise ValueError("ERRO CRÍTICO: A chave SUPABASE_KEY não foi configurada nas Variáveis de Ambiente da Render!")
-
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory
 
 app = Flask(__name__)
+# Configura o limite de tráfego do Flask para arquivos grandes direto na HostGator
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "chave_secreta_super_segura_jp2")
 
-# Conexão Pool com o Neon (PostgreSQL)
+# DIRETÓRIO LOCAL DE ARMAZENAMENTO (Dentro da estrutura da HostGator)
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+# Conexão nativa com o banco de dados MySQL local da HostGator
 def get_db_connection():
-    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+    return pymysql.connect(
+        host=os.environ.get("DB_HOST", "localhost"),
+        user=os.environ.get("DB_USER"),        # Seu usuário do MySQL do cPanel
+        password=os.environ.get("DB_PASSWORD"),# Sua senha do MySQL do cPanel
+        database=os.environ.get("DB_NAME"),    # O nome do banco criado no cPanel
+        cursorclass=pymysql.cursors.DictCursor
+    )
 
 def registrar_log(acao):
     try:
@@ -33,13 +33,12 @@ def registrar_log(acao):
         ip_usuario = request.headers.get('X-Forwarded-For', request.remote_addr)
         
         conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO logs_auditoria (usuario, acao, ip_origem)
-            VALUES (%s, %s, %s)
-        """, (usuario, acao, ip_usuario))
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO logs_auditoria (usuario, acao, ip_origem)
+                VALUES (%s, %s, %s)
+            """, (usuario, acao, ip_usuario))
         conn.commit()
-        cur.close()
         conn.close()
     except Exception as e:
         print(f"ERRO AO REGISTRAR LOG: {e}")
@@ -53,7 +52,7 @@ def tela_login():
         u = request.form.get('usuario', '').lower().strip()
         s = request.form.get('senha', '').strip()
         
-        # ACESSO MESTRE TEMPORÁRIO PARA GARANTIR SEU LOG-IN
+        # ACESSO MESTRE TEMPORÁRIO PARA O SEU PRIMEIRO ACESSO LOCAL
         if u == 'petrick':
             session['usuario_logado'] = 'petrick'
             session['nome_exibicao'] = 'Petrick Martins'
@@ -62,10 +61,9 @@ def tela_login():
         
         try:
             conn = get_db_connection()
-            cur = conn.cursor()
-            cur.execute("SELECT * FROM usuarios WHERE usuario = %s", (u,))
-            user = cur.fetchone()
-            cur.close()
+            with conn.cursor() as cur:
+                cur.execute("SELECT * FROM usuarios WHERE usuario = %s", (u,))
+                user = cur.fetchone()
             conn.close()
             
             if user:
@@ -113,23 +111,21 @@ def admin_usuarios():
         
         try:
             conn = get_db_connection()
-            cur = conn.cursor()
-            cur.execute("""
-                INSERT INTO usuarios (usuario, senha, nome_exibicao)
-                VALUES (%s, %s, %s)
-            """, (novo_user, senha_cripto, nome_exib))
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO usuarios (usuario, senha, nome_exibicao)
+                    VALUES (%s, %s, %s)
+                """, (novo_user, senha_cripto, nome_exib))
             conn.commit()
-            cur.close()
             conn.close()
             registrar_log(f"Cadastrou um novo usuário no painel: {novo_user}")
         except Exception as e:
             print(f"Erro cadastro: {e}")
             
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT id, usuario, nome_exibicao FROM usuarios")
-    lista_usuarios = cur.fetchall()
-    cur.close()
+    with conn.cursor() as cur:
+        cur.execute("SELECT id, usuario, nome_exibicao FROM usuarios")
+        lista_usuarios = cur.fetchall()
     conn.close()
     return render_template('admin_usuarios.html', usuarios=lista_usuarios)
 
@@ -138,10 +134,9 @@ def excluir_usuario(usuario_id):
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
     try:
         conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("DELETE FROM usuarios WHERE id = %s", (usuario_id,))
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM usuarios WHERE id = %s", (usuario_id,))
         conn.commit()
-        cur.close()
         conn.close()
         registrar_log(f"Removeu o usuário ID: {usuario_id} do sistema")
         flash("Sócio removido com sucesso!")
@@ -154,10 +149,9 @@ def admin_logs():
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
     try:
         conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM logs_auditoria ORDER BY data_registro DESC LIMIT 100")
-        lista_logs = cur.fetchall()
-        cur.close()
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM logs_auditoria ORDER BY data_registro DESC LIMIT 100")
+            lista_logs = cur.fetchall()
         conn.close()
     except:
         lista_logs = []
@@ -171,25 +165,22 @@ def listar_arquivos():
     
     try:
         conn = get_db_connection()
-        cur = conn.cursor()
-        
-        if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
-            cur.execute("""
-                SELECT * FROM arquivos_painel 
-                WHERE bloco = %s AND pasta_pai_id = %s
-            """, (bloco, int(pasta_pai_id)))
-        else:
-            cur.execute("""
-                SELECT * FROM arquivos_painel 
-                WHERE bloco = %s AND pasta_pai_id IS NULL
-            """, (bloco,))
-            
-        linhas = cur.fetchall()
-        cur.close()
+        with conn.cursor() as cur:
+            if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
+                cur.execute("""
+                    SELECT * FROM arquivos_painel 
+                    WHERE bloco = %s AND pasta_pai_id = %s AND deletado = 0
+                """, (bloco, int(pasta_pai_id)))
+            else:
+                cur.execute("""
+                    SELECT * FROM arquivos_painel 
+                    WHERE bloco = %s AND pasta_pai_id IS NULL AND deletado = 0
+                """, (bloco,))
+            linhas = cur.fetchall()
         conn.close()
         
         itens_formatados = []
-        for l in lines:
+        for l in linhas:
             itens_formatados.append({
                 'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
                 'caminho': l['caminho_sistema'], 'autor': l['criado_por'] or 'Sistema', 
@@ -208,16 +199,16 @@ def obter_pai_id():
     partes = caminho.split(' ➔ ')
     if len(partes) <= 1: return jsonify({'pasta_pai_id': None})
     ultima_pasta_nome = partes[-1]
+    
     try:
         conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT id FROM arquivos_painel 
-            WHERE bloco = %s AND nome_original = %s AND tipo = 'pasta'
-            LIMIT 1
-        """, (bloco, ultima_pasta_nome))
-        dados = cur.fetchone()
-        cur.close()
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT id FROM arquivos_painel 
+                WHERE bloco = %s AND nome_original = %s AND tipo = 'pasta' AND deletado = 0
+                LIMIT 1
+            """, (bloco, ultima_pasta_nome))
+            dados = cur.fetchone()
         conn.close()
         return jsonify({'pasta_pai_id': dados['id'] if dados else None})
     except:
@@ -229,16 +220,15 @@ def criar_pasta():
     nome, bloco = request.form.get('nome'), request.form.get('bloco')
     cat = request.form.get('categoria') or 'raiz'
     pai = request.form.get('pasta_pai_id')
-    p_id = int(pai) if (pai and str(pai).strip() not in ["null", "undefined", ""]) else None
+    p_id = int(pai) if (pai biases and str(pai).strip() not in ["null", "undefined", ""]) else None
     try:
         conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO arquivos_painel (nome_original, bloco, categoria, tipo, pasta_pai_id, criado_por)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (nome, bloco, cat, 'pasta', p_id, session.get('nome_exibicao', 'Sistema')))
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO arquivos_painel (nome_original, bloco, categoria, tipo, pasta_pai_id, criado_por, deletado)
+                VALUES (%s, %s, %s, 'pasta', %s, %s, 0)
+            """, (nome, bloco, cat, p_id, session.get('nome_exibicao', 'Sistema')))
         conn.commit()
-        cur.close()
         conn.close()
         registrar_log(f"Criou a pasta: {nome} no bloco {bloco}")
         return jsonify({'status': 'sucesso'})
@@ -253,40 +243,29 @@ def upload_avancado():
     p_id = int(pai) if (pai and str(pai).strip() not in ["null", "undefined", ""]) else None
     
     try:
+        conn = get_db_connection()
         for arq in arquivos:
             if arq.filename == '': continue
             
             nome_limpo = re.sub(r'[^a-zA-Z0-9._-]', '', arq.filename.replace(' ', '_'))
             nome_unico = f"{uuid.uuid4().hex}_{nome_limpo}"
             
-            with tempfile.NamedTemporaryFile(delete=False) as tmp:
-                arq.save(tmp.name)
-                tmp_path = tmp.name
-
-            with open(tmp_path, 'rb') as f:
-                supabase.storage.from_("meus-arquivos").upload(
-                    path=nome_unico, 
-                    file=f, 
-                    file_options={"content-type": arq.content_type}
-                )
+            # SALVA FISICAMENTE NA PASTA LOCAL DA HOSTGATOR (SEM INTERMEDIÁRIOS EXTERNOS)
+            destino_completo = os.path.join(UPLOAD_FOLDER, nome_unico)
+            arq.save(destino_completo)
             
-            os.remove(tmp_path)
-            link = supabase.storage.from_("meus-arquivos").get_public_url(nome_unico)
+            link = f"/static/uploads/{nome_unico}"
             
-            conn = get_db_connection()
-            cur = conn.cursor()
-            cur.execute("""
-                INSERT INTO arquivos_painel (nome_original, caminho_sistema, bloco, categoria, tipo, criado_por, pasta_pai_id)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """, (arq.filename, link, bloco, cat, 'arquivo', session.get('nome_exibicao', 'Sistema'), p_id))
-            conn.commit()
-            cur.close()
-            conn.close()
-            
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO arquivos_painel (nome_original, caminho_sistema, bloco, categoria, tipo, criado_por, pasta_pai_id, deletado)
+                    VALUES (%s, %s, %s, %s, 'arquivo', %s, %s, 0)
+                """, (arq.filename, link, bloco, cat, session.get('nome_exibicao', 'Sistema'), p_id))
+        conn.commit()
+        conn.close()
         return jsonify({'status': 'sucesso'})
     except Exception as e:
-        print(f"ERRO CRÍTICO NO UPLOAD: {e}")
-        if 'tmp_path' in locals() and os.path.exists(tmp_path): os.remove(tmp_path)
+        print(f"ERRO NO UPLOAD LOCAL: {e}")
         return jsonify({'status': 'erro', 'mensagem': str(e)})
         
 @app.route('/baixar/<int:arquivo_id>')
@@ -294,16 +273,14 @@ def baixar_arquivo(arquivo_id):
     if 'usuario_logado' not in session: return "Não autorizado", 401
     try:
         conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT caminho_sistema, nome_original, deletado FROM arquivos_painel WHERE id = %s", (arquivo_id,))
-        dados = cur.fetchone()
-        cur.close()
+        with conn.cursor() as cur:
+            cur.execute("SELECT caminho_sistema, nome_original, deletado FROM arquivos_painel WHERE id = %s", (arquivo_id,))
+            dados = cur.fetchone()
         conn.close()
         
-        if dados and dados['deletado'] != True:
+        if dados and dados['deletado'] != 1:
             registrar_log(f"Fez download do arquivo: {dados['nome_original']}")
-            if dados['caminho_sistema'].startswith('http'): 
-                return redirect(dados['caminho_sistema'])
+            return redirect(dados['caminho_sistema'])
     except: pass
     return "Arquivo não encontrado", 404
 
@@ -313,53 +290,44 @@ def excluir_arquivo():
     arq_id, senha = request.form.get('id'), request.form.get('senha', '').strip()
     try:
         conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT senha FROM usuarios WHERE usuario = %s", (session.get('usuario_logado'),))
-        dados_u = cur.fetchone()
-        user_senha = str(dados_u['senha']) if dados_u else ""
-        
-        if user_senha == criptografar_sha256(senha):
-            cur.execute("SELECT nome_original FROM arquivos_painel WHERE id = %s", (arq_id,))
-            res_arq = cur.fetchone()
-            nome_arq = res_arq['nome_original'] if res_arq else "Desconhecido"
+        with conn.cursor() as cur:
+            cur.execute("SELECT senha FROM usuarios WHERE usuario = %s", (session.get('usuario_logado'),))
+            dados_u = cur.fetchone()
+            user_senha = str(dados_u['senha']) if dados_u else ""
             
-            cur.execute("""
-                UPDATE arquivos_painel 
-                SET deletado = True, deletado_em = %s 
-                WHERE id = %s
-            """, (datetime.now().isoformat(), arq_id))
-            conn.commit()
-            cur.close()
-            conn.close()
-            
-            registrar_log(f"Enviou para a lixeira o item/pasta: {nome_arq} (ID: {arq_id})")
-            return jsonify({'status': 'sucesso'})
-        
-        cur.close()
+            if user_senha == criptografar_sha256(senha):
+                cur.execute("SELECT nome_original FROM arquivos_painel WHERE id = %s", (arq_id,))
+                res_arq = cur.fetchone()
+                nome_arq = res_arq['nome_original'] if res_arq else "Desconhecido"
+                
+                cur.execute("""
+                    UPDATE arquivos_painel 
+                    SET deletado = 1, deletado_em = %s 
+                    WHERE id = %s
+                """, (datetime.now().isoformat(), arq_id))
+                conn.commit()
+                registrar_log(f"Enviou para a lixeira o item/pasta: {nome_arq} (ID: {arq_id})")
+                conn.close()
+                return jsonify({'status': 'sucesso'})
         conn.close()
         return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
     except:
         return jsonify({'status': 'erro'})
 
-# ==========================================
-# ROTA MODIFICADA APENAS NO MIOLO DE GRAVAÇÃO
-# ==========================================
 @app.route('/salvar-site', methods=['POST'])
 def salvar_site():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     nome, url, bloco = request.form.get('nome'), request.form.get('url'), request.form.get('bloco')
     
-    # AJUSTE EXCLUSIVO DO SITE: Captura a categoria real que vem do seu HTML para dar o match perfeito na raiz
-    cat = request.form.get('categoria') or 'sites_jp2'
+    bloco_final = bloco or 'sites_jp2'
     try:
         conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO arquivos_painel (nome_original, bloco, tipo, categoria, caminho_sistema, criado_por)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (nome, bloco, 'link', cat, url, session.get('nome_exibicao', 'Sistema')))
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO arquivos_painel (nome_original, bloco, tipo, categoria, caminho_sistema, criado_por, deletado)
+                VALUES (%s, %s, 'link', 'sites_jp2', %s, %s, 0)
+            """, (nome, bloco_final, url, session.get('nome_exibicao', 'Sistema')))
         conn.commit()
-        cur.close()
         conn.close()
         registrar_log(f"Incluiu o site institucional: {nome} ({url})")
         return jsonify({'status': 'sucesso'})
@@ -370,10 +338,9 @@ def salvar_site():
 def api_listar_eventos():
     try:
         conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT id, titulo, data_evento, data_fim FROM agenda_eventos")
-        eventos = cur.fetchall()
-        cur.close()
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, titulo, data_evento, data_fim FROM agenda_eventos")
+            eventos = cur.fetchall()
         conn.close()
         
         lista_diaria = []
@@ -404,13 +371,12 @@ def calendar_adicionar():
     if not data_ini: return {"status": "erro", "mensagem": "Data não enviada!"}, 400
     try:
         conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO agenda_eventos (titulo, data_evento, data_fim)
-            VALUES (%s, %s, %s)
-        """, (titulo, data_ini, data_fim))
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO agenda_eventos (titulo, data_evento, data_fim)
+                VALUES (%s, %s, %s)
+            """, (titulo, data_ini, data_fim))
         conn.commit()
-        cur.close()
         conn.close()
         registrar_log(f"Adicionou um compromisso na agenda: {titulo}")
         return {"status": "sucesso"}, 200
@@ -424,45 +390,38 @@ def excluir_evento():
     senha = request.form.get('senha', '').strip()
     try:
         conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT senha FROM usuarios WHERE usuario = %s", (session.get('usuario_logado'),))
-        dados_u = cur.fetchone()
-        user_senha = str(dados_u['senha']) if dados_u else ""
-        
-        if user_senha == criptografar_sha256(senha):
-            if evento_id and evento_id != "" and evento_id != "undefined" and evento_id != "null":
-                cur.execute("DELETE FROM agenda_eventos WHERE id = %s", (int(evento_id),))
-                registrar_log(f"Apagou o compromisso da agenda ID: {evento_id}")
-            elif titulo:
-                cur.execute("DELETE FROM agenda_eventos WHERE titulo ILIKE %s", (titulo,))
-                registrar_log(f"Apagou o compromisso da agenda por título: {titulo}")
-            conn.commit()
-            cur.close()
-            conn.close()
-            return jsonify({'status': 'sucesso'})
-        cur.close()
+        with conn.cursor() as cur:
+            cur.execute("SELECT senha FROM usuarios WHERE usuario = %s", (session.get('usuario_logado'),))
+            dados_u = cur.fetchone()
+            user_senha = str(dados_u['senha']) if dados_u else ""
+            
+            if user_senha == criptografar_sha256(senha):
+                if evento_id and evento_id != "" and evento_id != "undefined" and evento_id != "null":
+                    cur.execute("DELETE FROM agenda_eventos WHERE id = %s", (int(evento_id),))
+                    registrar_log(f"Apagou o compromisso da agenda ID: {evento_id}")
+                elif titulo:
+                    cur.execute("DELETE FROM agenda_eventos WHERE titulo LIKE %s", (titulo,))
+                    registrar_log(f"Apagou o compromisso da agenda por título: {titulo}")
+        conn.commit()
         conn.close()
-        return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
+        return jsonify({'status': 'sucesso'})
     except: return jsonify({'status': 'erro'})
 
 @app.route('/api/resumo-dashboard')
 def resumo_dashboard():
     try:
         conn = get_db_connection()
-        cur = conn.cursor()
-        
-        cur.execute("SELECT COUNT(id) as total FROM arquivos_painel WHERE tipo = 'arquivo'")
-        total_arquivos = cur.fetchone()['total']
-        
-        cur.execute("SELECT COUNT(id) as total FROM usuarios")
-        total_socios = cur.fetchone()['total']
-        
-        hoje = datetime.now().strftime('%Y-%m-%d')
-        cur.execute("SELECT titulo FROM agenda_eventos WHERE data_evento >= %s ORDER BY data_evento ASC LIMIT 1", (hoje,))
-        dados_ev = cur.fetchone()
-        proximo_evento = dados_ev['titulo'] if dados_ev else "Nenhum"
-        
-        cur.close()
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(id) as total FROM arquivos_painel WHERE tipo = 'arquivo' AND deletado = 0")
+            total_arquivos = cur.fetchone()['total']
+            
+            cur.execute("SELECT COUNT(id) as total FROM usuarios")
+            total_socios = cur.fetchone()['total']
+            
+            hoje = datetime.now().strftime('%Y-%m-%d')
+            cur.execute("SELECT titulo FROM agenda_eventos WHERE data_evento >= %s ORDER BY data_evento ASC LIMIT 1", (hoje,))
+            dados_ev = cur.fetchone()
+            proximo_evento = dados_ev['titulo'] if dados_ev else "Nenhum"
         conn.close()
         return jsonify({'total_arquivos': total_arquivos, 'total_socios': total_socios, 'proximo_evento': proximo_evento})
     except: return jsonify({'error': 'erro'}), 500
