@@ -166,7 +166,6 @@ def listar_arquivos():
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
-            # Ajustado para mapear corretamente o campo deletado como 0 (False no MySQL)
             if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
                 cur.execute("""
                     SELECT * FROM arquivos_painel 
@@ -182,16 +181,33 @@ def listar_arquivos():
         
         itens_formatados = []
         for l in linhas:
+            caminho_final = l['caminho_sistema']
+            
+            # SE FOR UM LINK/SITE: Verifica se existe uma imagem específica para ele
+            if l['tipo'] == 'link':
+                # Remove espaços e caracteres especiais para checar o nome do arquivo de imagem
+                nome_limpo = "".join(x for x in l['nome_original'] if x.isalnum())
+                imagem_path = os.path.join(app.root_path, 'static', 'image', f"{nome_limpo}.jpeg")
+                
+                # Se a imagem customizada não existir na pasta da HostGator, usa o logo padrão do Instituto
+                if not os.path.exists(imagem_path):
+                    caminho_final = "/static/image/ibd.jpeg"
+            
             itens_formatados.append({
-                'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
-                'caminho': l['caminho_sistema'], 'autor': l['criado_por'] or 'Sistema', 
-                'bloco': l['bloco'], 'categoria': l['categoria'], 'pasta_pai_id': l['pasta_pai_id']
+                'id': l['id'], 
+                'nome': l['nome_original'], 
+                'tipo': l['tipo'], 
+                'caminho': caminho_final, 
+                'autor': l['criado_por'] or 'Sistema', 
+                'bloco': l['bloco'], 
+                'categoria': l['categoria'], 
+                'pasta_pai_id': l['pasta_pai_id']
             })
         return jsonify({'itens': itens_formatados})
     except Exception as e:
         print(f"Erro ao listar: {e}")
         return jsonify({'itens': []})
-
+        
 @app.route('/obter-pai-id')
 def obter_pai_id():
     if 'usuario_logado' not in session: return jsonify({'pasta_pai_id': None}), 401
