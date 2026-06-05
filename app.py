@@ -182,22 +182,22 @@ def listar_arquivos():
         itens_formatados = []
         for l in linhas:
             caminho_final = l['caminho_sistema']
+            imagem_card = "/static/image/ibd.jpeg" # Padrão inicial de segurança
             
-            # SE FOR UM LINK/SITE: Verifica se existe uma imagem específica para ele
             if l['tipo'] == 'link':
-                # Remove espaços e caracteres especiais para checar o nome do arquivo de imagem
                 nome_limpo = "".join(x for x in l['nome_original'] if x.isalnum())
                 imagem_path = os.path.join(app.root_path, 'static', 'image', f"{nome_limpo}.jpeg")
                 
-                # Se a imagem customizada não existir na pasta da HostGator, usa o logo padrão do Instituto
-                if not os.path.exists(imagem_path):
-                    caminho_final = "/static/image/ibd.jpeg"
+                # Se a imagem customizada existir na HostGator, usa ela. Se não, mantém a ibd.jpeg
+                if os.path.exists(imagem_path):
+                    imagem_card = f"/static/image/{nome_limpo}.jpeg"
             
             itens_formatados.append({
                 'id': l['id'], 
                 'nome': l['nome_original'], 
                 'tipo': l['tipo'], 
-                'caminho': caminho_final, 
+                'caminho': caminho_final,     # AQUI: Mantém a URL real salva no banco intacta!
+                'imagem_bg': imagem_card,     # AQUI: Campo novo exclusivo para a foto do card
                 'autor': l['criado_por'] or 'Sistema', 
                 'bloco': l['bloco'], 
                 'categoria': l['categoria'], 
