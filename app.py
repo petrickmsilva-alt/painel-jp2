@@ -173,23 +173,30 @@ def listar_arquivos():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
+        # RESOLUÇÃO DEFINITIVA PARA SITES: Se for o bloco de sites, traz tudo dele independente de pasta ou categoria
+        if bloco == 'sites_jp2':
             cur.execute("""
                 SELECT * FROM arquivos_painel 
-                WHERE bloco = %s AND (deletado = False OR deletado IS NULL) AND pasta_pai_id = %s
-            """, (bloco, int(pasta_pai_id)))
-        else:
-            cur.execute("""
-                SELECT * FROM arquivos_painel 
-                WHERE bloco = %s AND (deletado = False OR deletado IS NULL) AND pasta_pai_id IS NULL
+                WHERE bloco = %s AND (deletado = False OR deletado IS NULL)
             """, (bloco,))
+        else:
+            if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
+                cur.execute("""
+                    SELECT * FROM arquivos_painel 
+                    WHERE bloco = %s AND (deletado = False OR deletado IS NULL) AND pasta_pai_id = %s
+                """, (bloco, int(pasta_pai_id)))
+            else:
+                cur.execute("""
+                    SELECT * FROM arquivos_painel 
+                    WHERE bloco = %s AND (deletado = False OR deletado IS NULL) AND pasta_pai_id IS NULL
+                """, (bloco,))
             
         linhas = cur.fetchall()
         cur.close()
         conn.close()
         
         itens_formatados = []
-        for l in linhas:
+        for l in lines:
             itens_formatados.append({
                 'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
                 'caminho': l['caminho_sistema'], 'autor': l['criado_por'] or 'Sistema', 
@@ -264,7 +271,6 @@ def upload_avancado():
                 tmp_path = tmp.name
 
             with open(tmp_path, 'rb') as f:
-                # CORREÇÃO DA SINTAXE: .from_() como método correto do SDK do Supabase
                 supabase.storage.from_("meus-arquivos").upload(
                     path=nome_unico, 
                     file=f, 
@@ -347,14 +353,15 @@ def salvar_site():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     nome, url, bloco = request.form.get('nome'), request.form.get('url'), request.form.get('bloco')
     
-    cat = request.form.get('categoria') or bloco or 'raiz'
+    # Adaptação para garantir que grave no bloco correto vindo do front
+    bloco_final = bloco or 'sites_jp2'
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
             INSERT INTO arquivos_painel (nome_original, bloco, tipo, categoria, caminho_sistema, criado_por, deletado)
             VALUES (%s, %s, %s, %s, %s, %s, False)
-        """, (nome, bloco, 'link', cat, url, session.get('nome_exibicao', 'Sistema')))
+        """, (nome, bloco_final, 'link', 'sites_jp2', url, session.get('nome_exibicao', 'Sistema')))
         conn.commit()
         cur.close()
         conn.close()
