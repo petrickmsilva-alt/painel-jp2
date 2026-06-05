@@ -9,7 +9,7 @@ from flask import Flask, render_template, jsonify, request, redirect, url_for, s
 from supabase import create_client
 from datetime import datetime, timedelta
 
-# CONFIGURAÇÃO DE INFRAESTRUTURA SEGURA
+# CONFIGURAÇÃO DE INFRAESTRUTURA
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://zkdzgpblxorcxxdrmojo.supabase.co")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -23,7 +23,7 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "chave_secreta_super_segura_jp2")
 
-# Conexão direta com o banco Neon (PostgreSQL)
+# Conexão Pool com o Neon (PostgreSQL)
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
@@ -53,7 +53,7 @@ def tela_login():
         u = request.form.get('usuario', '').lower().strip()
         s = request.form.get('senha', '').strip()
         
-        # ACESSO MESTRE TEMPORÁRIO
+        # ACESSO MESTRE TEMPORÁRIO PARA GARANTIR SEU LOG-IN
         if u == 'petrick':
             session['usuario_logado'] = 'petrick'
             session['nome_exibicao'] = 'Petrick Martins'
@@ -173,16 +173,16 @@ def listar_arquivos():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # RETORNO AO PADRÃO ORIGINAL DA QUERY DO SUPABASE PARA PRESERVAR SUAS PASTAS
+        # RETORNO AO PADRÃO ORIGINAL EXATO: Sem travas extras de 'deletado' que quebravam a exibição
         if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
             cur.execute("""
                 SELECT * FROM arquivos_painel 
-                WHERE bloco = %s AND (deletado = False OR deletado IS NULL) AND pasta_pai_id = %s
+                WHERE bloco = %s AND pasta_pai_id = %s
             """, (bloco, int(pasta_pai_id)))
         else:
             cur.execute("""
                 SELECT * FROM arquivos_painel 
-                WHERE bloco = %s AND (deletado = False OR deletado IS NULL) AND pasta_pai_id IS NULL
+                WHERE bloco = %s AND pasta_pai_id IS NULL
             """, (bloco,))
             
         linhas = cur.fetchall()
@@ -190,7 +190,7 @@ def listar_arquivos():
         conn.close()
         
         itens_formatados = []
-        for l in lines:
+        for l in linhas:
             itens_formatados.append({
                 'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
                 'caminho': l['caminho_sistema'], 'autor': l['criado_por'] or 'Sistema', 
@@ -214,7 +214,7 @@ def obter_pai_id():
         cur = conn.cursor()
         cur.execute("""
             SELECT id FROM arquivos_painel 
-            WHERE bloco = %s AND nome_original = %s AND tipo = 'pasta' AND (deletado = False OR deletado IS NULL)
+            WHERE bloco = %s AND nome_original = %s AND tipo = 'pasta'
             LIMIT 1
         """, (bloco, ultima_pasta_nome))
         dados = cur.fetchone()
@@ -235,8 +235,8 @@ def criar_pasta():
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO arquivos_painel (nome_original, bloco, categoria, tipo, pasta_pai_id, criado_por, deletado)
-            VALUES (%s, %s, %s, %s, %s, %s, False)
+            INSERT INTO arquivos_painel (nome_original, bloco, categoria, tipo, pasta_pai_id, criado_por)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """, (nome, bloco, cat, 'pasta', p_id, session.get('nome_exibicao', 'Sistema')))
         conn.commit()
         cur.close()
@@ -277,8 +277,8 @@ def upload_avancado():
             conn = get_db_connection()
             cur = conn.cursor()
             cur.execute("""
-                INSERT INTO arquivos_painel (nome_original, caminho_sistema, bloco, categoria, tipo, criado_por, pasta_pai_id, deletado)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, False)
+                INSERT INTO arquivos_painel (nome_original, caminho_sistema, bloco, categoria, tipo, criado_por, pasta_pai_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (arq.filename, link, bloco, cat, 'arquivo', session.get('nome_exibicao', 'Sistema'), p_id))
             conn.commit()
             cur.close()
@@ -346,15 +346,13 @@ def excluir_arquivo():
 def salvar_site():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     nome, url, bloco = request.form.get('nome'), request.form.get('url'), request.form.get('bloco')
-    
-    bloco_final = bloco or 'sites_jp2'
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO arquivos_painel (nome_original, bloco, tipo, categoria, caminho_sistema, criado_por, deletado)
-            VALUES (%s, %s, %s, %s, %s, %s, False)
-        """, (nome, bloco_final, 'link', 'sites_jp2', url, session.get('nome_exibicao', 'Sistema')))
+            INSERT INTO arquivos_painel (nome_original, bloco, tipo, categoria, caminho_sistema, criado_por)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (nome, bloco, 'link', 'raiz', url, session.get('nome_exibicao', 'Sistema')))
         conn.commit()
         cur.close()
         conn.close()
@@ -448,7 +446,7 @@ def resumo_dashboard():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        cur.execute("SELECT COUNT(id) as total FROM arquivos_painel WHERE (deletado = False OR deletado IS NULL) AND tipo = 'arquivo'")
+        cur.execute("SELECT COUNT(id) as total FROM arquivos_painel WHERE tipo = 'arquivo'")
         total_arquivos = cur.fetchone()['total']
         
         cur.execute("SELECT COUNT(id) as total FROM usuarios")
