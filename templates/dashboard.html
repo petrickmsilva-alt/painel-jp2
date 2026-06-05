@@ -571,12 +571,11 @@
         .then(data => {
             gridContainer.innerHTML = "";
             
-            // LÓGICA EVOLUÍDA DE PORTAIS: Junta os estáticos aos novos vindos de forma 100% dinâmica do MySQL
+            // 1. Renderiza a base fixa estruturada original
             if (estadoDoPainel.bloco === 'sites_jp2' && estadoDoPainel.nivel_atual === 'raiz_bloco') {
                 let itensRenderizados = [];
-                
-                // 1. Renderiza a base fixa estruturada original
                 let sortedFixos = subpastasFixas['sites_jp2'];
+                
                 sortedFixos.forEach(cat => {
                     let card = document.createElement("div");
                     card.className = "explorer-card";
@@ -589,32 +588,35 @@
                     itensRenderizados.push(cat.toLowerCase().trim());
                 });
 
-                // 2. Renderiza de forma 100% dinâmica qualquer site novo vindo da HostGator que não esteja na lista fixa
+                // 2. Renderiza de forma dinâmica os novos sites vindos do banco
                 if (data.itens && data.itens.length > 0) {
                     data.itens.forEach(item => {
-                        if (item.tipo === 'link' && !itensRenderizados.includes(item.nome.toLowerCase().trim())) {
+                        let nomeVerificacao = item.nome ? item.nome.toLowerCase().trim() : '';
+                        if (item.tipo === 'link' && !itensRenderizados.includes(nomeVerificacao)) {
                             let card = document.createElement("div");
                             card.className = "explorer-card";
                             
-                            // CORREÇÃO DEFINTIVA DO CLIQUE: Garante que o clique abra a URL salva no banco, não a imagem
-                            let urlRealDoSite = item.caminho;
-                            if (!urlRealDoSite.startsWith('http://') && !urlRealDoSite.startsWith('https://')) {
-                                urlRealDoSite = 'https://' + urlRealDoSite;
-                            }
-                            
-                            // O clique abre o site real em uma nova aba
+                            let urlRealDoSite = item.caminho || '#';
                             card.onclick = function() { window.open(urlRealDoSite, '_blank'); };
                             
-                            // SUBSTITUA APENAS O HTML INTERNO DO CARD DINÂMICO POR ESTE:
+                            let imagemDoCard = item.imagem_bg || '/static/image/ibd.jpeg';
+                            
                             card.innerHTML = `
-                                <div class="action-trigger"><button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button></div>
-                                <div class="icon-wrapper"><img src="${item.imagem_bg}" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px;"></div>
-                                <div class="item-label" title="${item.nome}">${item.nome}</div>
+                                <div class="action-trigger">
+                                    <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="icon-wrapper">
+                                    <img src="${imagemDoCard}" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px;">
+                                </div>
+                                <div class="item-label" title="${item.nome || ''}">${item.nome || ''}</div>
                                 <div class="item-author">Portal WEB</div>`;
+                            gridContainer.appendChild(card);
                         }
                     });
-                }              
-              return;
+                }
+                return;
             }
 
             if (!data.itens || data.itens.length === 0) {
@@ -885,9 +887,9 @@
             formData.append('bloco', estadoDoPainel.bloco);
             
             let paiId = estadoDoPainel.pasta_pai_id;
-            let categoriaCorreta = (paiId === null || paiId === undefined || paiId === '' || paiId === 'null') ? 'raiz' : 'raiz';
+            let categoryCorreta = (paiId === null || paiId === undefined || paiId === '' || paiId === 'null') ? 'raiz' : 'raiz';
             
-            formData.append('categoria', categoriaCorreta);
+            formData.append('categoria', categoryCorreta);
             formData.append('pasta_pai_id', paiId || '');
 
             fetch('/upload-avancado', { method: 'POST', body: formData })
