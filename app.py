@@ -159,7 +159,7 @@ def admin_logs():
 
 @app.route('/listar')
 def listar_arquivos():
-    if 'usuario_logado' not in session: return jsonify({'erro': 'Não autorizado'}), 401
+    if 'usuario_logado' not in session: return jsonify({'erro': 'Não authorized'}), 401
     bloco = request.args.get('bloco')
     pasta_pai_id = request.args.get('pasta_pai_id')
     
@@ -220,7 +220,7 @@ def criar_pasta():
     nome, bloco = request.form.get('nome'), request.form.get('bloco')
     cat = request.form.get('categoria') or 'raiz'
     pai = request.form.get('pasta_pai_id')
-    p_id = int(pai) if (pai biases and str(pai).strip() not in ["null", "undefined", ""]) else None
+    p_id = int(pai) if (pai and str(pai).strip() not in ["null", "undefined", ""]) else None
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
@@ -325,7 +325,7 @@ def salvar_site():
         with conn.cursor() as cur:
             cur.execute("""
                 INSERT INTO arquivos_painel (nome_original, bloco, tipo, categoria, caminho_sistema, criado_por, deletado)
-                VALUES (%s, %s, 'link', 'sites_jp2', %s, %s, 0)
+                VALUES (%s, %s, 'link', 'raiz', %s, %s, 0)
             """, (nome, bloco_final, url, session.get('nome_exibicao', 'Sistema')))
         conn.commit()
         conn.close()
