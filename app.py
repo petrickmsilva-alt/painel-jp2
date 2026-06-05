@@ -53,6 +53,13 @@ def tela_login():
         u = request.form.get('usuario', '').lower().strip()
         s = request.form.get('senha', '').strip()
         
+        # TRUQUE DE ACESSO TEMPORÁRIO PARA O SEU PRIMEIRO ACESSO
+        if u == 'petrick':
+            session['usuario_logado'] = 'petrick'
+            session['nome_exibicao'] = 'Petrick Martins'
+            registrar_log("Realizou login via mestre temporário")
+            return redirect(url_for('home'))
+        
         try:
             conn = get_db_connection()
             cur = conn.cursor()
