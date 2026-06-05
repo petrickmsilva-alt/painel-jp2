@@ -320,11 +320,15 @@ def salvar_site():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     nome, url, bloco = request.form.get('nome'), request.form.get('url'), request.form.get('bloco')
     
-    bloco_final = bloco or 'sites_jp2'
+    # BLINDAGEM: Se o bloco vier em branco, nulo ou com o nome visível da tela, força o ID correto do banco
+    if not bloco or str(bloco).strip().lower() in ["", "null", "undefined", "sites jp2 business"]:
+        bloco_final = 'sites_jp2'
+    else:
+        bloco_final = str(bloco).strip()
+
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
-            # Corrigido para gravar a categoria como 'sites_jp2' para bater com a busca da sua interface
             cur.execute("""
                 INSERT INTO arquivos_painel (nome_original, bloco, tipo, categoria, caminho_sistema, criado_por, deletado)
                 VALUES (%s, %s, 'link', 'sites_jp2', %s, %s, 0)
