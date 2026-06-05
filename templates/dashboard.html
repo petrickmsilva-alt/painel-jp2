@@ -597,9 +597,10 @@
                             card.className = "explorer-card";
                             
                             card.onclick = function() { window.open(item.caminho, '_blank'); };
+                            // CÓDIGO NOVO (COMO DEVE FICAR):
                             card.innerHTML = `
                                 <div class="action-trigger"><button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button></div>
-                                <div class="icon-wrapper"><img src="/static/image/ibd.jpeg" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px;"></div>
+                                <div class="icon-wrapper"><img src="${item.caminho}" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px;"></div>
                                 <div class="item-label" title="${item.nome}">${item.nome}</div>
                                 <div class="item-author">Portal WEB</div>`;
                             gridContainer.appendChild(card);
