@@ -173,15 +173,16 @@ def listar_arquivos():
         conn = get_db_connection()
         cur = conn.cursor()
         
+        # CORREÇÃO: Garante a busca correta incluindo links e tratando valores nulos ou falsos de exclusão
         if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
             cur.execute("""
                 SELECT * FROM arquivos_painel 
-                WHERE bloco = %s AND deletado = False AND pasta_pai_id = %s
+                WHERE bloco = %s AND (deletado = False OR deletado IS NULL) AND pasta_pai_id = %s
             """, (bloco, int(pasta_pai_id)))
         else:
             cur.execute("""
                 SELECT * FROM arquivos_painel 
-                WHERE bloco = %s AND deletado = False AND pasta_pai_id IS NULL
+                WHERE bloco = %s AND (deletado = False OR deletado IS NULL) AND pasta_pai_id IS NULL
             """, (bloco,))
             
         linhas = cur.fetchall()
@@ -213,7 +214,7 @@ def obter_pai_id():
         cur = conn.cursor()
         cur.execute("""
             SELECT id FROM arquivos_painel 
-            WHERE bloco = %s AND nome_original = %s AND tipo = 'pasta' AND deletado = False
+            WHERE bloco = %s AND nome_original = %s AND tipo = 'pasta' AND (deletado = False OR deletado IS NULL)
             LIMIT 1
         """, (bloco, ultima_pasta_nome))
         dados = cur.fetchone()
@@ -234,8 +235,8 @@ def criar_pasta():
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO arquivos_painel (nome_original, bloco, categoria, tipo, pasta_pai_id, criado_por)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO arquivos_painel (nome_original, bloco, categoria, tipo, pasta_pai_id, criado_por, deletado)
+            VALUES (%s, %s, %s, %s, %s, %s, False)
         """, (nome, bloco, cat, 'pasta', p_id, session.get('nome_exibicao', 'Sistema')))
         conn.commit()
         cur.close()
@@ -276,8 +277,8 @@ def upload_avancado():
             conn = get_db_connection()
             cur = conn.cursor()
             cur.execute("""
-                INSERT INTO arquivos_painel (nome_original, caminho_sistema, bloco, categoria, tipo, criado_por, pasta_pai_id)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO arquivos_painel (nome_original, caminho_sistema, bloco, categoria, tipo, criado_por, pasta_pai_id, deletado)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, False)
             """, (arq.filename, link, bloco, cat, 'arquivo', session.get('nome_exibicao', 'Sistema'), p_id))
             conn.commit()
             cur.close()
@@ -348,9 +349,10 @@ def salvar_site():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
+        # CORREÇÃO: Força explicitamente a gravação de deletado=False para aparecer no filtro da listagem
         cur.execute("""
-            INSERT INTO arquivos_painel (nome_original, bloco, tipo, categoria, caminho_sistema, criado_por)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO arquivos_painel (nome_original, bloco, tipo, categoria, caminho_sistema, criado_por, deletado)
+            VALUES (%s, %s, %s, %s, %s, %s, False)
         """, (nome, bloco, 'link', 'raiz', url, session.get('nome_exibicao', 'Sistema')))
         conn.commit()
         cur.close()
@@ -445,7 +447,8 @@ def resumo_dashboard():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        cur.execute("SELECT COUNT(id) as total FROM arquivos_painel WHERE deletado = False")
+        # CORREÇÃO: Conta apenas arquivos reais que não estão deletados
+        cur.execute("SELECT COUNT(id) as total FROM arquivos_painel WHERE (deletado = False OR deletado IS NULL) AND tipo = 'arquivo'")
         total_arquivos = cur.fetchone()['total']
         
         cur.execute("SELECT COUNT(id) as total FROM usuarios")
