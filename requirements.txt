@@ -1,3 +1,4 @@
 flask
 gunicorn
 supabase
+psycopg2-binary
