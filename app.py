@@ -20,7 +20,6 @@ if not SUPABASE_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = Flask(__name__)
-# Força o limite de 100MB e o salvamento em disco temporário para evitar estouro de RAM (SIGKILL)
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "chave_secreta_super_segura_jp2")
 
@@ -54,7 +53,7 @@ def tela_login():
         u = request.form.get('usuario', '').lower().strip()
         s = request.form.get('senha', '').strip()
         
-        # ACESSO MESTRE TEMPORÁRIO PARA GARANTIR SEU LOG-IN
+        # ACESSO MESTRE TEMPORÁRIO PARA O SEU CONTROLE
         if u == 'petrick':
             session['usuario_logado'] = 'petrick'
             session['nome_exibicao'] = 'Petrick Martins'
@@ -174,12 +173,12 @@ def listar_arquivos():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # AJUSTE SEGURO PARA SUPORTAR SITES_JP2: Se o bloco for focado em links de sites, ele ignora o filtro hierárquico nulo
-        if bloco == 'sites_jp2':
+        # SOLUÇÃO MÁGICA: Se o front-end chamar por sites_jp2 OU se perder no console tentando renderizar, traz os links de uma vez só
+        if bloco == 'sites_jp2' or bloco == 'instituto':
             cur.execute("""
                 SELECT * FROM arquivos_painel 
-                WHERE bloco = %s AND (deletado = False OR deletado IS NULL)
-            """, (bloco,))
+                WHERE (bloco = 'sites_jp2' OR bloco = 'instituto') AND tipo = 'link' AND (deletado = False OR deletado IS NULL)
+            """)
         else:
             if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
                 cur.execute("""
@@ -354,7 +353,6 @@ def salvar_site():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     nome, url, bloco = request.form.get('nome'), request.form.get('url'), request.form.get('bloco')
     
-    # ADAPTAÇÃO COMPATÍVEL: Grava tanto no bloco quanto na categoria o termo esperado pelo front-end para exibição direta
     bloco_final = bloco or 'sites_jp2'
     try:
         conn = get_db_connection()
