@@ -387,7 +387,7 @@
                     </button>
                 </div>
                 <div class="d-flex gap-2">
-                   <div id="controles-arquivos" class="d-flex gap-2">
+                    <div id="controles-arquivos" class="d-flex gap-2">
                         <button class="btn btn-sm btn-outline-secondary px-3" id="btnVoltarExplorer" onclick="volverDiretorio()">
                             <i class="bi bi-arrow-left"></i> Voltar Pasta
                         </button>
@@ -553,7 +553,6 @@
 
         caminhoEl.innerText = estadoDoPainel.string_caminho;
         gridContainer.innerHTML = '<div class="text-center w-100 py-4"><div class="spinner-border text-primary"></div><br>Buscando na nuvem...</div>';
-        
         if (estadoDoPainel.bloco === 'sites_jp2') {
             if(divArquivos) divArquivos.classList.add('d-none');
             if(divSites) divSites.classList.remove('d-none');
@@ -564,8 +563,6 @@
 
         let btnVoltar = document.getElementById('btnVoltarExplorer');
         if(btnVoltar) btnVoltar.style.setProperty('visibility', (estadoDoPainel.nivel_atual === 'raiz_bloco') ? 'hidden' : 'visible', 'important');
-        
-        // A chave aqui é o timestamp &t=... que força o navegador a buscar do servidor real
         const catBusca = (estadoDoPainel.pasta_pai_id === null || estadoDoPainel.pasta_pai_id === '') ? estadoDoPainel.bloco : 'raiz';
         let urlListar = `/listar?bloco=${estadoDoPainel.bloco}&categoria=${catBusca}&pasta_pai_id=${estadoDoPainel.pasta_pai_id || ''}&t=${new Date().getTime()}`;
         
@@ -574,17 +571,41 @@
         .then(data => {
             gridContainer.innerHTML = "";
             
+            // LÓGICA EVOLUÍDA DE PORTAIS: Junta os estáticos aos novos vindos de forma 100% dinâmica do MySQL
             if (estadoDoPainel.bloco === 'sites_jp2' && estadoDoPainel.nivel_atual === 'raiz_bloco') {
+                let itensRenderizados = [];
+                
+                // 1. Renderiza a base fixa estruturada original
                 let sortedFixos = subpastasFixas['sites_jp2'];
                 sortedFixos.forEach(cat => {
                     let card = document.createElement("div");
                     card.className = "explorer-card";
                     let urlDestino = linksDirecionamento[cat] || '#';
                     let nomeArquivo = mapeamentoLogos[cat] || 'default.png';
+                    
                     card.onclick = function() { window.open(urlDestino, '_blank'); };
                     card.innerHTML = `<div class="icon-wrapper"><img src="/static/image/${nomeArquivo}" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px;"></div><div class="item-label">${cat}</div><div class="item-author">Portal WEB</div>`;
                     gridContainer.appendChild(card);
+                    itensRenderizados.push(cat.toLowerCase().trim());
                 });
+
+                // 2. Renderiza de forma 100% dinâmica qualquer site novo vindo da HostGator que não esteja na lista fixa
+                if (data.itens && data.itens.length > 0) {
+                    data.itens.forEach(item => {
+                        if (item.tipo === 'link' && !itensRenderizados.includes(item.nome.toLowerCase().trim())) {
+                            let card = document.createElement("div");
+                            card.className = "explorer-card";
+                            
+                            card.onclick = function() { window.open(item.caminho, '_blank'); };
+                            card.innerHTML = `
+                                <div class="action-trigger"><button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button></div>
+                                <div class="icon-wrapper"><img src="/static/image/ibd.jpeg" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px;"></div>
+                                <div class="item-label" title="${item.nome}">${item.nome}</div>
+                                <div class="item-author">Portal WEB</div>`;
+                            gridContainer.appendChild(card);
+                        }
+                    });
+                }
                 return;
             }
 
@@ -781,7 +802,7 @@
                 <h4 style="margin-bottom:20px; color:#dc2626; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
                     <i class="bi bi-trash"></i> Confirmar Exclusão
                 </h4>
-                <p style="margin-bottom:20px; color:#475569;">Deseja realmente excluir este item? <br>Esta ação não pode ser desfeita.</p>
+                <p style="margin-bottom:20px; color:#475569;">Deseja realmente excluir este item?<br>Esta ação não pode ser desfeita.</p>
                 <div style="margin-bottom:20px;">
                     <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">CONFIRME A SENHA</label>
                     <input type="password" id="senha_exclusao_temp" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
@@ -855,7 +876,6 @@
             formData.append('arquivos', fileInput.files[0]);
             formData.append('bloco', estadoDoPainel.bloco);
             
-            // FILTRO DE ALINHAMENTO DEFINITIVO SINCRO: Envia 'raiz' se houver subpasta ativa, ou herda o estado base do explorer
             let paiId = estadoDoPainel.pasta_pai_id;
             let categoriaCorreta = (paiId === null || paiId === undefined || paiId === '' || paiId === 'null') ? 'raiz' : 'raiz';
             
@@ -883,16 +903,11 @@
         let formData = new FormData();
         
         if (filesInput.files.length === 0) return alert("Selecione os arquivos!");
-        
         for(let i = 0; i < filesInput.files.length; i++) { 
             formData.append('arquivos', filesInput.files[i]);
         }
 
         formData.append('bloco', estadoDoPainel.bloco);
-        
-        // CORREÇÃO TÉCNICA:
-        // O Supabase e o seu app.py esperam que, se estiver dentro de uma pasta (pai_id existe), 
-        // a categoria seja 'raiz'. Se for a raiz do bloco (pai_id null), a categoria é o nome do bloco.
         const paiId = estadoDoPainel.pasta_pai_id;
         const catFinal = (paiId !== null && paiId !== undefined && paiId !== '') ? 'raiz' : estadoDoPainel.bloco;
         
@@ -909,13 +924,12 @@
             if(modalInstance) modalInstance.hide();
             
             document.getElementById('containerProgresso').classList.add('d-none');
-            filesInput.value = ""; 
-            
-            // Garantir que a grade seja sincronizada com o mesmo filtro usado no upload
-            sincronizarGrade(); 
+            filesInput.value = "";
+            sincronizarGrade();
         };
         xhr.send(formData);
     }
+
     function abrirConfiguradorAgenda() {
         let hoje = new Date().toISOString().split('T')[0];
         let elementos = {
