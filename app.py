@@ -159,13 +159,14 @@ def admin_logs():
 
 @app.route('/listar')
 def listar_arquivos():
-    if 'usuario_logado' not in session: return jsonify({'erro': 'Não authorized'}), 401
+    if 'usuario_logado' not in session: return jsonify({'erro': 'Não autorizado'}), 401
     bloco = request.args.get('bloco')
     pasta_pai_id = request.args.get('pasta_pai_id')
     
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
+            # Ajustado para mapear corretamente o campo deletado como 0 (False no MySQL)
             if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
                 cur.execute("""
                     SELECT * FROM arquivos_painel 
