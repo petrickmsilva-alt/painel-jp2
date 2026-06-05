@@ -173,7 +173,6 @@ def listar_arquivos():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # RETORNO AO PADRÃO ORIGINAL EXATO: Sem travas extras de 'deletado' que quebravam a exibição
         if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
             cur.execute("""
                 SELECT * FROM arquivos_painel 
@@ -190,7 +189,7 @@ def listar_arquivos():
         conn.close()
         
         itens_formatados = []
-        for l in linhas:
+        for l in lines:
             itens_formatados.append({
                 'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
                 'caminho': l['caminho_sistema'], 'autor': l['criado_por'] or 'Sistema', 
@@ -342,17 +341,23 @@ def excluir_arquivo():
     except:
         return jsonify({'status': 'erro'})
 
+# ==========================================
+# ROTA MODIFICADA APENAS NO MIOLO DE GRAVAÇÃO
+# ==========================================
 @app.route('/salvar-site', methods=['POST'])
 def salvar_site():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     nome, url, bloco = request.form.get('nome'), request.form.get('url'), request.form.get('bloco')
+    
+    # AJUSTE EXCLUSIVO DO SITE: Captura a categoria real que vem do seu HTML para dar o match perfeito na raiz
+    cat = request.form.get('categoria') or 'sites_jp2'
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
             INSERT INTO arquivos_painel (nome_original, bloco, tipo, categoria, caminho_sistema, criado_por)
             VALUES (%s, %s, %s, %s, %s, %s)
-        """, (nome, bloco, 'link', 'raiz', url, session.get('nome_exibicao', 'Sistema')))
+        """, (nome, bloco, 'link', cat, url, session.get('nome_exibicao', 'Sistema')))
         conn.commit()
         cur.close()
         conn.close()
