@@ -187,6 +187,8 @@ def criar_pasta():
 
 import uuid
 import re
+import os
+import tempfile
 
 @app.route('/upload-avancado', methods=['POST'])
 def upload_avancado():
@@ -202,14 +204,22 @@ def upload_avancado():
             nome_limpo = re.sub(r'[^a-zA-Z0-9._-]', '', arq.filename.replace(' ', '_'))
             nome_unico = f"{uuid.uuid4().hex}_{nome_limpo}"
             
-            # STREAMING DIRETO: 
-            # O Supabase Storage aceita o objeto 'arq' diretamente pois ele é um stream.
-            # Isso evita carregar o arquivo na RAM (arq.read()).
-            supabase.storage.from_("meus-arquivos").upload(
-                path=nome_unico, 
-                file=arq, 
-                file_options={"content-type": arq.content_type}
-            )
+            # CRIAÇÃO DE ARQUIVO TEMPORÁRIO
+            # Isso salva no disco do servidor, não na RAM. O Supabase lerá do disco.
+            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                arq.save(tmp.name)
+                tmp_path = tmp.name
+
+            # Envia o arquivo que está no disco
+            with open(tmp_path, 'rb') as f:
+                supabase.storage.from_("meus-arquivos").upload(
+                    path=nome_unico, 
+                    file=f, 
+                    file_options={"content-type": arq.content_type}
+                )
+            
+            # Limpa o arquivo temporário do disco
+            os.remove(tmp_path)
             
             link = supabase.storage.from_("meus-arquivos").get_public_url(nome_unico)
             
@@ -224,11 +234,13 @@ def upload_avancado():
             if p_id is not None: dados_insercao["pasta_pai_id"] = p_id
             
             supabase.table("arquivos_painel").insert(dados_insercao).execute()
-        
+            
         return jsonify({'status': 'sucesso'})
         
     except Exception as e:
         print(f"ERRO CRÍTICO NO UPLOAD: {e}")
+        # Garante a limpeza caso ocorra erro
+        if 'tmp_path' in locals() and os.path.exists(tmp_path): os.remove(tmp_path)
         return jsonify({'status': 'erro', 'mensagem': str(e)})
         
 @app.route('/baixar/<int:arquivo_id>')
