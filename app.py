@@ -20,7 +20,6 @@ if not SUPABASE_KEY:
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = Flask(__name__)
-# Mantém a proteção de memória e o limite configurado para uploads grandes
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "chave_secreta_super_segura_jp2")
 
@@ -174,7 +173,6 @@ def listar_arquivos():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Filtro corrigido: busca o que não está deletado ou que está nulo (para dados legados)
         if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
             cur.execute("""
                 SELECT * FROM arquivos_painel 
@@ -191,7 +189,7 @@ def listar_arquivos():
         conn.close()
         
         itens_formatados = []
-        for l in linhas:
+        for l in lines:
             itens_formatados.append({
                 'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
                 'caminho': l['caminho_sistema'], 'autor': l['criado_por'] or 'Sistema', 
@@ -266,7 +264,7 @@ def upload_avancado():
                 tmp_path = tmp.name
 
             with open(tmp_path, 'rb') as f:
-                supabase.storage.from_("meus-arquivos").upload(
+                supabase.storage.from="meus-arquivos".upload(
                     path=nome_unico, 
                     file=f, 
                     file_options={"content-type": arq.content_type}
@@ -347,14 +345,16 @@ def excluir_arquivo():
 def salvar_site():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     nome, url, bloco = request.form.get('nome'), request.form.get('url'), request.form.get('bloco')
+    
+    # CORREÇÃO CIRÚRGICA: Captura dinamicamente a categoria enviada pelo frontend para dar match na listagem
+    cat = request.form.get('categoria') or bloco or 'raiz'
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        # CORREÇÃO CRÍTICA: Definindo explicitamente o campo deletado como False para os novos sites criados no Neon
         cur.execute("""
             INSERT INTO arquivos_painel (nome_original, bloco, tipo, categoria, caminho_sistema, criado_por, deletado)
             VALUES (%s, %s, %s, %s, %s, %s, False)
-        """, (nome, bloco, 'link', 'raiz', url, session.get('nome_exibicao', 'Sistema')))
+        """, (nome, bloco, 'link', cat, url, session.get('nome_exibicao', 'Sistema')))
         conn.commit()
         cur.close()
         conn.close()
@@ -448,7 +448,6 @@ def resumo_dashboard():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # CORREÇÃO DO CONTADOR: Busca arquivos cujo estado não seja explicitamente deletado e que sejam do tipo 'arquivo'
         cur.execute("SELECT COUNT(id) as total FROM arquivos_painel WHERE (deletado = False OR deletado IS NULL) AND tipo = 'arquivo'")
         total_arquivos = cur.fetchone()['total']
         
