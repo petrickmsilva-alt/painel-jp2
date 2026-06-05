@@ -189,7 +189,7 @@ def listar_arquivos():
         conn.close()
         
         itens_formatados = []
-        for l in lines:
+        for l in linhas:
             itens_formatados.append({
                 'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
                 'caminho': l['caminho_sistema'], 'autor': l['criado_por'] or 'Sistema', 
@@ -264,7 +264,8 @@ def upload_avancado():
                 tmp_path = tmp.name
 
             with open(tmp_path, 'rb') as f:
-                supabase.storage.from="meus-arquivos".upload(
+                # CORREÇÃO DA SINTAXE: .from_() como método correto do SDK do Supabase
+                supabase.storage.from_("meus-arquivos").upload(
                     path=nome_unico, 
                     file=f, 
                     file_options={"content-type": arq.content_type}
@@ -346,7 +347,6 @@ def salvar_site():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     nome, url, bloco = request.form.get('nome'), request.form.get('url'), request.form.get('bloco')
     
-    # CORREÇÃO CIRÚRGICA: Captura dinamicamente a categoria enviada pelo frontend para dar match na listagem
     cat = request.form.get('categoria') or bloco or 'raiz'
     try:
         conn = get_db_connection()
