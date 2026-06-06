@@ -266,7 +266,7 @@
 
     .view-lista .explorer-card .item-author {
       margin-left: auto !important;
-      margin-right: 40px !important;
+      margin-right: 75px !important; /* Espaço adicional para os dois botões de gatilho */
       font-size: 12px !important;
     }
 
@@ -309,6 +309,8 @@
       opacity: 0;
       transition: opacity 0.15s;
       z-index: 10;
+      display: flex;
+      gap: 4px;
     }
 
     .explorer-card:hover .action-trigger {
@@ -432,7 +434,6 @@
                         <span id="txtCaminhoWindows" class="fw-bold text-secondary" style="font-size: 13px;"></span>
                     </div>
                     
-                    <!-- BOTÃO 'EXIBIR' ESTILO WINDOWS INCORPORADO COMPLETO -->
                     <div class="d-flex gap-2 align-items-center">
                         <div class="dropdown">
                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="btnExibirWindows" data-bs-toggle="dropdown" aria-expanded="false">
@@ -684,6 +685,9 @@
                             
                             card.innerHTML = `
                                 <div class="action-trigger">
+                                    <button class="btn btn-sm btn-light border py-0 px-1 text-primary" onclick="abrirModalRenomearDireto(event, ${item.id}, '${item.nome.replace(/'/g, "\\'")}')">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
                                     <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})">
                                         <i class="bi bi-trash"></i>
                                     </button>
@@ -714,7 +718,12 @@
                 let labelAutor = item.tipo === 'pasta' ? 'Pasta de Arquivos' : 'Documento';
                 
                 card.innerHTML = `
-                    <div class="action-trigger"><button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button></div>
+                    <div class="action-trigger">
+                        <button class="btn btn-sm btn-light border py-0 px-1 text-primary" onclick="abrirModalRenomearDireto(event, ${item.id}, '${item.nome.replace(/'/g, "\\'")}')">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button>
+                    </div>
                     <div class="icon-wrapper" onclick="${cliqueAcao}">${iconHtml}</div>
                     <div class="item-label" onclick="${cliqueAcao}" title="${item.nome}">${item.nome}</div>
                     <div class="item-author text-muted d-none d-md-block">${labelAutor}</div>`;
@@ -885,6 +894,64 @@
     function abrirModalUploadLogo() {
         let modalEl = document.getElementById('uploadLogoModal');
         if (modalEl) new bootstrap.Modal(modalEl).show();
+    }
+
+    // INTERFACE MODAL ADICIONADA: ITEM 2 DA ESCALA (JANELA RENOMEAR + FLUXO AJAX)
+    function abrirModalRenomearDireto(event, id, nomeAtual) {
+        if(event) { event.preventDefault(); event.stopPropagation(); }
+        let overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:9999999; display:flex; align-items:center; justify-content:center; overflow:hidden;';
+        overlay.innerHTML = `
+            <div style="background:white; padding:30px; border-radius:12px; width:420px; max-width: 90%; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
+                <h4 style="margin-bottom:20px; color:#2563eb; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                    <i class="bi bi-pencil-square"></i> Renomear Registro
+                </h4>
+                <div style="margin-bottom:15px;">
+                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">NOVO NOME DO ITEM</label>
+                    <input type="text" id="novo_nome_input_temp" value="${nomeAtual}" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:20px;">
+                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">CONFIRME SUA SENHA DE SÓCIO</label>
+                    <input type="password" id="senha_renomear_temp" placeholder="Digite sua senha..." style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+                </div>
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                    <button id="btn_cancelar_renomear" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; cursor:pointer;">Cancelar</button>
+                    <button id="btn_confirmar_renomear" style="padding:10px 20px; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;">Salvar Alteração</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        overlay.querySelector('#btn_cancelar_renomear').onclick = () => overlay.remove();
+        
+        overlay.querySelector('#btn_confirmar_renomear').onclick = function() {
+            let novoNome = overlay.querySelector('#novo_nome_input_temp').value.trim();
+            let senha = overlay.querySelector('#senha_renomear_temp').value;
+
+            if(!novoNome) return alert("O nome não pode ficar vazio!");
+            if(!senha) return alert("Digite sua senha de sócio para validar!");
+
+            let formData = new FormData();
+            formData.append('id', id);
+            formData.append('novo_nome', novoNome);
+            formData.append('senha', senha);
+
+            fetch('/renomear', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'sucesso') {
+                    alert("Item renomeado com sucesso!");
+                    overlay.remove();
+                    sincronizarGrade();
+                } else {
+                    alert("Erro: " + (data.mensagem || "Não foi possível alterar o nome."));
+                }
+            })
+            .catch(err => {
+                console.error("Erro na requisição de renomear:", err);
+                alert("Erro de conexão com o servidor local.");
+            });
+        };
     }
 
     function abrirModalExcluirDireto(event, id) {
@@ -1110,7 +1177,7 @@
         })
         .catch(err => {
             console.error("Erro ao salvar:", err);
-            alert("Erro ao salvar the compromisso.");
+            alert("Erro ao salvar o compromisso.");
         });
     }
 
