@@ -1008,14 +1008,14 @@
         overlay.innerHTML = `
             <div style="background:white; padding:30px; border-radius:12px; width:450px; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
                 <h4 style="margin-bottom:20px; color:#1e293b; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
-                    <i class="bi bi-cloud-arrow-up"></i> Upload de Arquivo
+                    <i class="bi bi-cloud-arrow-up"></i> Upload de Arquivos
                 </h4>
                 <div style="margin-bottom:15px;">
                     <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">BLOCO</label>
                     <input type="text" value="${estadoDoPainel.bloco.charAt(0).toUpperCase() + estadoDoPainel.bloco.slice(1)}" readonly style="width:100%; margin-bottom:10px; padding:5px;">
                 </div>
                 <div style="margin-bottom:20px;">
-                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">SELECIONE O ARQUIVO</label>
+                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">SELECIONE OS ARQUIVOS</label>
                     <input type="file" id="arquivo_temp" multiple style="width:100%; padding:8px; border:1px dashed #cbd5e1; border-radius:6px;">
                 </div>
                 <div style="background:#f8fafc; padding:12px; border-radius:6px; margin-bottom:20px; font-size:13px; color:#334155;">
@@ -1023,7 +1023,7 @@
                 </div>
                 <div style="display:flex; gap:10px; justify-content:flex-end;">
                     <button id="btn_fechar_temp" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; font-weight:600; cursor:pointer;">Cancelar</button>
-                    <button id="btn_enviar_temp" style="padding:10px 20px; background:#16a34a; color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Enviar Arquivo</button>
+                    <button id="btn_enviar_temp" style="padding:10px 20px; background:#16a34a; color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Enviar Arquivos</button>
                 </div>
             </div>`;
         
@@ -1031,10 +1031,15 @@
 
         overlay.querySelector('#btn_enviar_temp').onclick = function() {
             let fileInput = overlay.querySelector('#arquivo_temp');
-            if(fileInput.files.length === 0) return alert("Selecione um arquivo!");
+            if(fileInput.files.length === 0) return alert("Selecione ao menos um arquivo!");
             
             let formData = new FormData();
-            formData.append('arquivos', fileInput.files[0]);
+            
+            // ALTERAÇÃO CRÍTICA AQUI: Percorre a lista inteira de arquivos selecionados e adiciona todos no pacote de envio
+            for (let i = 0; i < fileInput.files.length; i++) {
+                formData.append('arquivos', fileInput.files[i]);
+            }
+            
             formData.append('bloco', estadoDoPainel.bloco);
             
             let paiId = estadoDoPainel.pasta_pai_id;
@@ -1043,16 +1048,23 @@
             formData.append('categoria', categoryCorreta);
             formData.append('pasta_pai_id', paiId || '');
 
+            // Altera o texto do botão para dar um feedback visual durante o envio do lote
+            let btnEnviar = overlay.querySelector('#btn_enviar_temp');
+            btnEnviar.disabled = true;
+            btnEnviar.innerText = "Enviando lote...";
+
             fetch('/upload-avancado', { method: 'POST', body: formData })
             .then(res => res.json())
             .then(data => {
-                alert("Upload concluído!");
+                alert("Todos os arquivos foram enviados com sucesso!");
                 overlay.remove();
                 sincronizarGrade();
             })
             .catch(err => {
                 console.error("Erro no upload:", err);
-                alert("Erro no upload.");
+                alert("Erro no upload do lote de arquivos.");
+                btnEnviar.disabled = false;
+                btnEnviar.innerText = "Enviar Arquivos";
             });
         };
 
