@@ -266,7 +266,7 @@
 
     .view-lista .explorer-card .item-author {
       margin-left: auto !important;
-      margin-right: 75px !important; /* Espaço adicional para os dois botões de gatilho */
+      margin-right: 130px !important; /* Aumentado para dar espaço aos 4 botões na lista */
       font-size: 12px !important;
     }
 
@@ -302,6 +302,7 @@
       text-overflow: ellipsis;
     }
 
+    /* GATILHO DE AÇÕES EXPANDIDO PARA ACOMODAR OS 4 BOTÕES DO SEU DESEJO */
     .explorer-card .action-trigger {
       position: absolute;
       top: 6px;
@@ -434,6 +435,7 @@
                         <span id="txtCaminhoWindows" class="fw-bold text-secondary" style="font-size: 13px;"></span>
                     </div>
                     
+                    <!-- BOTÃO 'EXIBIR' ESTILO WINDOWS INCORPORADO COMPLETO -->
                     <div class="d-flex gap-2 align-items-center">
                         <div class="dropdown">
                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="btnExibirWindows" data-bs-toggle="dropdown" aria-expanded="false">
@@ -458,7 +460,7 @@
                         <button type="button" class="btn btn-sm btn-primary" id="btn-nova-pasta-acao" onclick="abrirModalNovaPasta()">
                           <i class="bi bi-folder-plus"></i> Nova Pasta
                         </button>
-                        <button class="btn btn-sm btn-success" onclick="abrirModalUploadComContexto()"><i class="bi bi-cloud-arrow-up"></i> Enviar Arquivo</button>
+                        <button class="btn btn-sm btn-success" onclick="abrirModalUploadComContexto()"><i class="bi bi-cloud-arrow-up"></i> Enviar Arquivos</button>
                     </div>
                     <div id="controles-sites" class="d-none gap-2">
                         <button class="btn btn-sm btn-primary" onclick="abrirModalCadastroSite()"><i class="bi bi-plus-circle"></i> Incluir Site</button>
@@ -679,12 +681,13 @@
                             card.className = "explorer-card";
                             
                             let urlRealDoSite = item.caminho || '#';
-                            card.onclick = function() { window.open(urlRealDoSite, '_blank'); };
                             
-                            let imagemDoCard = item.imagem_bg || '/static/image/ibd.jpeg';
-                            
+                            // Ações rápidas exclusivas dos links/portais institucionais
                             card.innerHTML = `
                                 <div class="action-trigger">
+                                    <button class="btn btn-sm btn-light border py-0 px-1 text-success" onclick="event.stopPropagation(); window.open('${urlRealDoSite}', '_blank')">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
                                     <button class="btn btn-sm btn-light border py-0 px-1 text-primary" onclick="abrirModalRenomearDireto(event, ${item.id}, '${item.nome.replace(/'/g, "\\'")}')">
                                         <i class="bi bi-pencil"></i>
                                     </button>
@@ -692,10 +695,10 @@
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
-                                <div class="icon-wrapper">
-                                    <img src="${imagemDoCard}" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px;">
+                                <div class="icon-wrapper" onclick="window.open('${urlRealDoSite}', '_blank')">
+                                    <img src="${item.imagem_bg || '/static/image/ibd.jpeg'}" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px;">
                                 </div>
-                                <div class="item-label" title="${item.nome || ''}">${item.nome || ''}</div>
+                                <div class="item-label" onclick="window.open('${urlRealDoSite}', '_blank')" title="${item.nome || ''}">${item.nome || ''}</div>
                                 <div class="item-author">Portal WEB</div>`;
                             gridContainer.appendChild(card);
                         }
@@ -712,20 +715,47 @@
             data.itens.forEach(item => {
                 let card = document.createElement("div");
                 card.className = "explorer-card";
-                let iconHtml = item.tipo === 'pasta' ? '<i class="bi bi-folder-fill text-warning"></i>' : '<i class="bi bi-file-earmark-text-fill text-primary"></i>';
-                let cliqueAcao = item.tipo === 'pasta' ? `entrarSubpastaReal(${item.id}, '${item.nome}')` : `window.open('/baixar/${item.id}', '_blank')`;
                 
+                let iconHtml = item.tipo === 'pasta' ? '<i class="bi bi-folder-fill text-warning"></i>' : '<i class="bi bi-file-earmark-text-fill text-primary"></i>';
                 let labelAutor = item.tipo === 'pasta' ? 'Pasta de Arquivos' : 'Documento';
                 
-                card.innerHTML = `
-                    <div class="action-trigger">
+                // Montagem dos botões condicionais (Pastas ganham clique no card. Arquivos ganham botões de abrir e baixar)
+                let botoesAcaoHtml = "";
+                let cliqueCorpoCard = "";
+                
+                if (item.tipo === 'pasta') {
+                    cliqueCorpoCard = `entrarSubpastaReal(${item.id}, '${item.nome}')`;
+                    botoesAcaoHtml = `
                         <button class="btn btn-sm btn-light border py-0 px-1 text-primary" onclick="abrirModalRenomearDireto(event, ${item.id}, '${item.nome.replace(/'/g, "\\'")}')">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button>
-                    </div>
-                    <div class="icon-wrapper" onclick="${cliqueAcao}">${iconHtml}</div>
-                    <div class="item-label" onclick="${cliqueAcao}" title="${item.nome}">${item.nome}</div>
+                        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    `;
+                } else {
+                    // Arquivo de documento tradicional (Ganhou os botões da sua referência direto do lado do lápis!)
+                    cliqueCorpoCard = "void(0)";
+                    botoesAcaoHtml = `
+                        <button class="btn btn-sm btn-light border py-0 px-1 text-success" title="Visualizar" onclick="event.stopPropagation(); window.open('/baixar/${item.id}', '_blank')">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-light border py-0 px-1 text-dark" title="Baixar Arquivo" onclick="event.stopPropagation(); window.open('/baixar/${item.id}', '_blank')">
+                            <i class="bi bi-cloud-download"></i>
+                        </button>
+                        <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="abrirModalRenomearDireto(event, ${item.id}, '${item.nome.replace(/'/g, "\\'")}')">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" title="Mover para Lixeira" onclick="abrirModalExcluirDireto(event, ${item.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    `;
+                }
+                
+                card.innerHTML = `
+                    <div class="action-trigger">${botoesAcaoHtml}</div>
+                    <div class="icon-wrapper" onclick="${cliqueCorpoCard}">${iconHtml}</div>
+                    <div class="item-label" onclick="${cliqueCorpoCard}" title="${item.nome}">${item.nome}</div>
                     <div class="item-author text-muted d-none d-md-block">${labelAutor}</div>`;
                 gridContainer.appendChild(card);
             });
@@ -896,7 +926,6 @@
         if (modalEl) new bootstrap.Modal(modalEl).show();
     }
 
-    // INTERFACE MODAL ADICIONADA: ITEM 2 DA ESCALA (JANELA RENOMEAR + FLUXO AJAX)
     function abrirModalRenomearDireto(event, id, nomeAtual) {
         if(event) { event.preventDefault(); event.stopPropagation(); }
         let overlay = document.createElement('div');
@@ -1035,7 +1064,6 @@
             
             let formData = new FormData();
             
-            // ALTERAÇÃO CRÍTICA AQUI: Percorre a lista inteira de arquivos selecionados e adiciona todos no pacote de envio
             for (let i = 0; i < fileInput.files.length; i++) {
                 formData.append('arquivos', fileInput.files[i]);
             }
@@ -1048,7 +1076,6 @@
             formData.append('categoria', categoryCorreta);
             formData.append('pasta_pai_id', paiId || '');
 
-            // Altera o texto do botão para dar um feedback visual durante o envio do lote
             let btnEnviar = overlay.querySelector('#btn_enviar_temp');
             btnEnviar.disabled = true;
             btnEnviar.innerText = "Enviando lote...";
