@@ -4,6 +4,9 @@ import re
 import tempfile
 import hashlib
 import pymysql
+import urllib.request
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory
 
@@ -252,6 +255,51 @@ def criar_pasta():
     except:
         return jsonify({'status': 'erro'})
 
+# --- ROTA INTEGRADA ADICIONADA: ITEM 2 DA ESCALA (RENOMEAR) ---
+@app.route('/renomear', methods=['POST'])
+def renomear_item():
+    if 'usuario_logado' not in session: return jsonify({'status': 'erro', 'mensagem': 'Não autorizado'}), 401
+    
+    id_item = request.form.get('id')
+    novo_nome = request.form.get('novo_nome', '').strip()
+    senha = request.form.get('senha', '').strip()
+    
+    if not id_item or not novo_nome or not senha:
+        return jsonify({'status': 'erro', 'mensagem': 'Preencha todos os campos obrigatórios!'}), 400
+        
+    senha_hash = criptografar_sha256(senha)
+    
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            # 1. Confirma se a senha de quem está tentando renomear confere com a conta ativa
+            cur.execute("SELECT senha FROM usuarios WHERE usuario = %s", (session.get('usuario_logado'),))
+            dados_u = cur.fetchone()
+            user_senha = str(dados_u['senha']) if dados_u else ""
+            
+            if user_senha != senha_hash:
+                conn.close()
+                return jsonify({'status': 'erro', 'mensagem': 'Senha de validação incorreta!'}), 401
+            
+            # 2. Resgata o item para documentar o log de auditoria corporativo
+            cur.execute("SELECT nome_original, tipo FROM arquivos_painel WHERE id = %s AND deletado = 0", (id_item,))
+            item_antigo = cur.fetchone()
+            
+            if not item_antigo:
+                conn.close()
+                return jsonify({'status': 'erro', 'mensagem': 'Item não localizado no servidor!'}), 404
+                
+            # 3. Executa a atualização cirúrgica do nome do registro
+            cur.execute("UPDATE arquivos_painel SET nome_original = %s WHERE id = %s", (novo_nome, id_item))
+            
+        conn.commit()
+        conn.close()
+        
+        registrar_log(f"Renomeou o(a) {item_antigo['tipo']} '{item_antigo['nome_original']}' para '{novo_nome}' (ID: {id_item})")
+        return jsonify({'status': 'sucesso'})
+    except Exception as e:
+        return jsonify({'status': 'erro', 'mensagem': str(e)}), 500
+
 @app.route('/upload-avancado', methods=['POST'])
 def upload_avancado():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
@@ -331,10 +379,6 @@ def excluir_arquivo():
     except:
         return jsonify({'status': 'erro'})
 
-import urllib.request
-from bs4 import BeautifulSoup
-import re
-
 @app.route('/salvar-site', methods=['POST'])
 def salvar_site():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
@@ -354,26 +398,20 @@ def salvar_site():
     caminho_salvar_imagem = os.path.join(app.root_path, 'static', 'image', nome_arquivo_imagem)
     
     try:
-        # 1. Conecta no site para ler o HTML
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         html = urllib.request.urlopen(req, timeout=5).read()
         soup = BeautifulSoup(html, 'html.parser')
         
-        # 2. Procura pelo link do Favicon no código do site
         icon_link = soup.find('link', rel=re.compile(r'^(shortcut )?icon$', re.I))
         
         if icon_link and icon_link.get('href'):
             url_icon = icon_link.get('href')
-            # Ajusta caso o link do ícone seja relativo (ex: /favicon.ico)
             if not url_icon.startswith('http'):
-                from urllib.parse import urljoin
                 url_icon = urljoin(url, url_icon)
             
-            # 3. Baixa o ícone e salva fisicamente na HostGator/Render
             urllib.request.urlretrieve(url_icon, caminho_salvar_imagem)
     except Exception as e:
         print(f"Robô não conseguiu extrair a logo do site: {e}")
-    # ----------------------------------------------------
 
     try:
         conn = get_db_connection()
