@@ -376,7 +376,6 @@
         </header>
 
         <div class="content-workspace-viewport">
-            <!-- ELEMENTO ADICIONADO: CONTENER DE PROGRESSO GLOBAL PARA UPLOADS CORPORATIVOS ACELERADOS -->
             <div id="containerProgresso" class="d-none mb-3 p-3 bg-light rounded border border-info">
                 <div class="d-flex justify-content-between align-items-center mb-1">
                     <small class="text-info fw-bold"><i class="bi bi-lightning-charge-fill"></i> Transmitindo Lote por Fragmentos Ultra-Leves...</small>
@@ -407,8 +406,7 @@
                         </button>
                         <button class="btn btn-sm btn-outline-danger ms-1" id="btn-excluir-lote" onclick="dispararExclusaoEmLote()" style="display: none;">
                         <i class="bi bi-trash3-fill"></i> Excluir Selecionados (<span id="contador-selecionados">0</span>)
-                        </button>
-                        <button class="btn btn-sm btn-success" onclick="abrirModalUploadComContexto()"><i class="bi bi-cloud-arrow-up"></i> Enviar Arquivo</button>
+                        </button>button class="btn btn-sm btn-success" onclick="abrirModalUploadComContexto()"><i class="bi bi-cloud-arrow-up"></i> Enviar Arquivo</button>
                     </div>
                     <div id="controles-sites" class="d-none gap-2">
                         <button class="btn btn-sm btn-primary" onclick="abrirModalCadastroSite()"><i class="bi bi-plus-circle"></i> Incluir Site</button>
@@ -994,11 +992,7 @@
         overlay.querySelector('#btn_enviar_temp').onclick = function() {
             let fileInput = overlay.querySelector('#arquivo_temp');
             if(fileInput.files.length === 0) return alert("Selecione um arquivo!");
-            
-            // 🟢 ADICIONADO: Fecha a caixa cinza na hora para liberar a visão da faixa azul no topo!
             overlay.remove();
-            
-            // Repassa o arquivo selecionado diretamente para o fatiador mestre acelerado
             dispararUploadAvancado(fileInput);
         };
 
@@ -1010,14 +1004,11 @@
         let filesInput = inputPassado || document.getElementById('inputArquivosAvancado');
         if (!filesInput || filesInput.files.length === 0) return alert("Selecione os arquivos!");
         
-        // Ativa visualmente o painel de progresso na tela
         let progressoContainer = document.getElementById('containerProgresso');
         if (progressoContainer) progressoContainer.classList.remove('d-none');
         
         let arquivosParaSubir = Array.from(filesInput.files);
         let indiceArquivoAtual = 0;
-
-        // ⚡ MINI-FATIAS DE 1MB: Passam voando pela Render sem ativar o limite 413 ou estourar a memória
         const CHUNK_SIZE = 1 * 1024 * 1024;
         
         function subirProximoArquivo() {
@@ -1069,10 +1060,10 @@
                     if (xhr.status === 200) {
                         chunkIndex++;
                         if (chunkIndex < totalChunks) {
-                            enviarFatia(); // Despacha a próxima fatia leve imediatamente
+                            enviarFatia();
                         } else {
                             indiceArquivoAtual++;
-                            subirProximoArquivo(); // Arquivo finalizado! Passa para o próximo do lote
+                            subirProximoArquivo();
                         }
                     } else {
                         alert("Erro ao transmitir fragmento de rede. Tentativa abortada.");
@@ -1081,13 +1072,17 @@
                 };
                 xhr.send(formData);
             }
-
             enviarFatia();
         }
-
         subirProximoArquivo();
     }
     
+    function alterarVisualizacao(modo) {
+        let grid = document.getElementById("wrapper-explorer-grid");
+        grid.className = 'explorer-grid';
+        if(modo !== 'medio') grid.classList.add('view-' + modo);
+    }
+
     function abrirConfiguradorAgenda() {
         let hoje = new Date().toISOString().split('T')[0];
         let elementos = {
@@ -1157,7 +1152,7 @@
         } else {
             let dataIni = document.getElementById('dataInicioEventoInput').value;
             let dataFim = document.getElementById('dataFimEventoInput').value;
-            if (!dataIni || !dataFim) return alert("Preencha o período completo do evento!");
+            if (!dataIni || !dataFim) return alert("Preencha o período completo!");
             fd.append('dataReuniaoInput', dataIni);
             fd.append('data_fim', dataFim);
             fd.append('horario', '00:00');
