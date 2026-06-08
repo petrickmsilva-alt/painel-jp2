@@ -387,7 +387,7 @@
                     </button>
                 </div>
                 <div class="d-flex gap-2">
-                    <div id="controles-arquivos" class="d-flex gap-2">
+                   <div id="controles-arquivos" class="d-flex gap-2">
                         <button class="btn btn-sm btn-outline-secondary px-3" id="btnVoltarExplorer" onclick="volverDiretorio()">
                             <i class="bi bi-arrow-left"></i> Voltar Pasta
                         </button>
@@ -398,7 +398,7 @@
                     </div>
                     <div id="controles-sites" class="d-none gap-2">
                         <button class="btn btn-sm btn-primary" onclick="abrirModalCadastroSite()"><i class="bi bi-plus-circle"></i> Incluir Site</button>
-                    </div>
+                   </div>
                 </div>
             </div>
             <div id="wrapper-explorer-grid" class="explorer-grid"></div>
@@ -526,6 +526,7 @@
             console.error("Erro: Elemento 'menu-bloco-instituto' not found mestre!");
         }
     });
+
     function clicarBlocoMestre(bloco, elementoDom) {
         document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
         if (elementoDom) elementoDom.classList.add('active');
@@ -600,7 +601,6 @@
                             card.onclick = function() { window.open(urlRealDoSite, '_blank'); };
                             
                             let imagemDoCard = item.imagem_bg || '/static/image/ibd.jpeg';
-                            
                             card.innerHTML = `
                                 <div class="action-trigger">
                                     <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})">
@@ -624,7 +624,7 @@
                 return;
             }
             
-            ddata.itens.forEach(item => {
+            data.itens.forEach(item => {
                 let card = document.createElement("div");
                 card.className = "explorer-card";
                 
@@ -633,7 +633,7 @@
                 
                 let botoesAcaoHtml = "";
                 let cliqueCorpoCard = "";
-                
+        
                 if (item.tipo === 'pasta') {
                     cliqueCorpoCard = `entrarSubpastaReal(${item.id}, '${item.nome}')`;
                     botoesAcaoHtml = `
@@ -912,48 +912,29 @@
         
         document.documentElement.appendChild(overlay);
 
-        // 🛠️ O CORTE CIRÚRGICO QUE VOCÊ VAI FAZER FICA EXATAMENTE AQUI:
         overlay.querySelector('#btn_enviar_temp').onclick = function() {
             let fileInput = overlay.querySelector('#arquivo_temp');
             if(fileInput.files.length === 0) return alert("Selecione um arquivo!");
             
-            // Chama a função mestre fatiadora passando os arquivos deste input
+            // Chama a função mestre fatiadora de 8MB passando os arquivos deste input
             dispararUploadAvancado(fileInput);
         };
 
         overlay.querySelector('#btn_fechar_temp').onclick = () => overlay.remove();
     }        
-        document.documentElement.appendChild(overlay);
 
-       overlay.querySelector('#btn_enviar_temp').onclick = function() {
-            let fileInput = overlay.querySelector('#arquivo_temp');
-            if(fileInput.files.length === 0) return alert("Selecione um arquivo!");
-            
-            // Substituiu todo o fetch antigo por essa linha que fatia em pedaços de 8MB
-            dispararUploadAvancado(fileInput);
-        };
-            .catch(err => {
-                console.error("Erro no upload:", err);
-                alert("Erro no upload.");
-            });
-        };
-
-        overlay.querySelector('#btn_fechar_temp').onclick = () => overlay.remove();
-    }
-
-    function dispararUploadAvancado() {
-        let filesInput = document.getElementById('inputArquivosAvancado');
+    function dispararUploadAvancado(inputPassado) {
+        let filesInput = inputPassado || document.getElementById('inputArquivosAvancado');
         if (!filesInput || filesInput.files.length === 0) return alert("Selecione os arquivos!");
         
         // Ativa a sua barra de progresso nativa do backup
         document.getElementById('containerProgresso').classList.remove('d-none');
-        
         let arquivosParaSubir = Array.from(filesInput.files);
         let indiceArquivoAtual = 0;
 
         // Tamanho máximo de cada fatia: 8MB (Evita o erro 413 na Render)
-        const CHUNK_SIZE = 8 * 1024 * 1024; 
-
+        const CHUNK_SIZE = 8 * 1024 * 1024;
+        
         function subirProximoArquivo() {
             if (indiceArquivoAtual >= arquivosParaSubir.length) {
                 // Sucesso total: Esconde o progresso e limpa o input
@@ -962,8 +943,10 @@
                 
                 // Fecha o seu modal nativo do Bootstrap
                 let modalEl = document.getElementById('modalUploadArquivo');
-                let modalInstance = bootstrap.Modal.getInstance(modalEl);
-                if(modalInstance) modalInstance.hide();
+                if (modalEl) {
+                    let modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    if(modalInstance) modalInstance.hide();
+                }
                 
                 // Remove o overlay customizado se ele existir
                 let overlay = document.getElementById('modal-global-overlay');
@@ -978,7 +961,7 @@
             let guidUnico = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             let totalChunks = Math.ceil(arquivo.size / CHUNK_SIZE);
             let chunkIndex = 0;
-
+            
             function enviarFatia() {
                 let inicio = chunkIndex * CHUNK_SIZE;
                 let fim = Math.min(inicio + CHUNK_SIZE, arquivo.size);
@@ -986,7 +969,6 @@
 
                 let formData = new FormData();
                 formData.append('arquivos', fatiaBlob, arquivo.name);
-                
                 // Mantém exatamente a lógica de categorias e blocos do seu código
                 formData.append('bloco', estadoDoPainel.bloco);
                 const paiId = estadoDoPainel.pasta_pai_id;
@@ -1002,7 +984,6 @@
 
                 let xhr = new XMLHttpRequest();
                 xhr.open('POST', '/upload-avancado', true);
-                
                 xhr.onload = function() {
                     if (xhr.status === 200) {
                         chunkIndex++;
@@ -1029,6 +1010,7 @@
         // Dá o pontapé inicial no lote completo
         subirProximoArquivo();
     }
+    
     function abrirConfiguradorAgenda() {
         let hoje = new Date().toISOString().split('T')[0];
         let elementos = {
@@ -1144,7 +1126,7 @@
         })
         .catch(err => console.error("Erro ao carregar resumo:", err));
     });
-  </script>
+  </style>
 
   <div id="mobile-only-ui">
       <nav class="mobile-nav">
