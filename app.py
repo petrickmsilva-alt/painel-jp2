@@ -4,8 +4,11 @@ import re
 import tempfile
 import hashlib
 import pymysql
+import urllib.request
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 from datetime import datetime, timedelta
-from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory
+from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory, send_file
 
 app = Flask(__name__)
 # Configura o limite de tráfego do Flask para arquivos grandes direto na HostGator
@@ -331,10 +334,6 @@ def excluir_arquivo():
     except:
         return jsonify({'status': 'erro'})
 
-import urllib.request
-from bs4 import BeautifulSoup
-import re
-
 @app.route('/salvar-site', methods=['POST'])
 def salvar_site():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
@@ -366,7 +365,6 @@ def salvar_site():
             url_icon = icon_link.get('href')
             # Ajusta caso o link do ícone seja relativo (ex: /favicon.ico)
             if not url_icon.startswith('http'):
-                from urllib.parse import urljoin
                 url_icon = urljoin(url, url_icon)
             
             # 3. Baixa o ícone e salva fisicamente na HostGator/Render
@@ -483,6 +481,95 @@ def resumo_dashboard():
 
 @app.route('/manifest.json')
 def manifest(): return send_from_directory('static', 'manifest.json')    
+
+# =========================================================================
+# 🟢 ROTAS ADICIONADAS ADICIONAIS DA ESCALA GESTORA (ANTI-404 E RENOMEAR)
+# =========================================================================
+
+# ROTA 1: Controle Inteligente de Arquivos (Abre nativo ou força download de forma absoluta)
+@app.route('/baixar_recurso/<int:arquivo_id>')
+def baixar_recurso_corporativo(arquivo_id):
+    if 'usuario_logado' not in session: 
+        return "Acesso não autorizado", 401
+        
+    force_download = request.args.get('download', 'false') == 'true'
+    
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT caminho_sistema, nome_original, deletado 
+                FROM arquivos_painel 
+                WHERE id = %s
+            """, (arquivo_id,))
+            dados = cur.fetchone()
+        conn.close()
+        
+        if dados and dados['deletado'] != 1:
+            caminho_banco = dados['caminho_sistema']
+            nome_arquivo_fisico = caminho_banco.split('/')[-1]
+            
+            # Localiza de forma absoluta o documento na pasta uploads da HostGator/Render
+            caminho_absoluto = os.path.join(UPLOAD_FOLDER, nome_arquivo_fisico)
+            
+            if os.path.exists(caminho_absoluto):
+                registrar_log(f"Acessou arquivo via painel: {dados['nome_original']} (Forçar Download={force_download})")
+                
+                # download=true força baixar, download=false abre nativamente na aba (PDF, Vídeos, Imagens)
+                return send_file(
+                    caminho_absoluto, 
+                    download_name=dados['nome_original'], 
+                    as_attachment=force_download
+                )
+            else:
+                return f"Arquivo físico '{dados['nome_original']}' foi limpo pelo deploy temporário do servidor da Render. Faça o upload dele novamente para reestabelecer o link.", 404
+                
+    except Exception as e:
+        print(f"ERRO DE FLUXO NO DOWNLOAD: {e}")
+        
+    return "Erro interno ao processar requisição do documento.", 500
+
+# ROTA 2: Alteração de Nome Seguro e Validado por Senha
+@app.route('/renomear', methods=['POST'])
+def renomear_item():
+    if 'usuario_logado' not in session: return jsonify({'status': 'erro', 'mensagem': 'Não autorizado'}), 401
+    
+    id_item = request.form.get('id')
+    novo_nome = request.form.get('novo_nome', '').strip()
+    senha = request.form.get('senha', '').strip()
+    
+    if not id_item or not novo_nome or not senha:
+        return jsonify({'status': 'erro', 'mensagem': 'Preencha todos os campos obrigatórios!'}), 400
+        
+    senha_hash = criptografar_sha256(senha)
+    
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute("SELECT senha FROM usuarios WHERE usuario = %s", (session.get('usuario_logado'),))
+            dados_u = cur.fetchone()
+            user_senha = str(dados_u['senha']) if dados_u else ""
+            
+            if user_senha != senha_hash:
+                conn.close()
+                return jsonify({'status': 'erro', 'mensagem': 'Senha de validação incorreta!'}), 401
+            
+            cur.execute("SELECT nome_original, tipo FROM arquivos_painel WHERE id = %s AND deletado = 0", (id_item,))
+            item_antigo = cur.fetchone()
+            
+            if not item_antigo:
+                conn.close()
+                return jsonify({'status': 'erro', 'mensagem': 'Item não localizado no servidor!'}), 404
+                
+            cur.execute("UPDATE arquivos_painel SET nome_original = %s WHERE id = %s", (novo_nome, id_item))
+            
+        conn.commit()
+        conn.close()
+        
+        registrar_log(f"Renomeou o(a) {item_antigo['tipo']} '{item_antigo['nome_original']}' para '{novo_nome}' (ID: {id_item})")
+        return jsonify({'status': 'sucesso'})
+    except Exception as e:
+        return jsonify({'status': 'erro', 'mensagem': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
