@@ -4,23 +4,16 @@ import re
 import tempfile
 import hashlib
 import pymysql
-import urllib.request
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
 from datetime import datetime, timedelta
-from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory, send_file
+from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory
 
 app = Flask(__name__)
-# Aumenta a tolerância de tráfego do Flask para arquivos grandes
-app.config['MAX_CONTENT_LENGTH'] = 150 * 1024 * 1024
+# Configura o limite de tráfego do Flask para arquivos grandes direto na HostGator
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "chave_secreta_super_segura_jp2")
 
-# SOLUÇÃO DE ARMAZENAMENTO PERSISTENTE: Se estiver na Render, usa a pasta /data (Disk), senão usa local
-if os.path.exists('/data'):
-    UPLOAD_FOLDER = '/data/uploads'
-else:
-    UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
-
+# DIRETÓRIO LOCAL DE ARMAZENAMENTO (Dentro da estrutura da HostGator)
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
@@ -59,6 +52,7 @@ def tela_login():
         u = request.form.get('usuario', '').lower().strip()
         s = request.form.get('senha', '').strip()
         
+        # ACESSO MESTRE TEMPORÁRIO PARA O SEU PRIMEIRO ACESSO LOCAL
         if u == 'petrick':
             session['usuario_logado'] = 'petrick'
             session['nome_exibicao'] = 'Petrick Martins'
@@ -186,13 +180,15 @@ def listar_arquivos():
         conn.close()
         
         itens_formatados = []
-        for l in lines:
+        for l in linhas:
             caminho_final = l['caminho_sistema']
-            imagem_card = "/static/image/ibd.jpeg"
+            imagem_card = "/static/image/ibd.jpeg" # Padrão inicial de segurança
             
             if l['tipo'] == 'link':
                 nome_limpo = "".join(x for x in l['nome_original'] if x.isalnum())
                 imagem_path = os.path.join(app.root_path, 'static', 'image', f"{nome_limpo}.jpeg")
+                
+                # Se a imagem customizada existir na HostGator, usa ela. Se não, mantém a ibd.jpeg
                 if os.path.exists(imagem_path):
                     imagem_card = f"/static/image/{nome_limpo}.jpeg"
             
@@ -200,8 +196,8 @@ def listar_arquivos():
                 'id': l['id'], 
                 'nome': l['nome_original'], 
                 'tipo': l['tipo'], 
-                'caminho': caminho_final,
-                'imagem_bg': imagem_card,
+                'caminho': caminho_final,     # AQUI: Mantém a URL real salva no banco intacta!
+                'imagem_bg': imagem_card,     # AQUI: Campo novo exclusivo para a foto do card
                 'autor': l['criado_por'] or 'Sistema', 
                 'bloco': l['bloco'], 
                 'categoria': l['categoria'], 
@@ -256,41 +252,6 @@ def criar_pasta():
     except:
         return jsonify({'status': 'erro'})
 
-@app.route('/renomear', methods=['POST'])
-def renomear_item():
-    if 'usuario_logado' not in session: return jsonify({'status': 'erro', 'mensagem': 'Não autorizado'}), 401
-    id_item = request.form.get('id')
-    novo_nome = request.form.get('novo_nome', '').strip()
-    senha = request.form.get('senha', '').strip()
-    
-    if not id_item or not novo_nome or not senha:
-        return jsonify({'status': 'erro', 'mensagem': 'Preencha todos os campos obrigatórios!'}), 400
-        
-    senha_hash = criptografar_sha256(senha)
-    try:
-        conn = get_db_connection()
-        with conn.cursor() as cur:
-            cur.execute("SELECT senha FROM usuarios WHERE usuario = %s", (session.get('usuario_logado'),))
-            dados_u = cur.fetchone()
-            user_senha = str(dados_u['senha']) if dados_u else ""
-            if user_senha != senha_hash:
-                conn.close()
-                return jsonify({'status': 'erro', 'mensagem': 'Senha de validação incorreta!'}), 401
-            
-            cur.execute("SELECT nome_original, tipo FROM arquivos_painel WHERE id = %s AND deletado = 0", (id_item,))
-            item_antigo = cur.fetchone()
-            if not item_antigo:
-                conn.close()
-                return jsonify({'status': 'erro', 'mensagem': 'Item não localizado no servidor!'}), 404
-                
-            cur.execute("UPDATE arquivos_painel SET nome_original = %s WHERE id = %s", (novo_nome, id_item))
-        conn.commit()
-        conn.close()
-        registrar_log(f"Renomeou o(a) {item_antigo['tipo']} '{item_antigo['nome_original']}' para '{novo_nome}' (ID: {id_item})")
-        return jsonify({'status': 'sucesso'})
-    except Exception as e:
-        return jsonify({'status': 'erro', 'mensagem': str(e)}), 500
-
 @app.route('/upload-avancado', methods=['POST'])
 def upload_avancado():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
@@ -306,16 +267,17 @@ def upload_avancado():
             nome_limpo = re.sub(r'[^a-zA-Z0-9._-]', '', arq.filename.replace(' ', '_'))
             nome_unico = f"{uuid.uuid4().hex}_{nome_limpo}"
             
-            # Grava direto na pasta persistente anti-limpeza da Render
+            # SALVA FISICAMENTE NA PASTA LOCAL DA HOSTGATOR (SEM INTERMEDIÁRIOS EXTERNOS)
             destino_completo = os.path.join(UPLOAD_FOLDER, nome_unico)
             arq.save(destino_completo)
             
-            # Salvamos apenas o ID único do arquivo no campo do sistema
+            link = f"/static/uploads/{nome_unico}"
+            
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO arquivos_painel (nome_original, caminho_sistema, bloco, categoria, tipo, criado_por, pasta_pai_id, deletado)
                     VALUES (%s, %s, %s, %s, 'arquivo', %s, %s, 0)
-                """, (arq.filename, nome_unico, bloco, cat, session.get('nome_exibicao', 'Sistema'), p_id))
+                """, (arq.filename, link, bloco, cat, session.get('nome_exibicao', 'Sistema'), p_id))
         conn.commit()
         conn.close()
         return jsonify({'status': 'sucesso'})
@@ -323,11 +285,9 @@ def upload_avancado():
         print(f"ERRO NO UPLOAD LOCAL: {e}")
         return jsonify({'status': 'erro', 'mensagem': str(e)})
         
-# 🟢 CORREÇÃO CRÍTICA DO DOWNLOAD: Serve o arquivo físico de forma blindada, forçando ou abrindo
 @app.route('/baixar/<int:arquivo_id>')
 def baixar_arquivo(arquivo_id):
     if 'usuario_logado' not in session: return "Não autorizado", 401
-    force_download = request.args.get('download', 'false') == 'true'
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
@@ -336,15 +296,10 @@ def baixar_arquivo(arquivo_id):
         conn.close()
         
         if dados and dados['deletado'] != 1:
-            # Localiza o arquivo na pasta persistente da Render
-            arquivo_path = os.path.join(UPLOAD_FOLDER, dados['caminho_sistema'])
-            if os.path.exists(arquivo_path):
-                registrar_log(f"Acessou o arquivo: {dados['nome_original']} (Download={force_download})")
-                return send_file(arquivo_path, download_name=dados['nome_original'], as_attachment=force_download)
-            
-    except Exception as e:
-        print(f"Erro ao baixar: {e}")
-    return "Arquivo físico não encontrado no servidor. Faça o upload dele novamente para consolidar na pasta persistente.", 404
+            registrar_log(f"Fez download do arquivo: {dados['nome_original']}")
+            return redirect(dados['caminho_sistema'])
+    except: pass
+    return "Arquivo não encontrado", 404
 
 @app.route('/excluir', methods=['POST'])
 def excluir_arquivo():
@@ -376,6 +331,10 @@ def excluir_arquivo():
     except:
         return jsonify({'status': 'erro'})
 
+import urllib.request
+from bs4 import BeautifulSoup
+import re
+
 @app.route('/salvar-site', methods=['POST'])
 def salvar_site():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
@@ -389,21 +348,32 @@ def salvar_site():
     else:
         bloco_final = str(bloco).strip()
 
+    # --- ROBÔ DE CAPTURA AUTOMÁTICA DE LOGO (FAVICON) ---
     nome_limpo = "".join(x for x in nome if x.isalnum())
-    caminho_salvar_imagem = os.path.join(app.root_path, 'static', 'image', f"{nome_limpo}.jpeg")
+    nome_arquivo_imagem = f"{nome_limpo}.jpeg"
+    caminho_salvar_imagem = os.path.join(app.root_path, 'static', 'image', nome_arquivo_imagem)
     
     try:
+        # 1. Conecta no site para ler o HTML
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         html = urllib.request.urlopen(req, timeout=5).read()
         soup = BeautifulSoup(html, 'html.parser')
+        
+        # 2. Procura pelo link do Favicon no código do site
         icon_link = soup.find('link', rel=re.compile(r'^(shortcut )?icon$', re.I))
+        
         if icon_link and icon_link.get('href'):
             url_icon = icon_link.get('href')
+            # Ajusta caso o link do ícone seja relativo (ex: /favicon.ico)
             if not url_icon.startswith('http'):
+                from urllib.parse import urljoin
                 url_icon = urljoin(url, url_icon)
+            
+            # 3. Baixa o ícone e salva fisicamente na HostGator/Render
             urllib.request.urlretrieve(url_icon, caminho_salvar_imagem)
     except Exception as e:
         print(f"Robô não conseguiu extrair a logo do site: {e}")
+    # ----------------------------------------------------
 
     try:
         conn = get_db_connection()
@@ -499,8 +469,10 @@ def resumo_dashboard():
         with conn.cursor() as cur:
             cur.execute("SELECT COUNT(id) as total FROM arquivos_painel WHERE tipo = 'arquivo' AND deletado = 0")
             total_arquivos = cur.fetchone()['total']
+            
             cur.execute("SELECT COUNT(id) as total FROM usuarios")
             total_socios = cur.fetchone()['total']
+            
             hoje = datetime.now().strftime('%Y-%m-%d')
             cur.execute("SELECT titulo FROM agenda_eventos WHERE data_evento >= %s ORDER BY data_evento ASC LIMIT 1", (hoje,))
             dados_ev = cur.fetchone()
