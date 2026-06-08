@@ -270,9 +270,15 @@ def upload_avancado():
             nome_limpo = re.sub(r'[^a-zA-Z0-9._-]', '', arq.filename.replace(' ', '_'))
             nome_unico = f"{uuid.uuid4().hex}_{nome_limpo}"
             
-            # SALVA FISICAMENTE NA PASTA LOCAL DA HOSTGATOR (SEM INTERMEDIÁRIOS EXTERNOS)
             destino_completo = os.path.join(UPLOAD_FOLDER, nome_unico)
-            arq.save(destino_completo)
+            
+            # 🟢 ESCALA DE PROTEÇÃO: Grava o arquivo em blocos de memória (Chunking) para evitar estouro de limite (Erro 413)
+            with open(destino_completo, 'wb') as f:
+                while True:
+                    chunk = arq.read(16 * 1024)  # Lê blocos de 16KB por vez
+                    if not chunk:
+                        break
+                    f.write(chunk)
             
             link = f"/static/uploads/{nome_unico}"
             
@@ -285,7 +291,7 @@ def upload_avancado():
         conn.close()
         return jsonify({'status': 'sucesso'})
     except Exception as e:
-        print(f"ERRO NO UPLOAD LOCAL: {e}")
+        print(f"ERRO NO UPLOAD EM LOTES: {e}")
         return jsonify({'status': 'erro', 'mensagem': str(e)})
         
 @app.route('/baixar/<int:arquivo_id>')
