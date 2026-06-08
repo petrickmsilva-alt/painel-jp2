@@ -927,6 +927,9 @@
             let fileInput = overlay.querySelector('#arquivo_temp');
             if(fileInput.files.length === 0) return alert("Selecione um arquivo!");
             
+            // 🟢 ADICIONADO: Fecha a caixa cinza na hora para liberar a visão da faixa azul no topo!
+            overlay.remove();
+            
             // Repassa o arquivo selecionado diretamente para o fatiador mestre acelerado
             dispararUploadAvancado(fileInput);
         };
