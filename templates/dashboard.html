@@ -944,36 +944,92 @@
 
     function dispararUploadAvancado() {
         let filesInput = document.getElementById('inputArquivosAvancado');
-        let formData = new FormData();
+        if (!filesInput || filesInput.files.length === 0) return alert("Selecione os arquivos!");
         
-        if (filesInput.files.length === 0) return alert("Selecione os arquivos!");
-        for(let i = 0; i < filesInput.files.length; i++) { 
-            formData.append('arquivos', filesInput.files[i]);
-        }
-
-        formData.append('bloco', estadoDoPainel.bloco);
-        const paiId = estadoDoPainel.pasta_pai_id;
-        const catFinal = (paiId !== null && paiId !== undefined && paiId !== '') ? 'raiz' : estadoDoPainel.bloco;
-        
-        formData.append('categoria', catFinal);
-        formData.append('pasta_pai_id', paiId || '');
-
+        // Ativa a sua barra de progresso nativa do backup
         document.getElementById('containerProgresso').classList.remove('d-none');
         
-        let xhr = new XMLHttpRequest(); 
-        xhr.open('POST', '/upload-avancado', true);
-        xhr.onload = function() { 
-            let modalEl = document.getElementById('modalUploadArquivo');
-            let modalInstance = bootstrap.Modal.getInstance(modalEl);
-            if(modalInstance) modalInstance.hide();
-            
-            document.getElementById('containerProgresso').classList.add('d-none');
-            filesInput.value = "";
-            sincronizarGrade();
-        };
-        xhr.send(formData);
-    }
+        let arquivosParaSubir = Array.from(filesInput.files);
+        let indiceArquivoAtual = 0;
 
+        // Tamanho máximo de cada fatia: 8MB (Evita o erro 413 na Render)
+        const CHUNK_SIZE = 8 * 1024 * 1024; 
+
+        function subirProximoArquivo() {
+            if (indiceArquivoAtual >= arquivosParaSubir.length) {
+                // Sucesso total: Esconde o progresso e limpa o input
+                document.getElementById('containerProgresso').classList.add('d-none');
+                filesInput.value = "";
+                
+                // Fecha o seu modal nativo do Bootstrap
+                let modalEl = document.getElementById('modalUploadArquivo');
+                let modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if(modalInstance) modalInstance.hide();
+                
+                // Remove o overlay customizado se ele existir
+                let overlay = document.getElementById('modal-global-overlay');
+                if(overlay) overlay.remove();
+
+                alert("Todos os arquivos foram fatiados e salvos com sucesso!");
+                sincronizarGrade();
+                return;
+            }
+
+            let arquivo = arquivosParaSubir[indiceArquivoAtual];
+            let guidUnico = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            let totalChunks = Math.ceil(arquivo.size / CHUNK_SIZE);
+            let chunkIndex = 0;
+
+            function enviarFatia() {
+                let inicio = chunkIndex * CHUNK_SIZE;
+                let fim = Math.min(inicio + CHUNK_SIZE, arquivo.size);
+                let fatiaBlob = arquivo.slice(inicio, fim);
+
+                let formData = new FormData();
+                formData.append('arquivos', fatiaBlob, arquivo.name);
+                
+                // Mantém exatamente a lógica de categorias e blocos do seu código
+                formData.append('bloco', estadoDoPainel.bloco);
+                const paiId = estadoDoPainel.pasta_pai_id;
+                const catFinal = (paiId !== null && paiId !== undefined && paiId !== '') ? 'raiz' : estadoDoPainel.bloco;
+                formData.append('categoria', catFinal);
+                formData.append('pasta_pai_id', paiId || '');
+                
+                // Variáveis de controle para o app.py saber juntar os pedaços
+                formData.append('chunkIndex', chunkIndex);
+                formData.append('totalChunks', totalChunks);
+                formData.append('guid', guidUnico);
+                formData.append('nome_original', arquivo.name);
+
+                let xhr = new XMLHttpRequest();
+                xhr.open('POST', '/upload-avancado', true);
+                
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        chunkIndex++;
+                        if (chunkIndex < totalChunks) {
+                            // Envia o próximo pedaço do mesmo arquivo
+                            enviarFatia();
+                        } else {
+                            // Arquivo concluído! Passa para o próximo arquivo do lote
+                            indiceArquivoAtual++;
+                            subirProximoArquivo();
+                        }
+                    } else {
+                        alert("Erro ao enviar fragmento do arquivo para o servidor.");
+                        document.getElementById('containerProgresso').classList.add('d-none');
+                    }
+                };
+                xhr.send(formData);
+            }
+
+            // Inicia o envio do arquivo atual por partes
+            enviarFatia();
+        }
+
+        // Dá o pontapé inicial no lote completo
+        subirProximoArquivo();
+    }
     function abrirConfiguradorAgenda() {
         let hoje = new Date().toISOString().split('T')[0];
         let elementos = {
