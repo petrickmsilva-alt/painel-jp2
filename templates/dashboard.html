@@ -624,21 +624,20 @@
                 return;
             }
             
-            data.itens.forEach(item => {
+            ddata.itens.forEach(item => {
                 let card = document.createElement("div");
                 card.className = "explorer-card";
                 
                 let iconHtml = item.tipo === 'pasta' ? '<i class="bi bi-folder-fill text-warning"></i>' : '<i class="bi bi-file-earmark-text-fill text-primary"></i>';
                 let labelAutor = item.tipo === 'pasta' ? 'Pasta de Arquivos' : 'Documento';
                 
-                // Separação cirúrgica das ações de arquivos e pastas
                 let botoesAcaoHtml = "";
                 let cliqueCorpoCard = "";
                 
                 if (item.tipo === 'pasta') {
                     cliqueCorpoCard = `entrarSubpastaReal(${item.id}, '${item.nome}')`;
                     botoesAcaoHtml = `
-                        <button class="btn btn-sm btn-light border py-0 px-1 text-primary" onclick="abrirModalRenomearDireto(event, ${item.id}, '${item.nome.replace(/'/g, "\\'")}')">
+                        <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="event.stopPropagation(); let novoNome = prompt('Digite o novo nome da pasta:', '${item.nome}'); if(novoNome){ let s = prompt('Confirme sua senha de sócio:'); if(s){ let fd = new FormData(); fd.append('id', ${item.id}); fd.append('novo_nome', novoNome); fd.append('senha', s); fetch('/renomear', {method:'POST', body:fd}).then(r=>r.json()).then(d=>{ if(d.status==='sucesso'){ alert('Renomeado com sucesso!'); sincronizarGrade(); }else{ alert(d.mensagem); } }); } }">
                             <i class="bi bi-pencil"></i>
                         </button>
                         <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})">
@@ -654,7 +653,7 @@
                         <button class="btn btn-sm btn-light border py-0 px-1 text-dark" title="Baixar Arquivo" onclick="event.stopPropagation(); window.open('/baixar_recurso/${item.id}?download=true', '_blank')">
                             <i class="bi bi-cloud-download"></i>
                         </button>
-                        <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="abrirModalRenomearDireto(event, ${item.id}, '${item.nome.replace(/'/g, "\\'")}')">
+                        <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="event.stopPropagation(); let novoNome = prompt('Digite o novo nome do arquivo:', '${item.nome}'); if(novoNome){ let s = prompt('Confirme sua senha de sócio:'); if(s){ let fd = new FormData(); fd.append('id', ${item.id}); fd.append('novo_nome', novoNome); fd.append('senha', s); fetch('/renomear', {method:'POST', body:fd}).then(r=>r.json()).then(d=>{ if(d.status==='sucesso'){ alert('Renomeado com sucesso!'); sincronizarGrade(); }else{ alert(d.mensagem); } }); } }">
                             <i class="bi bi-pencil"></i>
                         </button>
                         <button class="btn btn-sm btn-light border py-0 px-1 text-danger" title="Mover para Lixeira" onclick="abrirModalExcluirDireto(event, ${item.id})">
@@ -670,8 +669,9 @@
                     <div class="item-author text-muted d-none d-md-block">${labelAutor}</div>`;
                 gridContainer.appendChild(card);
             });
-        });
+       });
     }
+    
     function entrarSubpastaReal(id, nomePasta) {
         estadoDoPainel.pasta_pai_id = id;
         estadoDoPainel.nivel_atual = 'subpasta';
@@ -912,27 +912,26 @@
         
         document.documentElement.appendChild(overlay);
 
+        // 🛠️ O CORTE CIRÚRGICO QUE VOCÊ VAI FAZER FICA EXATAMENTE AQUI:
         overlay.querySelector('#btn_enviar_temp').onclick = function() {
             let fileInput = overlay.querySelector('#arquivo_temp');
             if(fileInput.files.length === 0) return alert("Selecione um arquivo!");
             
-            let formData = new FormData();
-            formData.append('arquivos', fileInput.files[0]);
-            formData.append('bloco', estadoDoPainel.bloco);
-            
-            let paiId = estadoDoPainel.pasta_pai_id;
-            let categoryCorreta = (paiId === null || paiId === undefined || paiId === '' || paiId === 'null') ? 'raiz' : 'raiz';
-            
-            formData.append('categoria', categoryCorreta);
-            formData.append('pasta_pai_id', paiId || '');
+            // Chama a função mestre fatiadora passando os arquivos deste input
+            dispararUploadAvancado(fileInput);
+        };
 
-            fetch('/upload-avancado', { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(data => {
-                alert("Upload concluído!");
-                overlay.remove();
-                sincronizarGrade();
-            })
+        overlay.querySelector('#btn_fechar_temp').onclick = () => overlay.remove();
+    }        
+        document.documentElement.appendChild(overlay);
+
+       overlay.querySelector('#btn_enviar_temp').onclick = function() {
+            let fileInput = overlay.querySelector('#arquivo_temp');
+            if(fileInput.files.length === 0) return alert("Selecione um arquivo!");
+            
+            // Substituiu todo o fetch antigo por essa linha que fatia em pedaços de 8MB
+            dispararUploadAvancado(fileInput);
+        };
             .catch(err => {
                 console.error("Erro no upload:", err);
                 alert("Erro no upload.");
