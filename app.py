@@ -258,41 +258,45 @@ def criar_pasta():
 @app.route('/upload-avancado', methods=['POST'])
 def upload_avancado():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
-    arquivos = request.files.getlist('arquivos')
-    bloco, cat, pai = request.form.get('bloco'), request.form.get('categoria'), request.form.get('pasta_pai_id')
+    
+    file = request.files.get('arquivos')
+    bloco = request.form.get('bloco')
+    cat = request.form.get('categoria')
+    pai = request.form.get('pasta_pai_id')
     p_id = int(pai) if (pai and str(pai).strip() not in ["null", "undefined", ""]) else None
     
+    # Informações da fatia (chunk) enviada pelo JavaScript
+    chunk_index = int(request.form.get('chunkIndex', 0))
+    total_chunks = int(request.form.get('totalChunks', 1))
+    guid_uuid = request.form.get('guid', uuid.uuid4().hex)
+    nome_original = request.form.get('nome_original', file.filename if file else 'arquivo')
+    
     try:
-        conn = get_db_connection()
-        for arq in arquivos:
-            if arq.filename == '': continue
-            
-            nome_limpo = re.sub(r'[^a-zA-Z0-9._-]', '', arq.filename.replace(' ', '_'))
-            nome_unico = f"{uuid.uuid4().hex}_{nome_limpo}"
-            
-            destino_completo = os.path.join(UPLOAD_FOLDER, nome_unico)
-            
-            # 🟢 ESCALA DE PROTEÇÃO: Grava o arquivo em blocos de memória (Chunking) para evitar estouro de limite (Erro 413)
-            with open(destino_completo, 'wb') as f:
-                while True:
-                    chunk = arq.read(16 * 1024)  # Lê blocos de 16KB por vez
-                    if not chunk:
-                        break
-                    f.write(chunk)
-            
+        nome_limpo = re.sub(r'[^a-zA-Z0-9._-]', '', nome_original.replace(' ', '_'))
+        nome_unico = f"{guid_uuid}_{nome_limpo}"
+        destino_completo = os.path.join(UPLOAD_FOLDER, nome_unico)
+        
+        # Grava a fatia atual no final do arquivo (modo 'ab' - append binary)
+        if file:
+            with open(destino_completo, 'ab') as f:
+                f.write(file.read())
+        
+        # Se for a última fatia, salva permanentemente o registro no seu MySQL
+        if chunk_index + 1 == total_chunks:
             link = f"/static/uploads/{nome_unico}"
-            
+            conn = get_db_connection()
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO arquivos_painel (nome_original, caminho_sistema, bloco, categoria, tipo, criado_por, pasta_pai_id, deletado)
                     VALUES (%s, %s, %s, %s, 'arquivo', %s, %s, 0)
-                """, (arq.filename, link, bloco, cat, session.get('nome_exibicao', 'Sistema'), p_id))
-        conn.commit()
-        conn.close()
-        return jsonify({'status': 'sucesso'})
+                """, (nome_original, link, bloco, cat, session.get('nome_exibicao', 'Sistema'), p_id))
+            conn.commit()
+            conn.close()
+            
+        return jsonify({'status': 'sucesso', 'guid': guid_uuid})
     except Exception as e:
-        print(f"ERRO NO UPLOAD EM LOTES: {e}")
-        return jsonify({'status': 'erro', 'mensagem': str(e)})
+        print(f"ERRO NO UPLOAD FRAGMENTADO: {e}")
+        return jsonify({'status': 'erro', 'mensagem': str(e)}), 500
         
 @app.route('/baixar/<int:arquivo_id>')
 def baixar_arquivo(arquivo_id):
