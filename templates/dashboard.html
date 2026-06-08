@@ -206,22 +206,12 @@
       margin-right: 10px;
     }
 
-    /* GRADE CORPORATIVA (PADRÃO ÍCONES MÉDIOS) */
+    /* GRADE CORPORATIVA */
     .explorer-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
       gap: 20px;
       margin-top: 20px;
-    }
-
-    /* MODOS ADICIONAIS DE EXIBIÇÃO CSS */
-    .explorer-grid.view-grandes {
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
-    }
-    
-    .explorer-grid.view-lista {
-      grid-template-columns: 1fr !important;
-      gap: 10px !important;
     }
 
     .explorer-card {
@@ -240,36 +230,6 @@
       min-height: 135px;
     }
 
-    /* COMPORTAMENTO ADICIONAL PARA O MODO LISTA */
-    .view-lista .explorer-card {
-      flex-direction: row !important;
-      justify-content: flex-start !important;
-      min-height: 55px !important;
-      padding: 10px 20px !important;
-      text-align: left !important;
-    }
-
-    .view-lista .explorer-card .icon-wrapper {
-      font-size: 24px !important;
-      margin-bottom: 0 !important;
-      margin-right: 15px !important;
-    }
-
-    .view-lista .explorer-card .icon-wrapper img {
-      width: 30px !important;
-      height: 30px !important;
-    }
-
-    .view-lista .explorer-card .item-label {
-      text-align: left !important;
-    }
-
-    .view-lista .explorer-card .item-author {
-      margin-left: auto !important;
-      margin-right: 130px !important; /* Aumentado para dar espaço aos 4 botões na lista */
-      font-size: 12px !important;
-    }
-
     .explorer-card:hover {
       transform: translateY(-2px);
       border-color: var(--card-border-hover);
@@ -283,15 +243,6 @@
       line-height: 1;
     }
 
-    /* ALTERAÇÃO ADICIONAL PARA ÍCONES GRANDES */
-    .view-grandes .explorer-card .icon-wrapper {
-      font-size: 65px !important;
-    }
-    .view-grandes .explorer-card .icon-wrapper img {
-      width: 80px !important;
-      height: 80px !important;
-    }
-
     .explorer-card .item-label {
       font-size: 13px;
       font-weight: 600;
@@ -302,7 +253,6 @@
       text-overflow: ellipsis;
     }
 
-    /* GATILHO DE AÇÕES EXPANDIDO PARA ACOMODAR OS 4 BOTÕES DO SEU DESEJO */
     .explorer-card .action-trigger {
       position: absolute;
       top: 6px;
@@ -310,8 +260,6 @@
       opacity: 0;
       transition: opacity 0.15s;
       z-index: 10;
-      display: flex;
-      gap: 4px;
     }
 
     .explorer-card:hover .action-trigger {
@@ -434,23 +382,9 @@
                         <i class="bi bi-folder2-open me-2 text-primary"></i>
                         <span id="txtCaminhoWindows" class="fw-bold text-secondary" style="font-size: 13px;"></span>
                     </div>
-                    
-                    <!-- BOTÃO 'EXIBIR' ESTILO WINDOWS INCORPORADO COMPLETO -->
-                    <div class="d-flex gap-2 align-items-center">
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="btnExibirWindows" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-eye"></i> Exibir
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="btnExibirWindows">
-                                <li><a class="dropdown-menu-item dropdown-item active" href="#" id="opt-view-medios" onclick="mudarModoExibicao('medios', this)"><i class="bi bi-grid-3x3-gap me-2"></i>Ícones médios</a></li>
-                                <li><a class="dropdown-menu-item dropdown-item" href="#" id="opt-view-grandes" onclick="mudarModoExibicao('grandes', this)"><i class="bi bi-grid-1x2 me-2"></i>Ícones grandes</a></li>
-                                <li><a class="dropdown-menu-item dropdown-item" href="#" id="opt-view-lista" onclick="mudarModoExibicao('lista', this)"><i class="bi bi-list-task me-2"></i>Lista</a></li>
-                            </ul>
-                        </div>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="sincronizarGrade()">
-                            <i class="bi bi-arrow-clockwise"></i> Sincronizar
-                        </button>
-                    </div>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="sincronizarGrade()">
+                        <i class="bi bi-arrow-clockwise"></i> Sincronizar
+                    </button>
                 </div>
                 <div class="d-flex gap-2">
                     <div id="controles-arquivos" class="d-flex gap-2">
@@ -460,7 +394,7 @@
                         <button type="button" class="btn btn-sm btn-primary" id="btn-nova-pasta-acao" onclick="abrirModalNovaPasta()">
                           <i class="bi bi-folder-plus"></i> Nova Pasta
                         </button>
-                        <button class="btn btn-sm btn-success" onclick="abrirModalUploadComContexto()"><i class="bi bi-cloud-arrow-up"></i> Enviar Arquivos</button>
+                        <button class="btn btn-sm btn-success" onclick="abrirModalUploadComContexto()"><i class="bi bi-cloud-arrow-up"></i> Enviar Arquivo</button>
                     </div>
                     <div id="controles-sites" class="d-none gap-2">
                         <button class="btn btn-sm btn-primary" onclick="abrirModalCadastroSite()"><i class="bi bi-plus-circle"></i> Incluir Site</button>
@@ -551,7 +485,7 @@
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
   <script>
-    let estadoDoPainel = { bloco: 'instituto', categoria: 'raiz', pasta_pai_id: null, nivel_atual: 'raiz_bloco', string_caminho: 'INSTITUTO', modo_view: 'medios' };
+    let estadoDoPainel = { bloco: 'instituto', categoria: 'raiz', pasta_pai_id: null, nivel_atual: 'raiz_bloco', string_caminho: 'INSTITUTO' };
     let instanciaCalendario = null;
 
     const subpastasFixas = {
@@ -582,21 +516,6 @@
         'Expo Fashion Brasil': 'ExpoFashion.jpeg',
         'IBDTEC': 'IBDTEC.jpeg'
     };
-
-    // FUNÇÃO QUE IMPLEMENTA A TROCA DE VISUALIZAÇÃO CLÁSSICA DO WINDOWS
-    function mudarModoExibicao(modo, elemento) {
-        let grid = document.getElementById("wrapper-explorer-grid");
-        if(!grid) return;
-        
-        document.querySelectorAll('.dropdown-menu-item').forEach(el => el.classList.remove('active'));
-        if(elemento) elemento.classList.add('active');
-        
-        grid.classList.remove('view-grandes', 'view-lista');
-        estadoDoPainel.modo_view = modo;
-        
-        if(modo === 'grandes') grid.classList.add('view-grandes');
-        if(modo === 'lista') grid.classList.add('view-lista');
-    }
 
     document.addEventListener('DOMContentLoaded', function() {
         console.log("Sistema carregado. Tentando carregar Instituto...");
@@ -652,11 +571,7 @@
         .then(data => {
             gridContainer.innerHTML = "";
             
-            // Re-aplica as classes de visualização no container limpado
-            gridContainer.classList.remove('view-grandes', 'view-lista');
-            if(estadoDoPainel.modo_view === 'grandes') gridContainer.classList.add('view-grandes');
-            if(estadoDoPainel.modo_view === 'lista') gridContainer.classList.add('view-lista');
-            
+            // 1. Renderiza a base fixa estruturada original
             if (estadoDoPainel.bloco === 'sites_jp2' && estadoDoPainel.nivel_atual === 'raiz_bloco') {
                 let itensRenderizados = [];
                 let sortedFixos = subpastasFixas['sites_jp2'];
@@ -673,6 +588,7 @@
                     itensRenderizados.push(cat.toLowerCase().trim());
                 });
 
+                // 2. Renderiza de forma dinâmica os novos sites vindos do banco
                 if (data.itens && data.itens.length > 0) {
                     data.itens.forEach(item => {
                         let nomeVerificacao = item.nome ? item.nome.toLowerCase().trim() : '';
@@ -681,24 +597,20 @@
                             card.className = "explorer-card";
                             
                             let urlRealDoSite = item.caminho || '#';
+                            card.onclick = function() { window.open(urlRealDoSite, '_blank'); };
                             
-                            // Ações rápidas exclusivas dos links/portais institucionais
+                            let imagemDoCard = item.imagem_bg || '/static/image/ibd.jpeg';
+                            
                             card.innerHTML = `
                                 <div class="action-trigger">
-                                    <button class="btn btn-sm btn-light border py-0 px-1 text-success" onclick="event.stopPropagation(); window.open('${urlRealDoSite}', '_blank')">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-light border py-0 px-1 text-primary" onclick="abrirModalRenomearDireto(event, ${item.id}, '${item.nome.replace(/'/g, "\\'")}')">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
                                     <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
-                                <div class="icon-wrapper" onclick="window.open('${urlRealDoSite}', '_blank')">
-                                    <img src="${item.imagem_bg || '/static/image/ibd.jpeg'}" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px;">
+                                <div class="icon-wrapper">
+                                    <img src="${imagemDoCard}" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px;">
                                 </div>
-                                <div class="item-label" onclick="window.open('${urlRealDoSite}', '_blank')" title="${item.nome || ''}">${item.nome || ''}</div>
+                                <div class="item-label" title="${item.nome || ''}">${item.nome || ''}</div>
                                 <div class="item-author">Portal WEB</div>`;
                             gridContainer.appendChild(card);
                         }
@@ -715,49 +627,13 @@
             data.itens.forEach(item => {
                 let card = document.createElement("div");
                 card.className = "explorer-card";
-                
                 let iconHtml = item.tipo === 'pasta' ? '<i class="bi bi-folder-fill text-warning"></i>' : '<i class="bi bi-file-earmark-text-fill text-primary"></i>';
-                let labelAutor = item.tipo === 'pasta' ? 'Pasta de Arquivos' : 'Documento';
-                
-                // Montagem dos botões condicionais (Pastas ganham clique no card. Arquivos ganham botões de abrir e baixar)
-                let botoesAcaoHtml = "";
-                let cliqueCorpoCard = "";
-                
-                if (item.tipo === 'pasta') {
-                    cliqueCorpoCard = `entrarSubpastaReal(${item.id}, '${item.nome}')`;
-                    botoesAcaoHtml = `
-                        <button class="btn btn-sm btn-light border py-0 px-1 text-primary" onclick="abrirModalRenomearDireto(event, ${item.id}, '${item.nome.replace(/'/g, "\\'")}')">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    `;
-                } else {
-                    // Arquivo de documento tradicional (Ganhou os botões da sua referência direto do lado do lápis!)
-                    cliqueCorpoCard = "void(0)";
-                    // Procure por esta parte no javascript do seu dashboard.html e deixe os links assim:
-                   botoesAcaoHtml = `
-                      <button class="btn btn-sm btn-light border py-0 px-1 text-success" title="Visualizar" onclick="event.stopPropagation(); window.open('/baixar/${item.id}?download=false', '_blank')">
-                       <i class="bi bi-eye"></i>
-                      </button>
-                      <button class="btn btn-sm btn-light border py-0 px-1 text-dark" title="Baixar Arquivo" onclick="event.stopPropagation(); window.open('/baixar/${item.id}?download=true', '_blank')">
-                       <i class="bi bi-cloud-download"></i>
-                      </button>
-                      <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="abrirModalRenomearDireto(event, ${item.id}, '${item.nome.replace(/'/g, "\\'")}')">
-                       <i class="bi bi-pencil"></i>
-                      </button>
-                      <button class="btn btn-sm btn-light border py-0 px-1 text-danger" title="Mover para Lixeira" onclick="abrirModalExcluirDireto(event, ${item.id})">
-                       <i class="bi bi-trash"></i>
-                       </button>
-                   `;
-                }
+                let cliqueAcao = item.tipo === 'pasta' ? `entrarSubpastaReal(${item.id}, '${item.nome}')` : `window.open('/baixar/${item.id}', '_blank')`;
                 
                 card.innerHTML = `
-                    <div class="action-trigger">${botoesAcaoHtml}</div>
-                    <div class="icon-wrapper" onclick="${cliqueCorpoCard}">${iconHtml}</div>
-                    <div class="item-label" onclick="${cliqueCorpoCard}" title="${item.nome}">${item.nome}</div>
-                    <div class="item-author text-muted d-none d-md-block">${labelAutor}</div>`;
+                    <div class="action-trigger"><button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})"><i class="bi bi-trash"></i></button></div>
+                    <div class="icon-wrapper" onclick="${cliqueAcao}">${iconHtml}</div>
+                    <div class="item-label" onclick="${cliqueAcao}" title="${item.nome}">${item.nome}</div>`;
                 gridContainer.appendChild(card);
             });
         });
@@ -927,63 +803,6 @@
         if (modalEl) new bootstrap.Modal(modalEl).show();
     }
 
-    function abrirModalRenomearDireto(event, id, nomeAtual) {
-        if(event) { event.preventDefault(); event.stopPropagation(); }
-        let overlay = document.createElement('div');
-        overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:9999999; display:flex; align-items:center; justify-content:center; overflow:hidden;';
-        overlay.innerHTML = `
-            <div style="background:white; padding:30px; border-radius:12px; width:420px; max-width: 90%; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
-                <h4 style="margin-bottom:20px; color:#2563eb; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
-                    <i class="bi bi-pencil-square"></i> Renomear Registro
-                </h4>
-                <div style="margin-bottom:15px;">
-                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">NOVO NOME DO ITEM</label>
-                    <input type="text" id="novo_nome_input_temp" value="${nomeAtual}" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
-                </div>
-                <div style="margin-bottom:20px;">
-                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">CONFIRME SUA SENHA DE SÓCIO</label>
-                    <input type="password" id="senha_renomear_temp" placeholder="Digite sua senha..." style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
-                </div>
-                <div style="display:flex; gap:10px; justify-content:flex-end;">
-                    <button id="btn_cancelar_renomear" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; cursor:pointer;">Cancelar</button>
-                    <button id="btn_confirmar_renomear" style="padding:10px 20px; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;">Salvar Alteração</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(overlay);
-
-        overlay.querySelector('#btn_cancelar_renomear').onclick = () => overlay.remove();
-        
-        overlay.querySelector('#btn_confirmar_renomear').onclick = function() {
-            let novoNome = overlay.querySelector('#novo_nome_input_temp').value.trim();
-            let senha = overlay.querySelector('#senha_renomear_temp').value;
-
-            if(!novoNome) return alert("O nome não pode ficar vazio!");
-            if(!senha) return alert("Digite sua senha de sócio para validar!");
-
-            let formData = new FormData();
-            formData.append('id', id);
-            formData.append('novo_nome', novoNome);
-            formData.append('senha', senha);
-
-            fetch('/renomear', { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(data => {
-                if(data.status === 'sucesso') {
-                    alert("Item renomeado com sucesso!");
-                    overlay.remove();
-                    sincronizarGrade();
-                } else {
-                    alert("Erro: " + (data.mensagem || "Não foi possível alterar o nome."));
-                }
-            })
-            .catch(err => {
-                console.error("Erro na requisição de renomear:", err);
-                alert("Erro de conexão com o servidor local.");
-            });
-        };
-    }
-
     function abrirModalExcluirDireto(event, id) {
         if(event) { event.preventDefault(); event.stopPropagation(); }
         let overlay = document.createElement('div');
@@ -1038,22 +857,22 @@
         overlay.innerHTML = `
             <div style="background:white; padding:30px; border-radius:12px; width:450px; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
                 <h4 style="margin-bottom:20px; color:#1e293b; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
-                    <i class="bi bi-cloud-arrow-up"></i> Upload de Arquivos
+                    <i class="bi bi-cloud-arrow-up"></i> Upload de Arquivo
                 </h4>
                 <div style="margin-bottom:15px;">
                     <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">BLOCO</label>
                     <input type="text" value="${estadoDoPainel.bloco.charAt(0).toUpperCase() + estadoDoPainel.bloco.slice(1)}" readonly style="width:100%; margin-bottom:10px; padding:5px;">
                 </div>
                 <div style="margin-bottom:20px;">
-                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">SELECIONE OS ARQUIVOS</label>
-                    <input type="file" id="arquivo_temp" multiple style="width:100%; padding:8px; border:1px dashed #cbd5e1; border-radius:6px;">
+                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">SELECIONE O ARQUIVO</label>
+                    <input type="file" id="arquivo_temp" style="width:100%; padding:8px; border:1px dashed #cbd5e1; border-radius:6px;">
                 </div>
                 <div style="background:#f8fafc; padding:12px; border-radius:6px; margin-bottom:20px; font-size:13px; color:#334155;">
                     Destino: <strong style="color:#2563eb;">${estadoDoPainel.string_caminho}</strong>
                 </div>
                 <div style="display:flex; gap:10px; justify-content:flex-end;">
                     <button id="btn_fechar_temp" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; font-weight:600; cursor:pointer;">Cancelar</button>
-                    <button id="btn_enviar_temp" style="padding:10px 20px; background:#16a34a; color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Enviar Arquivos</button>
+                    <button id="btn_enviar_temp" style="padding:10px 20px; background:#16a34a; color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Enviar Arquivo</button>
                 </div>
             </div>`;
         
@@ -1061,14 +880,10 @@
 
         overlay.querySelector('#btn_enviar_temp').onclick = function() {
             let fileInput = overlay.querySelector('#arquivo_temp');
-            if(fileInput.files.length === 0) return alert("Selecione ao menos um arquivo!");
+            if(fileInput.files.length === 0) return alert("Selecione um arquivo!");
             
             let formData = new FormData();
-            
-            for (let i = 0; i < fileInput.files.length; i++) {
-                formData.append('arquivos', fileInput.files[i]);
-            }
-            
+            formData.append('arquivos', fileInput.files[0]);
             formData.append('bloco', estadoDoPainel.bloco);
             
             let paiId = estadoDoPainel.pasta_pai_id;
@@ -1077,22 +892,16 @@
             formData.append('categoria', categoryCorreta);
             formData.append('pasta_pai_id', paiId || '');
 
-            let btnEnviar = overlay.querySelector('#btn_enviar_temp');
-            btnEnviar.disabled = true;
-            btnEnviar.innerText = "Enviando lote...";
-
             fetch('/upload-avancado', { method: 'POST', body: formData })
             .then(res => res.json())
             .then(data => {
-                alert("Todos os arquivos foram enviados com sucesso!");
+                alert("Upload concluído!");
                 overlay.remove();
                 sincronizarGrade();
             })
             .catch(err => {
                 console.error("Erro no upload:", err);
-                alert("Erro no upload do lote de arquivos.");
-                btnEnviar.disabled = false;
-                btnEnviar.innerText = "Enviar Arquivos";
+                alert("Erro no upload.");
             });
         };
 
