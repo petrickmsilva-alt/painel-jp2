@@ -376,6 +376,17 @@
         </header>
 
         <div class="content-workspace-viewport">
+            <!-- ELEMENTO ADICIONADO: CONTENER DE PROGRESSO GLOBAL PARA UPLOADS CORPORATIVOS ACELERADOS -->
+            <div id="containerProgresso" class="d-none mb-3 p-3 bg-light rounded border border-info">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-info fw-bold"><i class="bi bi-lightning-charge-fill"></i> Transmitindo Lote por Fragmentos Ultra-Leves...</small>
+                    <span class="spinner-border spinner-border-sm text-info"></span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" style="width: 100%"></div>
+                </div>
+            </div>
+
             <div class="mb-4 bg-white p-3 rounded shadow-sm border">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div id="caminho-area" class="d-flex align-items-center">
@@ -916,43 +927,43 @@
             let fileInput = overlay.querySelector('#arquivo_temp');
             if(fileInput.files.length === 0) return alert("Selecione um arquivo!");
             
-            // Chama a função mestre fatiadora de 8MB passando os arquivos deste input
+            // Repassa o arquivo selecionado diretamente para o fatiador mestre acelerado
             dispararUploadAvancado(fileInput);
         };
 
         overlay.querySelector('#btn_fechar_temp').onclick = () => overlay.remove();
     }        
 
+    // 🚀 ATUALIZAÇÃO: SISTEMA DE UPLOAD FRAGMENTADO DE ALTA VELOCIDADE COM FATIAS DE 1MB
     function dispararUploadAvancado(inputPassado) {
         let filesInput = inputPassado || document.getElementById('inputArquivosAvancado');
         if (!filesInput || filesInput.files.length === 0) return alert("Selecione os arquivos!");
         
-        // Ativa a sua barra de progresso nativa do backup
-        document.getElementById('containerProgresso').classList.remove('d-none');
+        // Ativa visualmente o painel de progresso na tela
+        let progressoContainer = document.getElementById('containerProgresso');
+        if (progressoContainer) progressoContainer.classList.remove('d-none');
+        
         let arquivosParaSubir = Array.from(filesInput.files);
         let indiceArquivoAtual = 0;
 
-        // Tamanho máximo de cada fatia: 8MB (Evita o erro 413 na Render)
-        const CHUNK_SIZE = 8 * 1024 * 1024;
+        // ⚡ MINI-FATIAS DE 1MB: Passam voando pela Render sem ativar o limite 413 ou estourar a memória
+        const CHUNK_SIZE = 1 * 1024 * 1024;
         
         function subirProximoArquivo() {
             if (indiceArquivoAtual >= arquivosParaSubir.length) {
-                // Sucesso total: Esconde o progresso e limpa o input
-                document.getElementById('containerProgresso').classList.add('d-none');
+                if (progressoContainer) progressoContainer.classList.add('d-none');
                 filesInput.value = "";
                 
-                // Fecha o seu modal nativo do Bootstrap
                 let modalEl = document.getElementById('modalUploadArquivo');
                 if (modalEl) {
                     let modalInstance = bootstrap.Modal.getInstance(modalEl);
                     if(modalInstance) modalInstance.hide();
                 }
                 
-                // Remove o overlay customizado se ele existir
                 let overlay = document.getElementById('modal-global-overlay');
                 if(overlay) overlay.remove();
 
-                alert("Todos os arquivos foram fatiados e salvos com sucesso!");
+                alert("Todos os arquivos foram fatiados e gravados com velocidade absoluta!");
                 sincronizarGrade();
                 return;
             }
@@ -969,14 +980,13 @@
 
                 let formData = new FormData();
                 formData.append('arquivos', fatiaBlob, arquivo.name);
-                // Mantém exatamente a lógica de categorias e blocos do seu código
                 formData.append('bloco', estadoDoPainel.bloco);
+                
                 const paiId = estadoDoPainel.pasta_pai_id;
                 const catFinal = (paiId !== null && paiId !== undefined && paiId !== '') ? 'raiz' : estadoDoPainel.bloco;
                 formData.append('categoria', catFinal);
                 formData.append('pasta_pai_id', paiId || '');
                 
-                // Variáveis de controle para o app.py saber juntar os pedaços
                 formData.append('chunkIndex', chunkIndex);
                 formData.append('totalChunks', totalChunks);
                 formData.append('guid', guidUnico);
@@ -988,26 +998,22 @@
                     if (xhr.status === 200) {
                         chunkIndex++;
                         if (chunkIndex < totalChunks) {
-                            // Envia o próximo pedaço do mesmo arquivo
-                            enviarFatia();
+                            enviarFatia(); // Despacha a próxima fatia leve imediatamente
                         } else {
-                            // Arquivo concluído! Passa para o próximo arquivo do lote
                             indiceArquivoAtual++;
-                            subirProximoArquivo();
+                            subirProximoArquivo(); // Arquivo finalizado! Passa para o próximo do lote
                         }
                     } else {
-                        alert("Erro ao enviar fragmento do arquivo para o servidor.");
-                        document.getElementById('containerProgresso').classList.add('d-none');
+                        alert("Erro ao transmitir fragmento de rede. Tentativa abortada.");
+                        if (progressoContainer) progressoContainer.classList.add('d-none');
                     }
                 };
                 xhr.send(formData);
             }
 
-            // Inicia o envio do arquivo atual por partes
             enviarFatia();
         }
 
-        // Dá o pontapé inicial no lote completo
         subirProximoArquivo();
     }
     
@@ -1126,7 +1132,7 @@
         })
         .catch(err => console.error("Erro ao carregar resumo:", err));
     });
-  </style>
+  </script>
 
   <div id="mobile-only-ui">
       <nav class="mobile-nav">
