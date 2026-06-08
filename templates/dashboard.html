@@ -736,20 +736,21 @@
                 } else {
                     // Arquivo de documento tradicional (Ganhou os botões da sua referência direto do lado do lápis!)
                     cliqueCorpoCard = "void(0)";
-                    botoesAcaoHtml = `
-                        <button class="btn btn-sm btn-light border py-0 px-1 text-success" title="Visualizar" onclick="event.stopPropagation(); window.open('/baixar/${item.id}', '_blank')">
-                            <i class="bi bi-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-light border py-0 px-1 text-dark" title="Baixar Arquivo" onclick="event.stopPropagation(); window.open('/baixar/${item.id}', '_blank')">
-                            <i class="bi bi-cloud-download"></i>
-                        </button>
-                        <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="abrirModalRenomearDireto(event, ${item.id}, '${item.nome.replace(/'/g, "\\'")}')">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" title="Mover para Lixeira" onclick="abrirModalExcluirDireto(event, ${item.id})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    `;
+                    // Procure por esta parte no javascript do seu dashboard.html e deixe os links assim:
+                   botoesAcaoHtml = `
+                      <button class="btn btn-sm btn-light border py-0 px-1 text-success" title="Visualizar" onclick="event.stopPropagation(); window.open('/baixar/${item.id}?download=false', '_blank')">
+                       <i class="bi bi-eye"></i>
+                      </button>
+                      <button class="btn btn-sm btn-light border py-0 px-1 text-dark" title="Baixar Arquivo" onclick="event.stopPropagation(); window.open('/baixar/${item.id}?download=true', '_blank')">
+                       <i class="bi bi-cloud-download"></i>
+                      </button>
+                      <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="abrirModalRenomearDireto(event, ${item.id}, '${item.nome.replace(/'/g, "\\'")}')">
+                       <i class="bi bi-pencil"></i>
+                      </button>
+                      <button class="btn btn-sm btn-light border py-0 px-1 text-danger" title="Mover para Lixeira" onclick="abrirModalExcluirDireto(event, ${item.id})">
+                       <i class="bi bi-trash"></i>
+                       </button>
+                   `;
                 }
                 
                 card.innerHTML = `
