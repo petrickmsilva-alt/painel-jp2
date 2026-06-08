@@ -405,7 +405,9 @@
                         <button type="button" class="btn btn-sm btn-primary" id="btn-nova-pasta-acao" onclick="abrirModalNovaPasta()">
                           <i class="bi bi-folder-plus"></i> Nova Pasta
                         </button>
-                        <button class="btn btn-sm btn-success" onclick="abrirModalUploadComContexto()"><i class="bi bi-cloud-arrow-up"></i> Enviar Arquivo</button>
+                        <button class="btn btn-sm btn-outline-danger ms-1" id="btn-excluir-lote" onclick="dispararExclusaoEmLote()" style="display: none;">
+                        <i class="bi bi-trash3-fill"></i> Excluir Selecionados (<span id="contador-selecionados">0</span>)
+                        </button>button class="btn btn-sm btn-success" onclick="abrirModalUploadComContexto()"><i class="bi bi-cloud-arrow-up"></i> Enviar Arquivo</button>
                     </div>
                     <div id="controles-sites" class="d-none gap-2">
                         <button class="btn btn-sm btn-primary" onclick="abrirModalCadastroSite()"><i class="bi bi-plus-circle"></i> Incluir Site</button>
@@ -635,15 +637,26 @@
                 return;
             }
             
-            data.itens.forEach(item => {
+           data.itens.forEach(item => {
                 let card = document.createElement("div");
                 card.className = "explorer-card";
+                card.style.position = "relative"; // Garante o alinhamento da caixinha
                 
                 let iconHtml = item.tipo === 'pasta' ? '<i class="bi bi-folder-fill text-warning"></i>' : '<i class="bi bi-file-earmark-text-fill text-primary"></i>';
                 let labelAutor = item.tipo === 'pasta' ? 'Pasta de Arquivos' : 'Documento';
                 
                 let botoesAcaoHtml = "";
                 let cliqueCorpoCard = "";
+                
+                // 🟢 ADICIONADO: Desenha a caixinha Checkbox no topo esquerdo do card se for arquivo/pasta deletável
+                let checkboxHtml = "";
+                if (item.tipo === 'pasta' || item.tipo === 'arquivo') {
+                    checkboxHtml = `
+                        <input type="checkbox" class="chk-item-excluir" data-id="${item.id}" 
+                               style="position: absolute; top: 10px; left: 10px; width: 18px; height: 18px; cursor: pointer; z-index: 20;" 
+                               onclick="event.stopPropagation(); gerenciarBotaoLote();">
+                    `;
+                }
         
                 if (item.tipo === 'pasta') {
                     cliqueCorpoCard = `entrarSubpastaReal(${item.id}, '${item.nome}')`;
@@ -674,15 +687,69 @@
                 }
                 
                 card.innerHTML = `
+                    ${checkboxHtml}
                     <div class="action-trigger">${botoesAcaoHtml}</div>
                     <div class="icon-wrapper" onclick="${cliqueCorpoCard}">${iconHtml}</div>
                     <div class="item-label" onclick="${cliqueCorpoCard}" title="${item.nome}">${item.nome}</div>
                     <div class="item-author text-muted d-none d-md-block">${labelAutor}</div>`;
                 gridContainer.appendChild(card);
             });
-       });
+            // Oculta o botão mestre ao recarregar a grade de arquivos limpa
+            let btnLote = document.getElementById('btn-excluir-lote');
+            if(btnLote) btnLote.style.display = 'none';
+       })
+       .catch(err => console.error("Erro na listagem:", err));
     }
-    
+
+    // 🟢 FUNÇÕES NOVAS ADICIONADAS: CONTROLE DE SELEÇÃO E EXCLUSÃO EM LOTE
+    function gerenciarBotaoLote() {
+        let selecionados = document.querySelectorAll('.chk-item-excluir:checked');
+        let btnLote = document.getElementById('btn-excluir-lote');
+        let contador = document.getElementById('contador-selecionados');
+        
+        if (btnLote && contador) {
+            if (selecionados.length > 0) {
+                btnLote.style.display = 'inline-block';
+                contador.innerText = selecionados.length;
+            } else {
+                btnLote.style.display = 'none';
+                contador.innerText = '0';
+            }
+        }
+    }
+
+    function dispararExclusaoEmLote() {
+        let selecionados = document.querySelectorAll('.chk-item-excluir:checked');
+        if (selecionados.length === 0) return;
+        
+        // Junta todos os IDs marcados separados por vírgula para enviar ao app.py
+        let ids = Array.from(selecionados).map(cb => cb.getAttribute('data-id')).join(',');
+        
+        let confirmacao = confirm(`Deseja realmente mover esses ${selecionados.length} itens para a lixeira?`);
+        if (confirmacao) {
+            let senha = prompt("Confirme sua senha de sócio para validar a operação:");
+            if (!senha) return;
+            
+            let formData = new FormData();
+            formData.append('id', ids);
+            formData.append('senha', senha);
+            
+            fetch('/excluir', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'sucesso') {
+                    alert("Todos os itens selecionados foram enviados para a lixeira!");
+                    sincronizarGrade();
+                } else {
+                    alert("Erro: " + data.mensagem);
+                }
+            })
+            .catch(err => {
+                console.error("Erro na exclusão em lote:", err);
+                alert("Erro ao tentar processar exclusão.");
+            });
+        }
+    }    
     function entrarSubpastaReal(id, nomePasta) {
         estadoDoPainel.pasta_pai_id = id;
         estadoDoPainel.nivel_atual = 'subpasta';
