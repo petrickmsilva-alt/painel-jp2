@@ -302,45 +302,27 @@ def upload_avancado():
 # 🟢 2. REMOÇÃO DE DUPLICIDADE: UNIFICAÇÃO DA ROTA INTELIGENTE DE VISUALIZAÇÃO E DOWNLOAD
 @app.route('/baixar_recurso/<int:arquivo_id>')
 def baixar_recurso_corporativo(arquivo_id):
-    if 'usuario_logado' not in session: 
-        return "Acesso não autorizado", 401
-        
+    if 'usuario_logado' not in session: return "Não autorizado", 401
     force_download = request.args.get('download', 'false') == 'true'
-    
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
-            cur.execute("""
-                SELECT caminho_sistema, nome_original, deletado 
-                FROM arquivos_painel 
-                WHERE id = %s
-            """, (arquivo_id,))
+            cur.execute("SELECT caminho_sistema, nome_original, deletado FROM arquivos_painel WHERE id = %s", (arquivo_id,))
             dados = cur.fetchone()
         conn.close()
         
         if dados and dados['deletado'] != 1:
-            caminho_banco = dados['caminho_sistema']
-            nome_arquivo_fisico = caminho_banco.split('/')[-1]
+            nome_arquivo_fisico = dados['caminho_sistema'].split('/')[-1]
+            arquivo_path = os.path.join(UPLOAD_FOLDER, nome_arquivo_fisico)
             
-            # Localiza o arquivo de forma real e absoluta na pasta da HostGator/Render
-            caminho_absoluto = os.path.join(UPLOAD_FOLDER, nome_arquivo_fisico)
+            if os.path.exists(arquivo_path):
+                registrar_log(f"Acessou o arquivo: {dados['nome_original']} (Download={force_download})")
+                # 🟢 CORREÇÃO CIRÚRGICA: caminho_absoluto com "o" no final
+                return send_file(arquivo_path, download_name=dados['nome_original'], as_attachment=force_download)
             
-            if os.path.exists(caminho_absoluto):
-                registrar_log(f"Acessou arquivo via painel: {dados['nome_original']} (Download={force_download})")
-                
-                # download=false abre direto no navegador (PDF/Vídeos), download=true força baixar
-                return send_file(
-                    caminho_absolute, 
-                    download_name=dados['nome_original'], 
-                    as_attachment=force_download
-                )
-            else:
-                return f"Arquivo físico antigo '{dados['nome_original']}' foi limpo pelo deploy temporário do servidor da Render. Faça o upload dele novamente para reestabelecer o link permanente rápido.", 404
-                
     except Exception as e:
         print(f"ERRO DE FLUXO NO DOWNLOAD: {e}")
-        
-    return "Erro interno ao processar requisição do documento.", 500
+    return "Este arquivo físico antigo foi removido pelo deploy temporário do servidor da Render. Por favor, exclua-o na lixeira e faça o upload novamente para registrar o link persistente rápido.", 404
 
 # 🔒 3. ROTA DE SEGURANÇA PARA ALTERAÇÃO DE NOMES
 @app.route('/renomear', methods=['POST'])
