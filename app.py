@@ -170,37 +170,34 @@ def listar_arquivos():
         conn = get_db_connection()
         with conn.cursor() as cur:
             if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
-                cur.execute("""
-                    SELECT * FROM arquivos_painel 
-                    WHERE bloco = %s AND pasta_pai_id = %s AND deletado = 0
-                """, (bloco, int(pasta_pai_id)))
+                cur.execute("SELECT * FROM arquivos_painel WHERE bloco = %s AND pasta_pai_id = %s AND deletado = 0", (bloco, int(pasta_pai_id)))
             else:
-                cur.execute("""
-                    SELECT * FROM arquivos_painel 
-                    WHERE bloco = %s AND pasta_pai_id IS NULL AND deletado = 0
-                """, (bloco,))
+                cur.execute("SELECT * FROM arquivos_painel WHERE bloco = %s AND pasta_pai_id IS NULL AND deletado = 0", (bloco,))
             linhas = cur.fetchall()
         conn.close()
         
+        # OTIMIZAÇÃO: Pré-carregar a lista de arquivos da pasta static/image 
+        # uma única vez, em vez de perguntar ao disco a cada item.
+        pastas_imagens = os.listdir(os.path.join(app.root_path, 'static', 'image'))
+        
         itens_formatados = []
         for l in linhas:
-            caminho_final = l['caminho_sistema']
-            imagem_card = "/static/image/ibd.jpeg" # Padrão inicial de segurança
+            imagem_card = "/static/image/ibd.jpeg" 
             
             if l['tipo'] == 'link':
                 nome_limpo = "".join(x for x in l['nome_original'] if x.isalnum())
-                imagem_path = os.path.join(app.root_path, 'static', 'image', f"{nome_limpo}.jpeg")
+                nome_imagem = f"{nome_limpo}.jpeg"
                 
-                # Se a imagem customizada existir na HostGator, usa ela. Se não, mantém a ibd.jpeg
-                if os.path.exists(imagem_path):
-                    imagem_card = f"/static/image/{nome_limpo}.jpeg"
+                # Verificamos na lista que já está na memória (muito mais rápido que disco)
+                if nome_imagem in pastas_imagens:
+                    imagem_card = f"/static/image/{nome_imagem}"
             
             itens_formatados.append({
                 'id': l['id'], 
                 'nome': l['nome_original'], 
                 'tipo': l['tipo'], 
-                'caminho': caminho_final,     # AQUI: Mantém a URL real salva no banco intacta!
-                'imagem_bg': imagem_card,     # AQUI: Campo novo exclusivo para a foto do card
+                'caminho': l['caminho_sistema'],
+                'imagem_bg': imagem_card,
                 'autor': l['criado_por'] or 'Sistema', 
                 'bloco': l['bloco'], 
                 'categoria': l['categoria'], 
