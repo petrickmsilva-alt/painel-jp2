@@ -401,7 +401,7 @@
                         <span id="txtCaminhoWindows" class="fw-bold text-secondary" style="font-size: 13px;"></span>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <select id="selectView" class="form-select form-select-sm" onchange="alterarVisualizacao(this.value)">
+                        <select id="selectView" class="form-select form-select-sm" onchange="sincronizarGrade()(this.value)">
                             <option value="pequeno">Ícones Pequenos</option>
                             <option value="medio" selected>Ícones Médios</option>
                             <option value="lista">Lista</option>
@@ -720,6 +720,17 @@
             if(btnLote) btnLote.style.display = 'none';
        })
        .catch(err => console.error("Erro na listagem:", err));
+    }
+
+    function alterarVisualizacao(modo) {
+        let grid = document.getElementById("wrapper-explorer-grid");
+        // Remove as classes de visualização anteriores para não conflitar
+        grid.classList.remove('view-pequeno', 'view-lista');
+        
+        // Se o modo selecionado for diferente de 'medio' (o padrão), aplica a classe
+        if(modo !== 'medio') {
+            grid.classList.add('view-' + modo);
+        }
     }
 
     // 🟢 FUNÇÕES NOVAS ADICIONADAS: CONTROLE DE SELEÇÃO E EXCLUSÃO EM LOTE
