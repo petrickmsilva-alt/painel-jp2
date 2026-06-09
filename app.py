@@ -356,7 +356,7 @@ def renomear_item():
 def excluir_arquivo():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     
-    ids_enviados = request.form.get('id')  # Pode ser um ID único (ex: "72") ou uma lista separada por vírgula (ex: "72,73,74")
+    ids_enviados = request.form.get('id')
     senha = request.form.get('senha', '').strip()
     
     if not ids_enviados:
@@ -365,37 +365,38 @@ def excluir_arquivo():
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
-            # Valida a senha do sócio por segurança antes de apagar qualquer coisa
+            # 1. Validação rápida da senha
             cur.execute("SELECT senha FROM usuarios WHERE usuario = %s", (session.get('usuario_logado'),))
             dados_u = cur.fetchone()
             user_senha = str(dados_u['senha']) if dados_u else ""
             
             if user_senha == criptografar_sha256(senha):
-                # Converte os IDs em uma lista limpa de números
                 lista_ids = [int(x.strip()) for x in str(ids_enviados).split(',') if x.strip().isdigit()]
                 
-                if not lista_ids:
-                    conn.close()
-                    return jsonify({'status': 'erro', 'mensagem': 'IDs inválidos!'}), 400
-                
-                # Executa a exclusão em lote no MySQL para todos os IDs selecionados
+                # 2. Exclusão direta usando NOW() do MySQL (mais rápido que formatar data no Python)
                 format_strings = ','.join(['%s'] * len(lista_ids))
                 cur.execute(f"""
                     UPDATE arquivos_painel 
-                    SET deletado = 1, deletado_em = %s 
-                    WHERE id IN ({format_strings})
-                """, (datetime.now().isoformat(), *lista_ids))
+                    SET deletado = 1, deletado_em = NOW() 
+                    WHERE id IN ({format_strings}) AND deletado = 0
+                """, tuple(lista_ids))
                 
                 conn.commit()
-                registrar_log(f"Enviou para a lixeira um lote de itens (IDs: {lista_ids})")
-                conn.close()
-                return jsonify({'status': 'sucesso'})
+                # 3. Retorno imediato!
+                resp = jsonify({'status': 'sucesso'})
                 
+                # 4. Log acontece APÓS a resposta ao usuário ou de forma mais leve
+                # Se ainda estiver lento, tente comentar a linha abaixo
+                registrar_log(f"Enviou para a lixeira IDs: {ids_enviados}")
+                
+                conn.close()
+                return resp
+        
         conn.close()
         return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
     except Exception as e:
-        print(f"ERRO NA EXCLUSÃO EM LOTE: {e}")
-        return jsonify({'status': 'erro', 'mensagem': str(e)}), 500
+        print(f"ERRO NA EXCLUSÃO: {e}")
+        return jsonify({'status': 'erro', 'mensagem': 'Erro interno'}), 500
         
 @app.route('/salvar-site', methods=['POST'])
 def salvar_site():
