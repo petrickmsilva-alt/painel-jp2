@@ -417,30 +417,31 @@
                         <i class="bi bi-folder2-open me-2 text-primary"></i>
                         <span id="txtCaminhoWindows" class="fw-bold text-secondary" style="font-size: 13px;"></span>
                     </div>
-                    <select id="selectView" class="form-select form-select-sm w-auto" onchange="alterarVisualizacao(this.value)">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="sincronizarGrade()">
+                        <i class="bi bi-arrow-clockwise"></i> Sincronizar
+                    </button>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <button class="btn btn-sm btn-outline-secondary" id="btnVoltarExplorer" onclick="volverDiretorio()">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </button>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="abrirModalNovaPasta()">
+                        <i class="bi bi-folder-plus"></i> Nova Pasta
+                    </button>
+                    <button class="btn btn-sm btn-success" onclick="abrirModalUploadComContexto()">
+                        <i class="bi bi-cloud-arrow-up"></i> Enviar
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" id="btn-excluir-lote" onclick="dispararExclusaoEmLote()" style="display: none;">
+                        <i class="bi bi-trash3-fill"></i> Excluir (<span id="contador-selecionados">0</span>)
+                    </button>
+
+                    <select id="selectView" class="form-select form-select-sm ms-auto" style="width: 150px;" onchange="alterarVisualizacao(this.value)">
                         <option value="pequeno">Ícones Pequenos</option>
                         <option value="medio" selected>Ícones Médios</option>
                         <option value="lista">Lista</option>
                     </select>
                 </div>
-                <div class="d-flex gap-2">
-                   <div class="d-flex gap-2 flex-wrap align-items-center">
-                   <button class="btn btn-sm btn-outline-secondary px-3" id="btnVoltarExplorer" onclick="volverDiretorio()">
-                        <i class="bi bi-arrow-left"></i> Voltar
-                    </button>
-                    <button type="button" class="btn btn-sm btn-primary" id="btn-nova-pasta-acao" onclick="abrirModalNovaPasta()">
-                        <i class="bi bi-folder-plus"></i> Nova Pasta
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" id="btn-excluir-lote" onclick="dispararExclusaoEmLote()" style="display: none;">
-                        <i class="bi bi-trash3-fill"></i> Excluir Selecionados (<span id="contador-selecionados">0</span>)
-                    </button>
-                    <button class="btn btn-sm btn-success" onclick="abrirModalUploadComContexto()"><i class="bi bi-cloud-arrow-up"></i> Enviar Arquivo</button>
-    
-                   <select id="selectView" class="form-select form-select-sm ms-auto" style="width: 150px;" onchange="alterarVisualizacao(this.value)">
-                       <option value="pequeno">Ícones Pequenos</option>
-                       <option value="medio" selected>Ícones Médios</option>
-                       <option value="lista">Lista</option>
-                   </select>
             </div>
                 </i> Enviar Arquivo</button>
                         <button class="btn btn-sm btn-outline-secondary ms-auto" onclick="sincronizarGrade()">
