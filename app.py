@@ -387,7 +387,7 @@ def excluir_arquivo():
                 
                 # 4. Log acontece APÓS a resposta ao usuário ou de forma mais leve
                 # Se ainda estiver lento, tente comentar a linha abaixo
-                registrar_log(f"Enviou para a lixeira IDs: {ids_enviados}")
+                # registrar_log(f"Enviou para a lixeira IDs: {ids_enviados}")
                 
                 conn.close()
                 return resp
