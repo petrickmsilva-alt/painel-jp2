@@ -169,7 +169,6 @@ def listar_arquivos():
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
-            # Com o índice criado, esta consulta será muito rápida
             if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
                 cur.execute("SELECT * FROM arquivos_painel WHERE bloco = %s AND pasta_pai_id = %s AND deletado = 0", (bloco, int(pasta_pai_id)))
             else:
@@ -179,21 +178,21 @@ def listar_arquivos():
         
         itens_formatados = []
         for l in linhas:
-            # Montagem direta do link. Não pergunte ao disco se existe, apenas entregue a URL.
-            # O navegador do usuário é quem vai carregar a imagem na velocidade dele.
             nome_limpo = "".join(x for x in l.get('nome_original', '') if x.isalnum())
             itens_formatados.append({
-                'id': l['id'], 
-                'nome': l['nome_original'], 
-                'tipo': l['tipo'], 
-                'caminho': l['caminho_sistema'],
-                'imagem_bg': f"/static/image/{nome_limpo}.jpeg",
-                'autor': l['criado_por'] or 'Sistema', 
-                'bloco': l['bloco'], 
-                'categoria': l['categoria'], 
-                'pasta_pai_id': l['pasta_pai_id']
+                'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
+                'caminho': l['caminho_sistema'], 'imagem_bg': f"/static/image/{nome_limpo}.jpeg",
+                'autor': l['criado_por'] or 'Sistema', 'bloco': l['bloco'], 
+                'categoria': l['categoria'], 'pasta_pai_id': l['pasta_pai_id']
             })
-        return jsonify({'itens': itens_formatados})
+        
+        # --- A MÁGICA DO CACHE ---
+        resp = make_response(jsonify({'itens': itens_formatados}))
+        # 'max-age=300' significa que o navegador guardará os dados por 300 segundos (5 minutos)
+        resp.headers['Cache-Control'] = 'public, max-age=300'
+        return resp
+        # -------------------------
+
     except Exception as e:
         print(f"Erro ao listar: {e}")
         return jsonify({'itens': []})
