@@ -169,6 +169,7 @@ def listar_arquivos():
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
+            # Com o índice criado, esta consulta será muito rápida
             if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
                 cur.execute("SELECT * FROM arquivos_painel WHERE bloco = %s AND pasta_pai_id = %s AND deletado = 0", (bloco, int(pasta_pai_id)))
             else:
@@ -176,28 +177,17 @@ def listar_arquivos():
             linhas = cur.fetchall()
         conn.close()
         
-        # OTIMIZAÇÃO: Pré-carregar a lista de arquivos da pasta static/image 
-        # uma única vez, em vez de perguntar ao disco a cada item.
-        pastas_imagens = os.listdir(os.path.join(app.root_path, 'static', 'image'))
-        
         itens_formatados = []
         for l in linhas:
-            imagem_card = "/static/image/ibd.jpeg" 
-            
-            if l['tipo'] == 'link':
-                nome_limpo = "".join(x for x in l['nome_original'] if x.isalnum())
-                nome_imagem = f"{nome_limpo}.jpeg"
-                
-                # Verificamos na lista que já está na memória (muito mais rápido que disco)
-                if nome_imagem in pastas_imagens:
-                    imagem_card = f"/static/image/{nome_imagem}"
-            
+            # Montagem direta do link. Não pergunte ao disco se existe, apenas entregue a URL.
+            # O navegador do usuário é quem vai carregar a imagem na velocidade dele.
+            nome_limpo = "".join(x for x in l.get('nome_original', '') if x.isalnum())
             itens_formatados.append({
                 'id': l['id'], 
                 'nome': l['nome_original'], 
                 'tipo': l['tipo'], 
                 'caminho': l['caminho_sistema'],
-                'imagem_bg': imagem_card,
+                'imagem_bg': f"/static/image/{nome_limpo}.jpeg",
                 'autor': l['criado_por'] or 'Sistema', 
                 'bloco': l['bloco'], 
                 'categoria': l['categoria'], 
