@@ -217,10 +217,23 @@
     .explorer-grid { grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); }
     
     /* Modos de Visualização */
-    .view-pequeno { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important; }
-    .view-lista { grid-template-columns: 1fr !important; }
-    .view-lista .explorer-card { flex-direction: row; justify-content: flex-start; min-height: 60px; padding: 10px; }
+    /* Modo Pequeno: colunas menores (80px) */
+    .view-pequeno { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)) !important; }
+    .view-pequeno .explorer-card { min-height: 90px; padding: 10px; }
+    .view-pequeno .icon-wrapper { font-size: 30px; }
+    .view-pequeno .item-label { font-size: 11px; }
 
+    /* Modo Lista: altura bem reduzida */
+    .view-lista { grid-template-columns: 1fr !important; }
+    .view-lista .explorer-card { 
+        flex-direction: row; 
+        justify-content: flex-start; 
+        min-height: 40px; 
+        padding: 5px 15px; 
+    }
+    .view-lista .icon-wrapper { font-size: 20px; margin-bottom: 0; margin-right: 15px; }
+    .view-lista .item-label { width: auto; font-size: 13px; }
+    
     .explorer-card {
       background: #ffffff;
       border: 1px solid #e2e8f0;
