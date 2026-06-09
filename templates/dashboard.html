@@ -217,22 +217,26 @@
     .explorer-grid { grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); }
     
     /* Modos de Visualização */
-    /* Modo Pequeno: colunas menores (80px) */
-    .view-pequeno { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)) !important; }
-    .view-pequeno .explorer-card { min-height: 90px; padding: 10px; }
-    .view-pequeno .icon-wrapper { font-size: 30px; }
-    .view-pequeno .item-label { font-size: 11px; }
+    
+    /* Modo Pequeno: Ícones menores e texto compacto */
+    .view-pequeno { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)) !important; }
+    .view-pequeno .explorer-card { min-height: 100px; padding: 10px 5px; }
+    .view-pequeno .icon-wrapper { font-size: 32px !important; margin-bottom: 4px; }
+    .view-pequeno .item-label { font-size: 11px !important; line-height: 1.2; }
 
-    /* Modo Lista: altura bem reduzida */
+    /* Modo Lista: Compacto, ícone à esquerda e texto alinhado */
     .view-lista { grid-template-columns: 1fr !important; }
     .view-lista .explorer-card { 
         flex-direction: row; 
         justify-content: flex-start; 
-        min-height: 40px; 
-        padding: 5px 15px; 
+        min-height: 40px !important; 
+        padding: 5px 15px !important; 
+        text-align: left;
     }
-    .view-lista .icon-wrapper { font-size: 20px; margin-bottom: 0; margin-right: 15px; }
-    .view-lista .item-label { width: auto; font-size: 13px; }
+    .view-lista .icon-wrapper { font-size: 22px !important; margin-bottom: 0; margin-right: 15px; }
+    .view-lista .item-label { width: auto; font-size: 13px; font-weight: 500; }
+    /* Esconde o autor na lista para deixar limpo igual o Windows */
+    .view-lista .item-author { display: none !important; }
     
     .explorer-card {
       background: #ffffff;
