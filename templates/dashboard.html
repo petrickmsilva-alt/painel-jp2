@@ -678,9 +678,20 @@ function sincronizarGrade() {
                 let nomeArquivo = mapeamentoLogos[cat] || 'default.png';
                 
                 card.onclick = function() { window.open(urlDestino, '_blank'); };
-                card.innerHTML = `<div class="icon-wrapper"><img src="/static/image/${nomeArquivo}" style="width: 40px; height: 40px; object-fit: contain; border-radius: 8px;"></div><div class="item-label">${cat}</div><div class="item-author">Portal WEB</div>`;
-                gridContainer.appendChild(card);
-                itensRenderizados.push(cat.toLowerCase().trim());
+// Removi o div item-author e adicionei a classe site-title-large
+card.innerHTML = `
+    <div class="action-trigger">
+        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="event.stopPropagation(); alert('Item fixo do sistema: não pode ser excluído diretamente.');">
+            <i class="bi bi-trash"></i>
+        </button>
+    </div>
+    <div class="icon-wrapper">
+        <img src="/static/image/${nomeArquivo}" style="width: 40px; height: 40px; object-fit: contain; border-radius: 8px;">
+    </div>
+    <div class="item-label site-title-large">${cat}</div>
+`;
+gridContainer.appendChild(card);
+itensRenderizados.push(cat.toLowerCase().trim());
             });
 
             // 2. Renderiza de forma dinâmica os novos sites (MODIFICADO COM explorer-site-card)
@@ -696,17 +707,17 @@ function sincronizarGrade() {
                         
                         let imagemDoCard = item.imagem_bg || '/static/image/ibd.jpeg';
                         card.innerHTML = `
-                            <div class="action-trigger">
-                                <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
-                            <div class="icon-wrapper">
-                                <img src="${imagemDoCard}" style="width: 40px; height: 40px; object-fit: contain; border-radius: 8px;">
-                            </div>
-                            <div class="item-label" title="${item.nome || ''}">${item.nome || ''}</div>
-                            <div class="item-author">Portal WEB</div>`;
-                        gridContainer.appendChild(card);
+    <div class="action-trigger">
+        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})">
+            <i class="bi bi-trash"></i>
+        </button>
+    </div>
+    <div class="icon-wrapper">
+        <img src="${imagemDoCard}" style="width: 40px; height: 40px; object-fit: contain; border-radius: 8px;">
+    </div>
+    <div class="item-label site-title-large" title="${item.nome || ''}">${item.nome || ''}</div>
+`;
+gridContainer.appendChild(card);
                     }
                 });
             }
