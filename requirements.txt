@@ -4,3 +4,4 @@ supabase
 psycopg2-binary
 pymysql
 beautifulsoup4
+pandas
