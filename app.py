@@ -75,6 +75,13 @@ def registrar_log(acao):
 
 def criptografar_sha256(senha_pura):
     return hashlib.sha256(senha_pura.encode('utf-8')).hexdigest()
+    
+@app.route('/')
+def home():
+    # Verifica se existe sessão. Se sim, manda pro financeiro, se não, pro login.
+    if 'usuario_logado' in session:
+        return redirect(url_for('financeiro.pagina_financeiro'))
+    return redirect(url_for('tela_login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def tela_login():
