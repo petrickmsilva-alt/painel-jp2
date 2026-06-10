@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory, send_file
 from flask import Blueprint 
 
+# Função de conexão com o banco
 def get_db_connection():
     return pymysql.connect(
         host=os.environ.get("DB_HOST"),
@@ -21,9 +22,21 @@ def get_db_connection():
     )
 
 app = Flask(__name__)
-# Módulo financeiro que vamos criar
+
+# CHAVE SECRETA: Essencial para o sistema de login/sessão funcionar
+app.secret_key = os.environ.get("SECRET_KEY", "uma_chave_muito_segura_para_desenvolvimento")
+
+# Registro do módulo financeiro
 from financeiro import bp_financeiro
 app.register_blueprint(bp_financeiro)
+
+# Rota básica de teste para garantir que o app subiu
+@app.route('/')
+def index():
+    return "Sistema Financeiro JP2 Online - Caminho livre para o Tijolo 2!"
+
+if __name__ == '__main__':
+    app.run(debug=True)
 # Configura o limite de tráfego do Flask para arquivos grandes direto na HostGator
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "chave_secreta_super_segura_jp2")
