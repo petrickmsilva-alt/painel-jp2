@@ -4,6 +4,15 @@ import re
 import tempfile
 import hashlib
 import pymysql
+
+def get_db_connection():
+    return pymysql.connect(
+        host=os.environ.get("DB_HOST"),
+        user=os.environ.get("DB_USER"),
+        password=os.environ.get("DB_PASSWORD"),
+        database=os.environ.get("DB_NAME"),
+        cursorclass=pymysql.cursors.DictCursor
+    )
 import urllib.request
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
