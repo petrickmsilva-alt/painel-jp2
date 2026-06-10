@@ -59,9 +59,9 @@ def criptografar_sha256(senha_pura):
     
 @app.route('/')
 def home():
+    # Verifica se existe sessão. Se sim, manda para o financeiro, se não, pro login.
     if 'usuario_logado' in session:
-        # Troque 'financeiro.pagina_financeiro' pelo nome da rota da sua página principal
-        return redirect(url_for('dashboard')) 
+        return redirect(url_for('financeiro.pagina_financeiro'))
     return redirect(url_for('tela_login'))
 
 @app.route('/login', methods=['GET', 'POST'])
