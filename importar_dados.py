@@ -1,42 +1,23 @@
-import pandas as pd
-import pymysql
 import os
+import pymysql
+import pandas as pd
 
-# 1. Configurações do Banco (Igual ao que você usa no app.py)
+# Aqui usamos as variáveis que o seu sistema já reconhece
 DB_CONFIG = {
-    'host': os.environ.get("DB_HOST", "localhost"),
-    'user': os.environ.get("DB_USER"),
-    'password': os.environ.get("DB_PASSWORD"),
-    'database': os.environ.get("DB_NAME")
+    'host': os.environ.get("DB_HOST", "br778.hostgator.com.br"),
+    'user': os.environ.get("DB_USER", "brobon39_ibdtec_petrick"),
+    'password': os.environ.get("DB_PASSWORD", "FR-R-PH]C@Uj"),
+    'database': os.environ.get("DB_NAME", "brobon39_ibdtec_painel"),
+    'cursorclass': pymysql.cursors.DictCursor
 }
 
-def importar_todos():
-    conn = pymysql.connect(**DB_CONFIG)
-    cursor = conn.cursor()
-    
-    # Lista de arquivos para importar
-    arquivos = [f for f in os.listdir('.') if f.endswith('.csv')]
-    
-    for arquivo in arquivos:
-        print(f"Processando: {arquivo}...")
-        # O header=1 ignora a primeira linha vazia/título do Excel
-        df = pd.read_csv(arquivo, header=1) 
-        
-        # Limpeza simples: pega só as colunas que importam
-        # (Você pode ajustar os nomes das colunas conforme sua planilha)
-        for _, row in df.iterrows():
-            try:
-                # Exemplo: Inserindo na tabela financeiro_emprestimos
-                cursor.execute("""
-                    INSERT INTO financeiro_emprestimos (entidade, valor_original, saldo_devedor)
-                    VALUES (%s, %s, %s)
-                """, (arquivo, row.get('Valor Inicial', 0), row.get('Valor Final', 0)))
-            except Exception as e:
-                print(f"Erro na linha: {e}")
-    
-    conn.commit()
-    conn.close()
-    print("Importação concluída com sucesso!")
+def importar_dados():
+    try:
+        conn = pymysql.connect(**DB_CONFIG)
+        print("Conectado ao banco com sucesso!")
+        conn.close()
+    except Exception as e:
+        print(f"Erro ao conectar: {e}")
 
 if __name__ == "__main__":
-    importar_todos()
+    importar_dados()
