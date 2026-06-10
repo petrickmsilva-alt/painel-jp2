@@ -9,8 +9,12 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory, send_file
+from flask import Blueprint 
 
 app = Flask(__name__)
+# Módulo financeiro que vamos criar
+from financeiro import bp_financeiro
+app.register_blueprint(bp_financeiro)
 # Configura o limite de tráfego do Flask para arquivos grandes direto na HostGator
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "chave_secreta_super_segura_jp2")
