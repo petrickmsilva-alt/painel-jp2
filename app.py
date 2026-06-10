@@ -4,6 +4,12 @@ import re
 import tempfile
 import hashlib
 import pymysql
+import urllib.request
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
+from datetime import datetime, timedelta
+from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory, send_file
+from flask import Blueprint 
 
 def get_db_connection():
     return pymysql.connect(
@@ -13,12 +19,6 @@ def get_db_connection():
         database=os.environ.get("DB_NAME"),
         cursorclass=pymysql.cursors.DictCursor
     )
-import urllib.request
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
-from datetime import datetime, timedelta
-from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory, send_file
-from flask import Blueprint 
 
 app = Flask(__name__)
 # Módulo financeiro que vamos criar
