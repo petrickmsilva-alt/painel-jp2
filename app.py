@@ -107,11 +107,6 @@ def logout():
     session.clear()
     return redirect(url_for('tela_login'))
 
-@app.route('/')
-def home():
-    if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
-    return render_template('home.html', nome_sócio=session.get('nome_exibicao', 'Sócio'))
-
 @app.route('/agenda')
 def pagina_agenda():
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
