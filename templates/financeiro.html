@@ -1,11 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-    <title>Gestão Financeira</title>
+    <meta charset="UTF-8">
+    <title>Gestão Financeira - JP2</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f7f6; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input { width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
+        th { background: #007bff; color: white; }
+    </style>
 </head>
 <body>
-    <h1>Olá, {{ nome_sócio }}!</h1>
-    <p>Bem-vindo ao módulo de Gestão Financeira.</p>
-    <a href="/">Voltar para o Início</a>
+    <div class="container">
+        <h1>Gestão Financeira</h1>
+        <input type="text" id="filtro" placeholder="Pesquisar por entidade (Brobond, Expofeirasco...)" onkeyup="filtrarTabela()">
+        
+        <table id="tabelaFinanceiro">
+            <thead>
+                <tr>
+                    <th>Entidade</th>
+                    <th>Valor Original</th>
+                    <th>Valor Pago</th>
+                    <th>Saldo Devedor</th>
+                </tr>
+            </thead>
+            <tbody id="corpoTabela">
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Carrega os dados da sua API
+        fetch('/api/financeiro/dados')
+            .then(res => res.json())
+            .then(data => {
+                const corpo = document.getElementById('corpoTabela');
+                data.dados.forEach(item => {
+                    corpo.innerHTML += `<tr>
+                        <td>${item.entidade}</td>
+                        <td>R$ ${item.valor_original}</td>
+                        <td>R$ ${item.valor_pago}</td>
+                        <td>R$ ${item.saldo_devedor}</td>
+                    </tr>`;
+                });
+            });
+
+        // Função mágica de filtro
+        function filtrarTabela() {
+            let input = document.getElementById('filtro').value.toUpperCase();
+            let tr = document.getElementById('tabelaFinanceiro').getElementsByTagName('tr');
+            for (let i = 1; i < tr.length; i++) {
+                let td = tr[i].getElementsByTagName('td')[0];
+                tr[i].style.display = td.innerText.toUpperCase().indexOf(input) > -1 ? "" : "none";
+            }
+        }
+    </script>
 </body>
 </html>
