@@ -3,3 +3,4 @@ gunicorn
 pymysql
 pandas
 beautifulsoup4
+openpyxl
