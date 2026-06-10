@@ -20,14 +20,15 @@ UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-# Conexão nativa com o banco de dados MySQL local da HostGator
+# Conexão otimizada com autocommit para maior velocidade e estabilidade
 def get_db_connection():
     return pymysql.connect(
         host=os.environ.get("DB_HOST", "localhost"),
-        user=os.environ.get("DB_USER"),        # Seu usuário do MySQL do cPanel
-        password=os.environ.get("DB_PASSWORD"),# Sua senha do MySQL do cPanel
-        database=os.environ.get("DB_NAME"),    # O nome do banco criado no cPanel
-        cursorclass=pymysql.cursors.DictCursor
+        user=os.environ.get("DB_USER"),
+        password=os.environ.get("DB_PASSWORD"),
+        database=os.environ.get("DB_NAME"),
+        cursorclass=pymysql.cursors.DictCursor,
+        autocommit=True
     )
 
 def registrar_log(acao):
