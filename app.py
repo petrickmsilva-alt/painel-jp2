@@ -359,7 +359,8 @@ def excluir_arquivo():
     
     if not ids_enviados:
         return jsonify({'status': 'erro', 'mensagem': 'Nenhum item selecionado!'}), 400
-        
+    
+    conn = None
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
@@ -371,7 +372,7 @@ def excluir_arquivo():
             if user_senha == criptografar_sha256(senha):
                 lista_ids = [int(x.strip()) for x in str(ids_enviados).split(',') if x.strip().isdigit()]
                 
-                # 2. Exclusão direta usando NOW() do MySQL (mais rápido que formatar data no Python)
+                # 2. Exclusão direta
                 format_strings = ','.join(['%s'] * len(lista_ids))
                 cur.execute(f"""
                     UPDATE arquivos_painel 
@@ -379,22 +380,14 @@ def excluir_arquivo():
                     WHERE id IN ({format_strings}) AND deletado = 0
                 """, tuple(lista_ids))
                 
-                conn.commit()
-                # 3. Retorno imediato!
-                resp = jsonify({'status': 'sucesso'})
-                
-                # 4. Log acontece APÓS a resposta ao usuário ou de forma mais leve
-                # Se ainda estiver lento, tente comentar a linha abaixo
-                # registrar_log(f"Enviou para a lixeira IDs: {ids_enviados}")
-                
-                conn.close()
-                return resp
+                return jsonify({'status': 'sucesso'})
         
-        conn.close()
         return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
     except Exception as e:
         print(f"ERRO NA EXCLUSÃO: {e}")
         return jsonify({'status': 'erro', 'mensagem': 'Erro interno'}), 500
+    finally:
+        if conn: conn.close() # Garantia que a conexão sempre fecha
         
 @app.route('/salvar-site', methods=['POST'])
 def salvar_site():
