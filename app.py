@@ -167,6 +167,7 @@ def listar_arquivos():
     bloco = request.args.get('bloco')
     pasta_pai_id = request.args.get('pasta_pai_id')
     
+    conn = None # Declaramos aqui para o finally poder acessar
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
@@ -175,7 +176,6 @@ def listar_arquivos():
             else:
                 cur.execute("SELECT * FROM arquivos_painel WHERE bloco = %s AND pasta_pai_id IS NULL AND deletado = 0", (bloco,))
             linhas = cur.fetchall()
-        conn.close()
         
         itens_formatados = []
         for l in linhas:
@@ -187,16 +187,16 @@ def listar_arquivos():
                 'categoria': l['categoria'], 'pasta_pai_id': l['pasta_pai_id']
             })
         
-        # --- A MÁGICA DO CACHE ---
         resp = make_response(jsonify({'itens': itens_formatados}))
-        # 'max-age=300' significa que o navegador guardará os dados por 300 segundos (5 minutos)
         resp.headers['Cache-Control'] = 'public, max-age=300'
         return resp
-        # -------------------------
 
     except Exception as e:
         print(f"Erro ao listar: {e}")
         return jsonify({'itens': []})
+    
+    finally:
+        if conn: conn.close() # Garantia absoluta de que a conexão fechará
         
 @app.route('/obter-pai-id')
 def obter_pai_id():
