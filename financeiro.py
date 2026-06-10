@@ -1,52 +1,53 @@
-from flask import Blueprint, render_template, session, redirect, url_for, jsonify
+from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
 from database import get_db_connection
-import pandas as pd
-import os
+from datetime import datetime
 
 bp_financeiro = Blueprint('financeiro', __name__)
 
-@bp_financeiro.route('/api/financeiro/dados')
-def api_dados():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    # Buscamos os dados da tabela que estamos populando
-    cursor.execute("SELECT entidade, valor_original, 0 as saldo_devedor FROM financeiro_emprestimos")
-    dados = cursor.fetchall()
-    conn.close()
-    return jsonify(dados)
-
+# Rota para renderizar a página do financeiro
 @bp_financeiro.route('/financeiro')
 def pagina_financeiro():
-    if 'usuario_logado' not in session: 
+    if 'usuario_logado' not in session:
         return redirect(url_for('tela_login'))
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) as total FROM financeiro_emprestimos")
-    resultado = cursor.fetchone()
-    
-    # Se estiver vazio, tenta importar a planilha (Apenas na primeira vez)
-    if resultado['total'] == 0:
-        try:
-            arquivo = 'Empréstimo Holding Negócios.xlsx'
-            if os.path.exists(arquivo):
-                # IMPORTANTE: Se o seu arquivo tiver várias abas, 
-                # use sheet_name='NOME_DA_ABA' ou sheet_name=0 para a primeira
-                df = pd.read_excel(arquivo, sheet_name=0, header=2) 
-                
-                for _, row in df.iterrows():
-                    entidade = str(row.iloc[0]) # Coluna 0: QUEM
-                    valor_raw = str(row.iloc[1]) # Coluna 1: VALOR
-                    
-                    # Limpeza simples do valor
-                    valor = valor_raw.replace('R$', '').replace(',', '').strip()
-                    
-                    if entidade and entidade != 'nan' and valor.replace('.','',1).isdigit():
-                        cursor.execute("INSERT INTO financeiro_emprestimos (entidade, valor_original) VALUES (%s, %s)", 
-                                       (entidade, float(valor)))
-                conn.commit()
-        except Exception as e:
-            print(f"Erro na importação: {e}")
-            
-    conn.close()
     return render_template('financeiro.html')
+
+# Lógica de cálculo mensal (O "Motor" do SCRIPT.txt)
+def calcular_juros_mensal(valor_inicial, percentual_juros):
+    # Regra: (VALOR INICIAL * JUROS) / 30 * 15
+    return (float(valor_inicial) * (float(percentual_juros) / 100)) / 30 * 15
+
+@bp_financeiro.route('/api/adicionar-investimento', methods=['POST'])
+def adicionar_investimento():
+    if 'usuario_logado' not in session:
+        return jsonify({'status': 'erro', 'msg': 'Não autorizado'}), 401
+    
+    dados = request.form
+    valor = dados.get('valor')
+    juros = dados.get('juros')
+    
+    # Exemplo de como salvar no banco e calcular o primeiro mês
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            # 1. Insere na tabela de investimentos
+            cur.execute("""
+                INSERT INTO investimentos (quem, valor, detalhes, mes_ano, juros) 
+                VALUES (%s, %s, %s, %s, %s)
+            """, (dados['quem'], valor, dados['detalhes'], dados['mes_ano'], juros))
+            
+            investimento_id = cur.lastrowid
+            
+            # 2. Calcula o Juros inicial e insere na tabela de calculo_mensal
+            vlr_juros = calcular_juros_mensal(valor, juros)
+            valor_mais_juros = float(valor) + vlr_juros
+            
+            cur.execute("""
+                INSERT INTO calculo_mensal (investimento_id, mes, valor_inicial, juros, vlr_juros, valor_mais_juros, saldo_devedor)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (investimento_id, datetime.now().strftime('%B'), valor, juros, vlr_juros, valor_mais_juros, valor_mais_juros))
+            
+        conn.commit()
+        conn.close()
+        return jsonify({'status': 'sucesso'})
+    except Exception as e:
+        return jsonify({'status': 'erro', 'msg': str(e)})
