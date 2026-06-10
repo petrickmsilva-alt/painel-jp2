@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, session, redirect, url_for, jsonify
-from app import get_db_connection
+from database import get_db_connection
 import pandas as pd
 import os
 
