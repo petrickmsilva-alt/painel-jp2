@@ -1,95 +1,95 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Gestão Financeira - JP2</title>
-    <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f7f6; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .card { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #eee; }
-        input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
-        th { background: #007bff; color: white; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Gestão Financeira</h1>
+{% extends 'layout_base.html' %}
 
-        <div class="card">
-            <h3>Registrar Novo Investimento</h3>
-            <form id="formInvestimento">
-                <input type="text" name="quem" placeholder="Nome do Credor / Terceiro" required>
-                <input type="number" step="0.01" name="valor" placeholder="Valor Inicial (R$)" required>
-                <input type="text" name="detalhes" placeholder="Descrição do Emprego do Capital">
-                <input type="text" name="mes_ano" placeholder="Mês/Ano (Ex: 06/2026)" required>
-                <input type="number" step="0.01" name="juros" placeholder="Juros Mensais (%)" required>
-                <button type="button" onclick="salvarInvestimento()">Salvar e Calcular</button>
-            </form>
-        </div>
-
-        <input type="text" id="filtro" placeholder="Pesquisar por entidade..." onkeyup="filtrarTabela()">
-        
-        <table id="tabelaFinanceiro">
-            <thead>
-                <tr>
-                    <th>Entidade</th>
-                    <th>Valor Inicial</th>
-                    <th>Juros %</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="corpoTabela">
-                </tbody>
-        </table>
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestão Financeira</h2>
     </div>
 
-    <script>
-        // Função para salvar novo investimento
-        function salvarInvestimento() {
-            let formData = new FormData(document.getElementById('formInvestimento'));
-            fetch('/api/adicionar-investimento', {
-                method: 'POST',
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.status === 'sucesso') {
-                    alert('Investimento cadastrado com sucesso!');
-                    location.reload();
-                } else {
-                    alert('Erro: ' + data.msg);
-                }
-            });
-        }
+    <div class="card p-4 mb-4 shadow-sm">
+        <h5>Registrar Novo Investimento</h5>
+        <hr>
+        <form id="formInvestimento" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Quem (Credor)</label>
+                <input type="text" name="quem" class="form-control" placeholder="Nome" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Valor (R$)</label>
+                <input type="number" step="0.01" name="valor" class="form-control" placeholder="0.00" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Juros (%)</label>
+                <input type="number" step="0.01" name="juros" class="form-control" placeholder="0.00" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Mês/Ano</label>
+                <input type="text" name="mes_ano" class="form-control" placeholder="06/2026" required>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="button" class="btn btn-primary w-100" onclick="salvarInvestimento()">Salvar</button>
+            </div>
+        </form>
+    </div>
 
-        // Carrega a lista do banco de dados
-        fetch('/api/financeiro/dados')
-            .then(res => res.json())
-            .then(data => {
-                const corpo = document.getElementById('corpoTabela');
-                data.forEach(item => {
-                    corpo.innerHTML += `<tr>
-                        <td>${item.quem || ''}</td>
-                        <td>R$ ${parseFloat(item.valor).toFixed(2)}</td>
-                        <td>${item.juros}%</td>
-                        <td>Ativo</td>
-                    </tr>`;
-                });
-            });
+    <div class="card p-4 shadow-sm">
+        <input type="text" id="filtro" class="form-control mb-3" placeholder="Pesquisar entidade..." onkeyup="filtrarTabela()">
+        <div class="table-responsive">
+            <table class="table table-hover" id="tabelaFinanceiro">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Entidade</th>
+                        <th>Valor Inicial</th>
+                        <th>Juros %</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoTabela">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
-        function filtrarTabela() {
-            let input = document.getElementById('filtro').value.toUpperCase();
-            let tr = document.getElementById('tabelaFinanceiro').getElementsByTagName('tr');
-            for (let i = 1; i < tr.length; i++) {
-                let td = tr[i].getElementsByTagName('td')[0];
-                if (td) {
-                    tr[i].style.display = td.innerText.toUpperCase().indexOf(input) > -1 ? "" : "none";
-                }
+<script>
+    function salvarInvestimento() {
+        let formData = new FormData(document.getElementById('formInvestimento'));
+        fetch('/api/adicionar-investimento', { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'sucesso') { 
+                alert('Salvo com sucesso!');
+                location.reload(); 
+            } else { 
+                alert('Erro: ' + data.msg); 
+            }
+        });
+    }
+
+    fetch('/api/financeiro/dados')
+        .then(res => res.json())
+        .then(data => {
+            const corpo = document.getElementById('corpoTabela');
+            corpo.innerHTML = ''; // Limpa antes de carregar
+            data.forEach(item => {
+                corpo.innerHTML += `<tr>
+                    <td>${item.quem || ''}</td>
+                    <td>R$ ${parseFloat(item.valor || 0).toFixed(2)}</td>
+                    <td>${item.juros || 0}%</td>
+                    <td><span class="badge bg-success">Ativo</span></td>
+                </tr>`;
+            });
+        });
+
+    function filtrarTabela() {
+        let input = document.getElementById('filtro').value.toUpperCase();
+        let tr = document.getElementById('tabelaFinanceiro').getElementsByTagName('tr');
+        for (let i = 1; i < tr.length; i++) {
+            let td = tr[i].getElementsByTagName('td')[0];
+            if (td) {
+                tr[i].style.display = td.innerText.toUpperCase().indexOf(input) > -1 ? "" : "none";
             }
         }
-    </script>
-</body>
-</html>
+    }
+</script>
+{% endblock %}
