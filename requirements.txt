@@ -1,7 +1,5 @@
 flask
 gunicorn
-supabase
-psycopg2-binary
 pymysql
-beautifulsoup4
 pandas
+beautifulsoup4
