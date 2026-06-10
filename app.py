@@ -253,39 +253,36 @@ def upload_avancado():
     pai = request.form.get('pasta_pai_id')
     p_id = int(pai) if (pai and str(pai).strip() not in ["null", "undefined", ""]) else None
     
-    # Informações da fatia (chunk) enviada pelo JavaScript
     chunk_index = int(request.form.get('chunkIndex', 0))
     total_chunks = int(request.form.get('totalChunks', 1))
     guid_uuid = request.form.get('guid', uuid.uuid4().hex)
     nome_original = request.form.get('nome_original', file.filename if file else 'arquivo')
     
+    conn = None
     try:
         nome_limpo = re.sub(r'[^a-zA-Z0-9._-]', '', nome_original.replace(' ', '_'))
         nome_unico = f"{guid_uuid}_{nome_limpo}"
         destino_completo = os.path.join(UPLOAD_FOLDER, nome_unico)
         
-        # Grava a fatia atual no final do arquivo físico de forma instantânea
         if file:
             with open(destino_completo, 'ab') as f:
                 f.write(file.read())
         
-        # Só salva o registro definitivo no MySQL na última fatia do lote
         if chunk_index + 1 == total_chunks:
-            link = f"/static/uploads/{nome_unico}"
             conn = get_db_connection()
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO arquivos_painel (nome_original, caminho_sistema, bloco, categoria, tipo, criado_por, pasta_pai_id, deletado)
                     VALUES (%s, %s, %s, %s, 'arquivo', %s, %s, 0)
-                """, (nome_original, link, bloco, cat, session.get('nome_exibicao', 'Sistema'), p_id))
-            conn.commit()
-            conn.close()
+                """, (nome_original, f"/static/uploads/{nome_unico}", bloco, cat, session.get('nome_exibicao', 'Sistema'), p_id))
             
         return jsonify({'status': 'sucesso', 'guid': guid_uuid})
     except Exception as e:
         print(f"ERRO NO UPLOAD FRAGMENTADO: {e}")
         return jsonify({'status': 'erro', 'mensagem': str(e)}), 500
-
+    finally:
+        if conn: conn.close()
+            
 # 🟢 2. REMOÇÃO DE DUPLICIDADE: UNIFICAÇÃO DA ROTA INTELIGENTE DE VISUALIZAÇÃO E DOWNLOAD
 @app.route('/baixar_recurso/<int:arquivo_id>')
 def baixar_recurso_corporativo(arquivo_id):
