@@ -15,19 +15,18 @@
 <body>
     <div class="container">
         <h1>Gestão Financeira</h1>
-        <input type="text" id="filtro" placeholder="Pesquisar por entidade (Brobond, Expofeirasco...)" onkeyup="filtrarTabela()">
+        <input type="text" id="filtro" placeholder="Pesquisar por entidade..." onkeyup="filtrarTabela()">
         
         <table id="tabelaFinanceiro">
             <thead>
                 <tr>
                     <th>Entidade</th>
                     <th>Valor Original</th>
-                    <th>Valor Pago</th>
                     <th>Saldo Devedor</th>
                 </tr>
             </thead>
             <tbody id="corpoTabela">
-                </tbody>
+            </tbody>
         </table>
     </div>
 
@@ -37,23 +36,24 @@
             .then(res => res.json())
             .then(data => {
                 const corpo = document.getElementById('corpoTabela');
-                data.dados.forEach(item => {
+                // O 'data' agora é a lista direta
+                data.forEach(item => {
                     corpo.innerHTML += `<tr>
-                        <td>${item.entidade}</td>
-                        <td>R$ ${item.valor_original}</td>
-                        <td>R$ ${item.valor_pago}</td>
-                        <td>R$ ${item.saldo_devedor}</td>
+                        <td>${item.entidade || ''}</td>
+                        <td>R$ ${item.valor_original || 0}</td>
+                        <td>R$ ${item.saldo_devedor || 0}</td>
                     </tr>`;
                 });
             });
 
-        // Função mágica de filtro
         function filtrarTabela() {
             let input = document.getElementById('filtro').value.toUpperCase();
             let tr = document.getElementById('tabelaFinanceiro').getElementsByTagName('tr');
             for (let i = 1; i < tr.length; i++) {
                 let td = tr[i].getElementsByTagName('td')[0];
-                tr[i].style.display = td.innerText.toUpperCase().indexOf(input) > -1 ? "" : "none";
+                if (td) {
+                    tr[i].style.display = td.innerText.toUpperCase().indexOf(input) > -1 ? "" : "none";
+                }
             }
         }
     </script>
