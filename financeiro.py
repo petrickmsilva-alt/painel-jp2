@@ -4,6 +4,13 @@ from datetime import datetime
 
 bp_financeiro = Blueprint('financeiro', __name__)
 
+# Adicione esta nova rota no seu arquivo financeiro.py
+@bp_financeiro.route('/financeiro/resumo')
+def pagina_resumo():
+    if 'usuario_logado' not in session:
+        return redirect(url_for('tela_login'))
+    return render_template('resumo.html')
+
 # Rota para renderizar a página do financeiro
 @bp_financeiro.route('/financeiro')
 def pagina_financeiro():
