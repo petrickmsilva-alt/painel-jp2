@@ -179,6 +179,22 @@
         });
     }
 
+    function excluirEmpresa(id) {
+    if(confirm('Tem certeza que deseja excluir esta empresa?')) {
+        fetch(`/api/excluir-empresa/${id}`, { 
+            method: 'DELETE' 
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'sucesso') {
+                carregarTabelaEmpresas(); // Atualiza a tabela na tela
+            } else {
+                alert('Erro ao excluir: ' + data.mensagem);
+            }
+        });
+    }
+}
+    
     function abrirModalEmpresa() {
         // Tenta abrir com jQuery, que já deve estar funcionando (já que o DataTables usa)
         $('#modalEmpresa').modal('show');
