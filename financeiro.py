@@ -56,12 +56,14 @@ def resumo_investimentos():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        query = """SELECT id, nome_investidor as credor, valor_inicial as valor_investido, 
-                   juros_mensais as juros, captador, tipo_recurso, finalidade, data_pgto 
+        # Removi os "AS" para manter os nomes que o JS já está usando
+        query = """SELECT id, nome_investidor, valor_inicial, juros_mensais, 
+                          captador, tipo_operacao, finalidade, data_pgto 
                    FROM investimentos"""
         cur.execute(query)
-        columns = [col[0] for col in cur.description]
-        dados = [dict(zip(columns, row)) for row in cur.fetchall()]
+        # Como você usa o DictCursor no database.py, o fetchall() já retorna dicionários!
+        # Não precisa do zip nem da lista de colunas.
+        dados = cur.fetchall() 
         cur.close()
         conn.close()
         return jsonify({'status': 'sucesso', 'dados': dados})
