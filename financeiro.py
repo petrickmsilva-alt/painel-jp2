@@ -71,26 +71,24 @@ def resumo_investimentos():
     
     try:
         conn = get_db_connection()
-        cur = conn.cursor() # Removemos o dictionary=True
+        cur = conn.cursor()
         
+        # Corrigido o JOIN para usar 'i.id' (conforme sua estrutura)
         query = """
             SELECT 
+                i.id,
                 i.nome_investidor as credor, 
-                i.descricao as empresa, 
                 i.valor_inicial as valor_investido, 
-                i.juros_mensais as juros,
+                i.descricao as empresa, 
+                i.juros_mensais as juros, 
                 i.data_inicio as mes_ano,
-                c.valor_final, 
-                c.saldo_devedor 
+                c.valor_final,
+                c.saldo_devedor
             FROM investimentos i
-            LEFT JOIN calculo_mensal c ON i.idinvestimento = c.idinvestimento
+            LEFT JOIN calculo_mensal c ON i.id = c.investimento_id
         """
         cur.execute(query)
-        
-        # Obter os nomes das colunas
         columns = [col[0] for col in cur.description]
-        
-        # Converter cada linha em um dicionário
         dados = [dict(zip(columns, row)) for row in cur.fetchall()]
         
         cur.close()
