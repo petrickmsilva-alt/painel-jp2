@@ -28,7 +28,7 @@
     /* SIDEBAR LATERAL ESQUERDA CORPORATIVA */
     .sidebar-enterprise {
       width: var(--sidebar-width);
-      background-color: var(--sidebar-bg);
+      background-color: #1e293b !important; /* <--- Mude aqui */
       color: #f8fafc;
       display: flex;
       flex-direction: column;
@@ -37,10 +37,10 @@
       box-shadow: 4px 0 15px rgba(0,0,0,0.05);
       z-index: 100;
     }
-
+    
     .sidebar-brand {
       padding: 20px;
-      background-color: #0f172a;
+      background-color: #1e293b; /* <--- Mude aqui também */
       border-bottom: 1px solid #334155;
       display: flex;
       flex-direction: column;
@@ -399,6 +399,9 @@
         <div class="sidebar-menu">
             <a href="/" class="menu-item"><i class="bi bi-house"></i> Voltar ao Painel</a>
             
+           <div class="sidebar-menu">
+            <a href="/" class="menu-item"><i class="bi bi-house"></i> Voltar ao Painel</a>
+            
             <div class="menu-header">Módulos de Arquivo</div>
             <a class="menu-item" id="menu-bloco-instituto" onclick="clicarBlocoMestre('instituto', this)">
                 <i class="bi bi-building-fill text-warning"></i> Instituto (IBDTEC)
@@ -407,25 +410,25 @@
                 <i class="bi bi-briefcase-fill text-info"></i> JP2 Business
             </a>
             
-            <div class="menu-header mt-3">Gestão</div>
+            <div class="menu-header mt-3">GESTÃO</div>
             <a href="/agenda" class="menu-item">
                  <i class="bi bi-calendar-event-fill text-danger"></i> Agenda 
             </a>
-            <a href="/admin/usuarios" class="menu-item" style="color: #ffc107;">
-                <i class="bi bi-gear-fill"></i> Gestão de Sócios
+            <a href="/financeiro" class="menu-item">
+               <i class="bi bi-plus-circle text-primary"></i> Painel de Investimento
             </a>
-            <a href="/admin/logs" class="menu-item" style="color: #64748b;">
-                <i class="bi bi-clipboard-data"></i> Auditoria (Logs) 
+            <a href="/admin/usuarios" class="menu-item">
+                <i class="bi bi-people-fill text-warning"></i> Gestão de Sócios
             </a>
-            <a href="/financeiro" class="menu-item" style="color: #00008B;">
-               <i class="bi bi-currency-dollar"></i> Gestão Financeira
+            <a href="/admin/logs" class="menu-item">
+                <i class="bi bi-clipboard-data text-secondary"></i> Auditoria (Logs) 
             </a>
 
             <div class="menu-header mt-3">Ecossistema Digital</div>
             <a class="menu-item" id="menu-bloco-sites" onclick="clicarBlocoMestre('sites_jp2', this)">
                 <i class="bi bi-globe2 text-success"></i> Sites JP2 Business
             </a>
-        </div>
+        </div>    
     </aside>
 
     <main class="main-workspace">
