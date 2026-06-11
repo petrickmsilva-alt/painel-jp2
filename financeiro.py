@@ -4,19 +4,13 @@ from datetime import datetime
 
 bp_financeiro = Blueprint('financeiro', __name__)
 
+# --- ROTAS DE PÁGINA ---
 @bp_financeiro.route('/financeiro')
 def pagina_financeiro():
-    if 'usuario_logado' not in session:
-        return redirect(url_for('tela_login'))
+    if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
     return render_template('financeiro.html')
 
-@bp_financeiro.route('/financeiro/resumo')
-def pagina_resumo():
-    if 'usuario_logado' not in session:
-        return redirect(url_for('tela_login'))
-    return render_template('resumo.html')
-
-# Rota para listar empresas (para o seu select no formulário)
+# --- ROTAS DE EMPRESAS (DINÂMICO) ---
 @bp_financeiro.route('/api/empresas', methods=['GET'])
 def listar_empresas():
     conn = get_db_connection()
@@ -27,7 +21,6 @@ def listar_empresas():
     conn.close()
     return jsonify({'status': 'sucesso', 'dados': empresas})
 
-# Rota para cadastrar uma nova empresa via Modal
 @bp_financeiro.route('/api/adicionar-empresa', methods=['POST'])
 def adicionar_empresa():
     dados = request.form
@@ -40,80 +33,68 @@ def adicionar_empresa():
     conn.close()
     return jsonify({'status': 'sucesso'})
 
+# --- ROTA DE CADASTRO DE INVESTIMENTO (ATUALIZADA) ---
 @bp_financeiro.route('/api/adicionar-investimento', methods=['POST'])
 def adicionar_investimento():
-    if 'usuario_logado' not in session:
-        return jsonify({'status': 'erro', 'msg': 'Não autorizado'}), 401
+    if 'usuario_logado' not in session: return jsonify({'status': 'erro', 'msg': 'Não autorizado'}), 401
     
-    # Captura apenas os campos que sabemos que existem no banco
-    quem = request.form.get('quem')
-    valor = request.form.get('valor')
-    juros = request.form.get('juros')
-    mes_ano = request.form.get('mes_ano')
-    descricao = request.form.get('descricao')
-
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Query LIMPA: sem a coluna 'detalhes'
+        # Query de inserção usando os nomes de colunas que verificamos na sua imagem
         query = """
-            INSERT INTO investimentos (nome_investidor, valor_inicial, juros_mensais, data_inicio, descricao) 
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO investimentos 
+            (nome_investidor, valor_inicial, juros_mensais, data_inicio, descricao, captador, tipo_recurso, finalidade, data_pgto) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         
-        # Execução com 5 parâmetros (exatamente como na query acima)
-        cur.execute(query, (quem, valor, juros, mes_ano, descricao))
+        params = (
+            request.form.get('quem'), 
+            request.form.get('valor'), 
+            request.form.get('juros'), 
+            request.form.get('data_recurso'), 
+            request.form.get('descricao'),
+            request.form.get('captador'),
+            request.form.get('tipo_recurso'),
+            request.form.get('finalidade'),
+            request.form.get('data_pgto')
+        )
         
+        cur.execute(query, params)
         conn.commit()
         cur.close()
         conn.close()
-        return jsonify({'status': 'sucesso', 'msg': 'Investimento salvo!'})
+        return jsonify({'status': 'sucesso', 'msg': 'Investimento salvo com sucesso!'})
     except Exception as e:
         return jsonify({'status': 'erro', 'msg': str(e)})
-               
+
+# --- ROTA DE RESUMO ---
 @bp_financeiro.route('/api/resumo-investimentos', methods=['GET'])
 def resumo_investimentos():
-    if 'usuario_logado' not in session:
-        return jsonify({'status': 'erro', 'msg': 'Não autorizado'}), 401
+    if 'usuario_logado' not in session: return jsonify({'status': 'erro', 'msg': 'Não autorizado'}), 401
     
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         
-        query = """
-            SELECT 
-                i.id,
-                i.nome_investidor as credor, 
-                i.valor_inicial as valor_investido, 
-                i.detalhes as empresa, 
-                i.juros_mensais as juros, 
-                i.data_inicio as mes_ano,
-                i.descricao,
-                c.valor_final,
-                c.saldo_devedor
-            FROM investimentos i
-            LEFT JOIN calculo_mensal c ON i.id = c.investimento_id
-        """
+        # Query ajustada para as novas colunas
+        query = "SELECT id, nome_investidor as credor, valor_inicial as valor_investido, juros_mensais as juros, data_inicio as mes_ano, descricao, captador, tipo_recurso, finalidade, data_pgto FROM investimentos"
         cur.execute(query)
         columns = [col[0] for col in cur.description]
         dados = [dict(zip(columns, row)) for row in cur.fetchall()]
         
         cur.close()
         conn.close()
-        
         return jsonify({'status': 'sucesso', 'dados': dados})
     except Exception as e:
         return jsonify({'status': 'erro', 'msg': str(e)})
 
 @bp_financeiro.route('/api/excluir-investimento/<int:id>', methods=['DELETE'])
 def excluir_investimento(id):
-    if 'usuario_logado' not in session:
-        return jsonify({'status': 'erro', 'msg': 'Não autorizado'}), 401
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("DELETE FROM calculo_mensal WHERE investimento_id = %s", (id,))
         cur.execute("DELETE FROM investimentos WHERE id = %s", (id,))
         conn.commit()
         cur.close()
