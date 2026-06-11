@@ -101,46 +101,33 @@
 
 <script>
     function carregarEmpresas() {
-        fetch('/api/empresas')
-        .then(res => res.json())
-        .then(data => {
+        fetch('/api/empresas').then(res => res.json()).then(data => {
             const select = document.getElementById('selectEmpresa');
             select.innerHTML = '<option value="">Selecione uma empresa...</option>';
-            if(data.status === 'sucesso') {
+            if(data.status === 'sucesso' && data.dados) {
                 data.dados.forEach(emp => { select.innerHTML += `<option value="${emp.id}">${emp.nome}</option>`; });
             }
         });
     }
 
     function carregarTabelaEmpresas() {
-    fetch('/api/empresas')
-    .then(res => {
-        if (!res.ok) throw new Error("Erro no servidor");
-        return res.json();
-    })
-    .then(data => {
-        const tbody = document.getElementById('corpoTabelaEmpresas');
-        tbody.innerHTML = '';
-        if(data.status === 'sucesso' && data.dados) {
-            data.dados.forEach(item => {
-                // O item já é um objeto pronto porque o DictCursor enviou assim
-                tbody.innerHTML += `<tr>
-                    <td>${item.nome || '-'}</td>
-                    <td>${item.cnpj || '-'}</td>
-                    <td>${item.ramo_atividade || '-'}</td>
-                    <td>
-                        <button class="btn btn-sm btn-danger" onclick="excluirEmpresa('${item.id}')">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                </tr>`;
-            });
-        }
-    })
-    .catch(err => console.error("Erro ao carregar:", err));
-}
-        
-        function salvarEmpresa() {
+        fetch('/api/empresas').then(res => res.json()).then(data => {
+            const tbody = document.getElementById('corpoTabelaEmpresas');
+            tbody.innerHTML = '';
+            if(data.status === 'sucesso' && data.dados) {
+                data.dados.forEach(item => {
+                    tbody.innerHTML += `<tr>
+                        <td>${item.nome || '-'}</td>
+                        <td>${item.cnpj || '-'}</td>
+                        <td>${item.ramo_atividade || '-'}</td>
+                        <td><button class="btn btn-sm btn-danger" onclick="excluirEmpresa('${item.id}')"><i class="bi bi-trash"></i></button></td>
+                    </tr>`;
+                });
+            }
+        });
+    }
+
+    function salvarEmpresa() {
         const formData = new FormData();
         formData.append('nome', document.getElementById('empNome').value);
         formData.append('cnpj', document.getElementById('empCnpj').value);
@@ -150,70 +137,36 @@
     }
 
     function excluirEmpresa(id) {
-    console.log("ID que vou excluir:", id); // Olhe o console após clicar
-    if(!id) {
-        alert("Erro: ID não identificado!");
-        return;
+        if(confirm('Tem certeza?')) fetch(`/api/excluir-empresa/${id}`, { method: 'DELETE' }).then(() => { carregarTabelaEmpresas(); carregarEmpresas(); });
     }
-    if(confirm('Tem certeza?')) {
-        // A crase aqui é fundamental para concatenar o ID
-        fetch(`/api/excluir-empresa/${id}`, { method: 'DELETE' })
-        .then(res => res.json())
-        .then(data => {
-            if(data.status === 'sucesso') {
-                carregarTabelaEmpresas();
-                carregarEmpresas();
-            } else {
-                alert('Erro: ' + data.msg);
-            }
-         });
-       }
-     }
 
     function carregarTabela() {
-    fetch('/api/resumo-investimentos')
-    .then(res => res.json())
-    .then(data => {
-        const tbody = document.getElementById('corpoTabela');
-        tbody.innerHTML = ''; // Limpa antes de preencher
-        
-        if(data.status === 'sucesso' && Array.isArray(data.dados)) {
-            // Se já existir tabela, destrói para recriar com novos dados
-            if ($.fn.DataTable.isDataTable('#tabelaInvestimentos')) {
-                $('#tabelaInvestimentos').DataTable().destroy();
-            }
-
-            data.dados.forEach(item => {
-                const valor = item.valor_investido ? parseFloat(item.valor_investido).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00';
-                
-                tbody.innerHTML += `
-                    <tr>
+        fetch('/api/resumo-investimentos').then(res => res.json()).then(data => {
+            const tbody = document.getElementById('corpoTabela');
+            tbody.innerHTML = '';
+            if(data.status === 'sucesso' && data.dados) {
+                if ($.fn.DataTable.isDataTable('#tabelaInvestimentos')) $('#tabelaInvestimentos').DataTable().destroy();
+                data.dados.forEach(item => {
+                    const v = item.valor_investido ? parseFloat(item.valor_investido).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00';
+                    tbody.innerHTML += `<tr>
                         <td>${item.credor || '-'}</td>
-                        <td>R$ ${valor}</td>
+                        <td>R$ ${v}</td>
                         <td>${item.tipo_recurso || '-'}</td>
                         <td>${item.finalidade || '-'}</td>
                         <td>${item.captador || '-'}</td>
                         <td>${item.juros || '0'}%</td>
                         <td>${item.data_pgto || '-'}</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-danger" onclick="excluirInvestimento(${item.id})">Excluir</button>
-                        </td>
+                        <td><button class="btn btn-sm btn-outline-danger" onclick="excluirInvestimento(${item.id})">Excluir</button></td>
                     </tr>`;
-            });
-
-            // Reinicializa a tabela dinâmica
-            $('#tabelaInvestimentos').DataTable({
-                language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json' }
-            });
-        }
-    });
-}
+                });
+                $('#tabelaInvestimentos').DataTable({ language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json' } });
+            }
+        });
+    }
 
     function salvarInvestimento() {
         const formData = new FormData(document.getElementById('formInvestimento'));
-        // Corrigir valor antes de enviar
-        let v = formData.get('valor').replace(/\./g, '').replace(',', '.');
-        formData.set('valor', v);
+        formData.set('valor', formData.get('valor').replace(/\./g, '').replace(',', '.'));
         fetch('/api/adicionar-investimento', { method: 'POST', body: formData })
         .then(() => { alert('Cadastrado!'); document.getElementById('formInvestimento').reset(); carregarTabela(); });
     }
