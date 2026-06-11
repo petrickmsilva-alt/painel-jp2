@@ -4,70 +4,64 @@ from datetime import datetime
 
 bp_financeiro = Blueprint('financeiro', __name__)
 
-# Rota para renderizar a página do financeiro
 @bp_financeiro.route('/financeiro')
 def pagina_financeiro():
     if 'usuario_logado' not in session:
         return redirect(url_for('tela_login'))
     return render_template('financeiro.html')
 
-# Rota para renderizar o resumo
 @bp_financeiro.route('/financeiro/resumo')
 def pagina_resumo():
     if 'usuario_logado' not in session:
         return redirect(url_for('tela_login'))
     return render_template('resumo.html')
 
-# Lógica de cálculo mensal
-def calcular_juros_mensal(valor_inicial, percentual_juros):
-    # Converte para float garantindo que não haverá erro de tipo
-    return (float(valor_inicial) * (float(percentual_juros) / 100)) / 30 * 15
-
 @bp_financeiro.route('/api/adicionar-investimento', methods=['POST'])
 def adicionar_investimento():
     if 'usuario_logado' not in session:
         return jsonify({'status': 'erro', 'msg': 'Não autorizado'}), 401
     
-    dados = request.form
+    # Captura de todos os dados do formulário
+    quem = request.form.get('quem')
+    valor = request.form.get('valor')
+    detalhes = request.form.get('detalhes')
+    juros = request.form.get('juros')
+    mes_ano = request.form.get('mes_ano')
+    descricao = request.form.get('descricao')
+
     try:
-        # Conversão de segurança para números puros
-        valor = float(dados.get('valor', 0))
-        juros = float(dados.get('juros', 0))
-        
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # 1. INSERT na tabela 'investimentos' ajustado para as suas colunas reais
-        # Colunas reais: nome_investidor, tipo_operacao, valor_inicial, data_inicio, juros_mensais, descricao
-        # Certifique-se de que o número de %s (na query) é igual ao número de campos (no segundo parêntese)
+        # 1. INSERT na tabela 'investimentos'
         query = """
-        INSERT INTO investimentos (nome_investidor, valor_inicial, detalhes, juros_mensais, data_inicio, descricao) 
-        VALUES (%s, %s, %s, %s, %s, %s)
-       """
-       # Pegue a descrição vindo do formulário
-       descricao = request.form.get('descricao')
-
-       # Execute passando os valores
-       cur.execute(query, (quem, valor, detalhes, juros, mes_ano, descricao))
+            INSERT INTO investimentos (nome_investidor, valor_inicial, detalhes, juros_mensais, data_inicio, descricao) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        cur.execute(query, (quem, valor, detalhes, juros, mes_ano, descricao))
         
-        # 2. Cálculo de juros
-        vlr_juros = (valor * (juros / 100)) / 30 * 15
-        valor_final = valor + vlr_juros
+        # Obtém o ID do registro recém criado
+        investimento_id = cur.lastrowid
         
-        # 3. INSERT na tabela 'calculo_mensal' ajustado para as colunas reais
-        # Colunas reais: investimento_id, mes_referencia, valor_inicial, juros_aplicados, valor_juros, valor_final, pagamento_realizado, saldo_devedor, data_registro
+        # 2. Cálculo de juros (usando valores convertidos)
+        v_float = float(valor)
+        j_float = float(juros)
+        vlr_juros = (v_float * (j_float / 100)) / 30 * 15
+        valor_final = v_float + vlr_juros
+        
+        # 3. INSERT na tabela 'calculo_mensal'
         cur.execute("""
             INSERT INTO calculo_mensal (investimento_id, mes_referencia, valor_inicial, juros_aplicados, valor_juros, valor_final, pagamento_realizado, saldo_devedor, data_registro)
             VALUES (%s, %s, %s, %s, %s, %s, 0, %s, NOW())
-        """, (investimento_id, dados['mes_ano'], valor, juros, vlr_juros, valor_final, valor_final))
+        """, (investimento_id, mes_ano, v_float, j_float, vlr_juros, valor_final, valor_final))
         
         conn.commit()
         cur.close()
         conn.close()
-        return jsonify({'status': 'sucesso'})
+        return jsonify({'status': 'sucesso', 'msg': 'Investimento salvo!'})
     except Exception as e:
         return jsonify({'status': 'erro', 'msg': str(e)})
-        
+
 @bp_financeiro.route('/api/resumo-investimentos', methods=['GET'])
 def resumo_investimentos():
     if 'usuario_logado' not in session:
@@ -77,15 +71,15 @@ def resumo_investimentos():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Corrigido o JOIN para usar 'i.id' (conforme sua estrutura)
         query = """
             SELECT 
                 i.id,
                 i.nome_investidor as credor, 
                 i.valor_inicial as valor_investido, 
-                i.descricao as empresa, 
+                i.detalhes as empresa, 
                 i.juros_mensais as juros, 
                 i.data_inicio as mes_ano,
+                i.descricao,
                 c.valor_final,
                 c.saldo_devedor
             FROM investimentos i
@@ -99,5 +93,21 @@ def resumo_investimentos():
         conn.close()
         
         return jsonify({'status': 'sucesso', 'dados': dados})
+    except Exception as e:
+        return jsonify({'status': 'erro', 'msg': str(e)})
+
+@bp_financeiro.route('/api/excluir-investimento/<int:id>', methods=['DELETE'])
+def excluir_investimento(id):
+    if 'usuario_logado' not in session:
+        return jsonify({'status': 'erro', 'msg': 'Não autorizado'}), 401
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM calculo_mensal WHERE investimento_id = %s", (id,))
+        cur.execute("DELETE FROM investimentos WHERE id = %s", (id,))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({'status': 'sucesso'})
     except Exception as e:
         return jsonify({'status': 'erro', 'msg': str(e)})
