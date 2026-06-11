@@ -21,10 +21,9 @@ def adicionar_investimento():
     if 'usuario_logado' not in session:
         return jsonify({'status': 'erro', 'msg': 'Não autorizado'}), 401
     
-    # Captura de todos os dados do formulário
+    # Capturando os dados do formulário
     quem = request.form.get('quem')
     valor = request.form.get('valor')
-    detalhes = request.form.get('detalhes')
     juros = request.form.get('juros')
     mes_ano = request.form.get('mes_ano')
     descricao = request.form.get('descricao')
@@ -33,29 +32,28 @@ def adicionar_investimento():
         conn = get_db_connection()
         cur = conn.cursor()
         
-       # 1. INSERT na tabela 'investimentos'
-        # Removemos 'detalhes' e usamos apenas o que existe na sua imagem
+        # AVISO: Removi 'detalhes' daqui. Apenas colunas que existem no banco.
         query = """
             INSERT INTO investimentos (nome_investidor, valor_inicial, juros_mensais, data_inicio, descricao) 
             VALUES (%s, %s, %s, %s, %s)
         """
-        # Note que removi 'detalhes' do conjunto de valores abaixo
+        
+        # Executa sem a variável 'detalhes'
         cur.execute(query, (quem, valor, juros, mes_ano, descricao))
         
-        # Obtém o ID do registro recém criado
         investimento_id = cur.lastrowid
         
-        # 2. Cálculo de juros (usando valores convertidos)
-        v_float = float(valor)
-        j_float = float(juros)
+        # Cálculo básico para a tabela mensal (se ela existir)
+        v_float = float(valor.replace(',', '.'))
+        j_float = float(juros.replace(',', '.'))
         vlr_juros = (v_float * (j_float / 100)) / 30 * 15
         valor_final = v_float + vlr_juros
         
-        # 3. INSERT na tabela 'calculo_mensal'
+        # Inserção na tabela mensal
         cur.execute("""
-            INSERT INTO calculo_mensal (investimento_id, mes_referencia, valor_inicial, juros_aplicados, valor_juros, valor_final, pagamento_realizado, saldo_devedor, data_registro)
-            VALUES (%s, %s, %s, %s, %s, %s, 0, %s, NOW())
-        """, (investimento_id, mes_ano, v_float, j_float, vlr_juros, valor_final, valor_final))
+            INSERT INTO calculo_mensal (investimento_id, mes_referencia, valor_inicial, juros_aplicados, valor_juros, valor_final, data_registro)
+            VALUES (%s, %s, %s, %s, %s, %s, NOW())
+        """, (investimento_id, mes_ano, v_float, j_float, vlr_juros, valor_final))
         
         conn.commit()
         cur.close()
@@ -63,7 +61,7 @@ def adicionar_investimento():
         return jsonify({'status': 'sucesso', 'msg': 'Investimento salvo!'})
     except Exception as e:
         return jsonify({'status': 'erro', 'msg': str(e)})
-
+        
 @bp_financeiro.route('/api/resumo-investimentos', methods=['GET'])
 def resumo_investimentos():
     if 'usuario_logado' not in session:
