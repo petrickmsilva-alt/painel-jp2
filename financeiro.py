@@ -30,29 +30,29 @@ def adicionar_investimento():
     
     dados = request.form
     try:
-        # Conversão de segurança: garantimos que são números
         valor = float(dados.get('valor', 0))
         juros = float(dados.get('juros', 0))
         
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # 1. Insere na tabela de investimentos
+        # INSERT corrigido com os nomes exatos das colunas da sua imagem
         cur.execute("""
-            INSERT INTO investimentos (quem, valor, detalhes, mes_ano, juros) 
+            INSERT INTO investimentos (nome_investidor, valor_inicial, descricao, mes_ano, juros_mensais) 
             VALUES (%s, %s, %s, %s, %s)
         """, (dados['quem'], valor, dados['detalhes'], dados['mes_ano'], juros))
         
         investimento_id = cur.lastrowid
         
-        # 2. Calcula o Juros inicial e insere na tabela de calculo_mensal
-        vlr_juros = calcular_juros_mensal(valor, juros)
-        valor_mais_juros = valor + vlr_juros
+        # Cálculo
+        vlr_juros = (valor * (juros / 100)) / 30 * 15
+        valor_final = valor + vlr_juros
         
+        # INSERT em calculo_mensal corrigido
         cur.execute("""
-            INSERT INTO calculo_mensal (investimento_id, mes, valor_inicial, juros, vlr_juros, valor_final, saldo_devedor)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (investimento_id, datetime.now().strftime('%B'), valor, juros, vlr_juros, valor_mais_juros, valor_mais_juros))
+            INSERT INTO calculo_mensal (idinvestimento, id_mes_referencia, valor_inicial, juros_aplicados, valor_juros, valor_final, saldo_devedor, data_registro)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
+        """, (investimento_id, dados['mes_ano'], valor, juros, vlr_juros, valor_final, valor_final))
         
         conn.commit()
         cur.close()
@@ -60,7 +60,7 @@ def adicionar_investimento():
         return jsonify({'status': 'sucesso'})
     except Exception as e:
         return jsonify({'status': 'erro', 'msg': str(e)})
-
+        
 # Rota de Resumo para a Tela de Racional
 @bp_financeiro.route('/api/resumo-investimentos', methods=['GET'])
 def resumo_investimentos():
