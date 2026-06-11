@@ -21,7 +21,7 @@ def adicionar_investimento():
     if 'usuario_logado' not in session:
         return jsonify({'status': 'erro', 'msg': 'Não autorizado'}), 401
     
-    # Capturando os dados do formulário
+    # Captura apenas os campos que sabemos que existem no banco
     quem = request.form.get('quem')
     valor = request.form.get('valor')
     juros = request.form.get('juros')
@@ -32,28 +32,14 @@ def adicionar_investimento():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # AVISO: Removi 'detalhes' daqui. Apenas colunas que existem no banco.
+        # Query LIMPA: sem a coluna 'detalhes'
         query = """
             INSERT INTO investimentos (nome_investidor, valor_inicial, juros_mensais, data_inicio, descricao) 
             VALUES (%s, %s, %s, %s, %s)
         """
         
-        # Executa sem a variável 'detalhes'
+        # Execução com 5 parâmetros (exatamente como na query acima)
         cur.execute(query, (quem, valor, juros, mes_ano, descricao))
-        
-        investimento_id = cur.lastrowid
-        
-        # Cálculo básico para a tabela mensal (se ela existir)
-        v_float = float(valor.replace(',', '.'))
-        j_float = float(juros.replace(',', '.'))
-        vlr_juros = (v_float * (j_float / 100)) / 30 * 15
-        valor_final = v_float + vlr_juros
-        
-        # Inserção na tabela mensal
-        cur.execute("""
-            INSERT INTO calculo_mensal (investimento_id, mes_referencia, valor_inicial, juros_aplicados, valor_juros, valor_final, data_registro)
-            VALUES (%s, %s, %s, %s, %s, %s, NOW())
-        """, (investimento_id, mes_ano, v_float, j_float, vlr_juros, valor_final))
         
         conn.commit()
         cur.close()
@@ -61,7 +47,7 @@ def adicionar_investimento():
         return jsonify({'status': 'sucesso', 'msg': 'Investimento salvo!'})
     except Exception as e:
         return jsonify({'status': 'erro', 'msg': str(e)})
-        
+               
 @bp_financeiro.route('/api/resumo-investimentos', methods=['GET'])
 def resumo_investimentos():
     if 'usuario_logado' not in session:
