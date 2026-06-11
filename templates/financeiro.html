@@ -134,10 +134,9 @@
     }
 
     function abrirModalEmpresa() {
-    // Usamos o Bootstrap 5 nativo, sem depender de $()
-    var modal = new bootstrap.Modal(document.getElementById('modalEmpresa'));
-    modal.show();
-}
+        // Tenta abrir com jQuery, que já deve estar funcionando (já que o DataTables usa)
+        $('#modalEmpresa').modal('show');
+    }
 
     function carregarTabela() {
         fetch('/api/resumo-investimentos')
