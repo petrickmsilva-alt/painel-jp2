@@ -2,11 +2,9 @@
 
 {% block content %}
 <div class="container-fluid p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Cadastro de Investimento</h2>
-    </div>
+    <h2 class="mb-4">Gestão de Investimentos</h2>
 
-    <div class="card p-4 shadow-sm">
+    <div class="card p-4 shadow-sm mb-4">
         <h5 class="mb-4">Novo Lançamento</h5>
         <form id="formInvestimento" class="row g-3">
             <div class="col-md-6">
@@ -19,7 +17,6 @@
                 <label class="form-label fw-bold">Credor</label>
                 <input type="text" name="quem" class="form-control" required>
             </div>
-
             <div class="col-md-6">
                 <label class="form-label fw-bold">Captador de Recursos</label>
                 <input type="text" name="captador" class="form-control">
@@ -34,7 +31,6 @@
                     <option value="Investidor PF">Investidor PF</option>
                 </select>
             </div>
-
             <div class="col-md-6">
                 <label class="form-label fw-bold">Finalidade</label>
                 <select name="finalidade" class="form-select">
@@ -48,7 +44,6 @@
                 <label class="form-label fw-bold">Valor da Verba (R$)</label>
                 <input type="text" name="valor" class="form-control" onkeyup="formatarMoeda(this)" required>
             </div>
-
             <div class="col-md-4">
                 <label class="form-label fw-bold">Taxa de Juros (%)</label>
                 <input type="text" name="juros" class="form-control" onblur="formatarJuros(this)">
@@ -67,25 +62,26 @@
         </form>
     </div>
 
-    <div class="card shadow-sm mt-4">
-        <div class="card-header bg-dark text-white">
-            <h5 class="mb-0">Investimentos Cadastrados</h5>
-        </div>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-dark text-white"><h5>Investimentos Cadastrados</h5></div>
         <div class="table-responsive p-3">
-            <table class="table table-striped table-hover align-middle" id="tabelaInvestimentos">
-                <thead class="table-light">
-                    <tr>
-                        <th>Credor</th>
-                        <th>Valor</th>
-                        <th>Tipo Recurso</th>
-                        <th>Finalidade</th>
-                        <th>Captador</th>
-                        <th>Juros</th>
-                        <th>Data Pgto</th>
-                        <th>Ações</th>
-                    </tr>
+            <table class="table table-striped table-hover" id="tabelaInvestimentos">
+                <thead>
+                    <tr><th>Credor</th><th>Valor</th><th>Tipo</th><th>Finalidade</th><th>Captador</th><th>Juros</th><th>Data</th><th>Ações</th></tr>
                 </thead>
                 <tbody id="corpoTabela"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-secondary text-white"><h5>Empresas Cadastradas</h5></div>
+        <div class="table-responsive p-3">
+            <table class="table table-striped table-hover" id="tabelaEmpresas">
+                <thead>
+                    <tr><th>Nome</th><th>CNPJ</th><th>Ramo</th><th>Ações</th></tr>
+                </thead>
+                <tbody id="corpoTabelaEmpresas"></tbody>
             </table>
         </div>
     </div>
@@ -94,175 +90,78 @@
 <div class="modal fade" id="modalEmpresa" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Cadastrar Nova Empresa</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
+            <div class="modal-header"><h5 class="modal-title">Cadastrar Nova Empresa</h5></div>
             <div class="modal-body">
                 <form id="formEmpresa">
-                    <div class="mb-3">
-                        <label>Nome da Empresa</label>
-                        <input type="text" id="nome_empresa" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label>CNPJ</label>
-                        <input type="text" id="cnpj_empresa" class="form-control" placeholder="00.000.000/0000-00" onkeyup="mascaraCNPJ(this)">
-                    </div>
-                    <div class="mb-3">
-                        <label>Ramo de Atividade</label>
-                        <input type="text" id="ramo_empresa" class="form-control">
-                    </div>
+                    <div class="mb-3"><label>Nome</label><input type="text" name="nome" class="form-control" required></div>
+                    <div class="mb-3"><label>CNPJ</label><input type="text" name="cnpj" class="form-control" onkeyup="mascaraCNPJ(this)"></div>
+                    <div class="mb-3"><label>Ramo</label><input type="text" name="ramo_atividade" class="form-control"></div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                <button type="button" class="btn btn-primary" onclick="salvarEmpresa()">Salvar Empresa</button>
-            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button><button class="btn btn-primary" onclick="salvarEmpresa()">Salvar</button></div>
         </div>
     </div>
 </div>
 
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3>Gestão de Investimentos</h3>
-        <button class="btn btn-success" onclick="abrirModalEmpresa()">+ Cadastrar Nova Empresa</button>
-    </div>
-    
-    <div class="card p-3">
-        <table class="table table-hover" id="tabelaInvestimentos">
-            <thead>
-                <tr>
-                    <th>Empresa</th>
-                    <th>CNPJ</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody id="corpoTabelaEmpresas"></tbody>
-        </table>
-    </div>
-</div>
-
 <script>
-    
-    // Máscara para o CNPJ não ficar tudo junto
-    function mascaraCNPJ(i){
-        var v = i.value.replace(/\D/g,'');
-        v = v.replace(/^(\d{2})(\d)/,'$1.$2');
-        v = v.replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3');
-        v = v.replace(/\.(\d{3})(\d)/,'.$1/$2');
-        v = v.replace(/(\d{4})(\d)/,'$1-$2');
-        i.value = v;
-    }
-    
-    function carregarEmpresas() {
+    // --- LÓGICA DE EMPRESAS ---
+    function carregarTabelaEmpresas() {
         fetch('/api/empresas')
         .then(res => res.json())
         .then(data => {
-            const select = document.querySelector('select[name="empresa_id"]');
-            select.innerHTML = '<option value="">Selecione uma empresa...</option>';
-            data.dados.forEach(emp => {
-                select.innerHTML += `<option value="${emp.id}">${emp.nome}</option>`;
-            });
+            const tbody = document.getElementById('corpoTabelaEmpresas');
+            tbody.innerHTML = '';
+            if(data.status === 'sucesso') {
+                data.dados.forEach(item => {
+                    tbody.innerHTML += `<tr><td>${item.nome}</td><td>${item.cnpj}</td><td>${item.ramo_atividade || '-'}</td>
+                    <td><button class="btn btn-sm btn-danger" onclick="excluirEmpresa(${item.id})"><i class="bi bi-trash"></i></button></td></tr>`;
+                });
+            }
         });
     }
 
     function salvarEmpresa() {
-        const formData = new FormData();
-        formData.append('nome', document.getElementById('empNome').value);
-        formData.append('cnpj', document.getElementById('empCnpj').value);
-        formData.append('ramo_atividade', document.getElementById('empRamo').value);
-
+        const formData = new FormData(document.getElementById('formEmpresa'));
         fetch('/api/adicionar-empresa', { method: 'POST', body: formData })
-        .then(() => {
-            $('#modalEmpresa').modal('hide');
-            carregarEmpresas();
-        });
+        .then(() => { $('#modalEmpresa').modal('hide'); document.getElementById('formEmpresa').reset(); carregarTabelaEmpresas(); carregarEmpresas(); });
     }
 
     function excluirEmpresa(id) {
-    if(confirm('Tem certeza que deseja excluir esta empresa?')) {
-        fetch(`/api/excluir-empresa/${id}`, { 
-            method: 'DELETE' 
-        })
-        .then(res => res.json())
-        .then(data => {
-            if(data.status === 'sucesso') {
-                carregarTabelaEmpresas(); // Atualiza a tabela na tela
-            } else {
-                alert('Erro ao excluir: ' + data.mensagem);
-            }
-        });
-    }
-}
-    
-    function abrirModalEmpresa() {
-        // Tenta abrir com jQuery, que já deve estar funcionando (já que o DataTables usa)
-        $('#modalEmpresa').modal('show');
+        if(confirm('Excluir empresa?')) fetch(`/api/excluir-empresa/${id}`, { method: 'DELETE' }).then(() => carregarTabelaEmpresas());
     }
 
+    // --- LÓGICA DE INVESTIMENTOS ---
     function carregarTabela() {
         fetch('/api/resumo-investimentos')
         .then(res => res.json())
         .then(data => {
             const tbody = document.getElementById('corpoTabela');
             tbody.innerHTML = '';
-            
             if(data.status === 'sucesso') {
-                if ($.fn.DataTable.isDataTable('#tabelaInvestimentos')) {
-                    $('#tabelaInvestimentos').DataTable().destroy();
-                }
-                
+                if ($.fn.DataTable.isDataTable('#tabelaInvestimentos')) $('#tabelaInvestimentos').DataTable().destroy();
                 data.dados.forEach(item => {
-                    // Aqui a lógica para evitar o NaN: Se valor_investido existir, converte, senão coloca 0.00
-                    const valorFormatado = item.valor_investido ? 
-                        parseFloat(item.valor_investido).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : 
-                        '0,00';
-
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${item.credor || '-'}</td>
-                            <td>R$ ${valorFormatado}</td>
-                            <td>${item.tipo_recurso || '-'}</td>
-                            <td>${item.finalidade || '-'}</td>
-                            <td>${item.captador || '-'}</td>
-                            <td>${item.juros || '0'}%</td>
-                            <td>${item.data_pgto || '-'}</td>
-                            <td><button class="btn btn-sm btn-outline-danger" onclick="excluir(${item.id})">Excluir</button></td>
-                        </tr>`;
+                    const v = item.valor_investido ? parseFloat(item.valor_investido).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00';
+                    tbody.innerHTML += `<tr><td>${item.credor}</td><td>R$ ${v}</td><td>${item.tipo_recurso}</td><td>${item.finalidade}</td><td>${item.captador}</td><td>${item.juros}%</td><td>${item.data_pgto}</td>
+                    <td><button class="btn btn-sm btn-outline-danger" onclick="excluir(${item.id})">Excluir</button></td></tr>`;
                 });
-                
-                $('#tabelaInvestimentos').DataTable({
-                    language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json' }
-                });
+                $('#tabelaInvestimentos').DataTable({ language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json' } });
             }
         });
     }
-    function excluir(id) {
-        if(confirm('Excluir este registro?')) {
-            fetch('/api/excluir-investimento/' + id, { method: 'DELETE' })
-            .then(res => res.json())
-            .then(data => { if(data.status === 'sucesso') carregarTabela(); else alert('Erro: ' + data.msg); });
-        }
-    }
 
     function salvarInvestimento() {
-        const form = document.getElementById('formInvestimento');
-        const formData = new FormData(form);
-        const valorRaw = formData.get('valor').replace(/\./g, '').replace(',', '.');
-        const jurosRaw = formData.get('juros').replace(',', '.');
-        formData.set('valor', valorRaw);
-        formData.set('juros', jurosRaw);
+        const formData = new FormData(document.getElementById('formInvestimento'));
+        formData.set('valor', formData.get('valor').replace(/\./g, '').replace(',', '.'));
         fetch('/api/adicionar-investimento', { method: 'POST', body: formData })
-        .then(res => res.json())
-        .then(data => {
-            if(data.status === 'sucesso') { alert('Cadastrado!'); form.reset(); carregarTabela(); } 
-            else alert('Erro: ' + data.msg);
-        });
+        .then(() => { alert('Cadastrado!'); document.getElementById('formInvestimento').reset(); carregarTabela(); });
     }
 
+    // --- UTILITÁRIOS ---
+    function mascaraCNPJ(i){ i.value = i.value.replace(/\D/g,'').replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d)/,'.$1/$2').replace(/(\d{4})(\d)/,'$1-$2'); }
     function formatarMoeda(i) { let v = i.value.replace(/\D/g,''); v=(v/100).toFixed(2).replace('.',','); i.value = v.replace(/(\d)(\d{3})(\d{3}),/g,"$1.$2.$3,").replace(/(\d)(\d{3}),/g,"$1.$2,"); }
     function formatarJuros(i) { let v = i.value.replace(',', '.'); if(v>1) i.value = (v/100).toFixed(2).replace('.',','); }
+    function abrirModalEmpresa() { $('#modalEmpresa').modal('show'); }
 
-    document.addEventListener('DOMContentLoaded', () => { carregarEmpresas(); carregarTabela(); });
+    document.addEventListener('DOMContentLoaded', () => { carregarTabela(); carregarEmpresas(); carregarTabelaEmpresas(); });
 </script>
 {% endblock %}
