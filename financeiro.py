@@ -4,13 +4,6 @@ from datetime import datetime
 
 bp_financeiro = Blueprint('financeiro', __name__)
 
-# Adicione esta nova rota no seu arquivo financeiro.py
-@bp_financeiro.route('/financeiro/resumo')
-def pagina_resumo():
-    if 'usuario_logado' not in session:
-        return redirect(url_for('tela_login'))
-    return render_template('resumo.html')
-
 # Rota para renderizar a página do financeiro
 @bp_financeiro.route('/financeiro')
 def pagina_financeiro():
@@ -18,8 +11,16 @@ def pagina_financeiro():
         return redirect(url_for('tela_login'))
     return render_template('financeiro.html')
 
+# Rota para renderizar o resumo
+@bp_financeiro.route('/financeiro/resumo')
+def pagina_resumo():
+    if 'usuario_logado' not in session:
+        return redirect(url_for('tela_login'))
+    return render_template('resumo.html')
+
 # Lógica de cálculo mensal
 def calcular_juros_mensal(valor_inicial, percentual_juros):
+    # Converte para float garantindo que não haverá erro de tipo
     return (float(valor_inicial) * (float(percentual_juros) / 100)) / 30 * 15
 
 @bp_financeiro.route('/api/adicionar-investimento', methods=['POST'])
@@ -28,10 +29,11 @@ def adicionar_investimento():
         return jsonify({'status': 'erro', 'msg': 'Não autorizado'}), 401
     
     dados = request.form
-    valor = dados.get('valor')
-    juros = dados.get('juros')
-    
     try:
+        # Conversão de segurança: garantimos que são números
+        valor = float(dados.get('valor', 0))
+        juros = float(dados.get('juros', 0))
+        
         conn = get_db_connection()
         cur = conn.cursor()
         
@@ -45,10 +47,10 @@ def adicionar_investimento():
         
         # 2. Calcula o Juros inicial e insere na tabela de calculo_mensal
         vlr_juros = calcular_juros_mensal(valor, juros)
-        valor_mais_juros = float(valor) + vlr_juros
+        valor_mais_juros = valor + vlr_juros
         
         cur.execute("""
-            INSERT INTO calculo_mensal (investimento_id, mes, valor_inicial, juros, vlr_juros, valor_mais_juros, saldo_devedor)
+            INSERT INTO calculo_mensal (investimento_id, mes, valor_inicial, juros, vlr_juros, valor_final, saldo_devedor)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """, (investimento_id, datetime.now().strftime('%B'), valor, juros, vlr_juros, valor_mais_juros, valor_mais_juros))
         
@@ -59,7 +61,7 @@ def adicionar_investimento():
     except Exception as e:
         return jsonify({'status': 'erro', 'msg': str(e)})
 
-# --- NOVO TIJOLO: ROTA DE RESUMO PARA A TELA DE RACIONAL ---
+# Rota de Resumo para a Tela de Racional
 @bp_financeiro.route('/api/resumo-investimentos', methods=['GET'])
 def resumo_investimentos():
     if 'usuario_logado' not in session:
@@ -67,9 +69,9 @@ def resumo_investimentos():
     
     try:
         conn = get_db_connection()
-        cur = conn.cursor(dictionary=True) # Retorna como dicionário para facilitar o JSON
+        # O 'dictionary=True' depende do seu conector. Se der erro, use o padrão sem o argumento.
+        cur = conn.cursor(dictionary=True) 
         
-        # Query que cruza o cadastro com o cálculo mensal
         query = """
             SELECT 
                 i.quem as credor, 
