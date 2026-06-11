@@ -27,6 +27,20 @@ def listar_empresas():
     conn.close()
     return jsonify({'status': 'sucesso', 'dados': empresas})
 
+@bp_financeiro.route('/api/excluir-empresa/<int:id>', methods=['DELETE'])
+def excluir_empresa(id):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        # Executa a exclusão baseada no ID recebido da URL
+        cur.execute("DELETE FROM empresas WHERE id = %s", (id,))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({'status': 'sucesso', 'mensagem': 'Empresa excluída com sucesso'})
+    except Exception as e:
+        return jsonify({'status': 'erro', 'mensagem': str(e)}), 500
+
 # Rota para cadastrar empresa (Aproveite e substitua esta também)
 @bp_financeiro.route('/api/adicionar-empresa', methods=['POST'])
 def adicionar_empresa():
