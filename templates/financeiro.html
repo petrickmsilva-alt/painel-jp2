@@ -148,14 +148,18 @@
         tbody.innerHTML = ''; 
         
         if(data.status === 'sucesso' && Array.isArray(data.dados)) {
+            // Destrói a tabela antiga se ela existir para evitar conflitos
             if ($.fn.DataTable.isDataTable('#tabelaInvestimentos')) {
                 $('#tabelaInvestimentos').DataTable().destroy();
             }
 
             data.dados.forEach(item => {
-                // Aqui estamos usando os nomes exatos da sua imagem:
+                // Tratamento seguro para o valor: garante que seja número antes de formatar
+                let valorNumerico = parseFloat(item.valor_inicial) || 0;
+                let valorFormatado = valorNumerico.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                
+                // Mapeamento dos campos baseado exatamente na sua estrutura SQL
                 const nome = item.nome_investidor || '-';
-                const valor = item.valor_inicial ? parseFloat(item.valor_inicial).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00';
                 const tipo = item.tipo_operacao || '-';
                 const finalidade = item.finalidade || '-';
                 const captador = item.captador || '-';
@@ -165,7 +169,7 @@
                 tbody.innerHTML += `
                     <tr>
                         <td>${nome}</td>
-                        <td>R$ ${valor}</td>
+                        <td>R$ ${valorFormatado}</td>
                         <td>${tipo}</td>
                         <td>${finalidade}</td>
                         <td>${captador}</td>
@@ -177,6 +181,7 @@
                     </tr>`;
             });
 
+            // Inicializa a tabela após os dados serem injetados
             $('#tabelaInvestimentos').DataTable({
                 language: {
                     "sEmptyTable": "Nenhum registro encontrado",
