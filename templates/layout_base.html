@@ -2,13 +2,14 @@
 <html lang="pt-br">
 <head>
     <meta charset="utf-8">
-    
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+    <title>Painel Financeiro</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    
     <style>
-        /* Isso aqui é o estilo da barra lateral */
         body { display: flex; min-height: 100vh; background-color: #f8fafc; }
         #sidebar { width: 250px; background: #1e293b; color: white; padding: 20px; }
         #sidebar a { color: #cbd5e1; text-decoration: none; display: block; padding: 10px; border-radius: 5px; margin-bottom: 5px; }
@@ -18,21 +19,24 @@
 </head>
 <body>
 
-    <div id="sidebar" style="width: 250px; background: #1e293b; color: white; min-height: 100vh; padding: 20px;">
-    <h4>PAINEL DE INVESTIMENTO</h4>
-    <hr>
-    
-    <a href="/" style="color: #cbd5e1; text-decoration: none; display: block; padding: 10px;"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
-    <hr>
-    
-    <small class="text-muted px-2">GESTÃO</small>
-    <a href="/financeiro" style="color: white; text-decoration: none; display: block; padding: 10px;"><i class="bi bi-plus-circle"></i> Cadastro de Investimento</a>
-    <a href="/financeiro/resumo" style="color: #cbd5e1; text-decoration: none; display: block; padding: 10px;"><i class="bi bi-graph-up"></i> Resumo de Investimento</a>
-</div>
+    <div id="sidebar">
+        <h4>PAINEL DE INVESTIMENTO</h4>
+        <hr>
+        <a href="/"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
+        <hr>
+        <small class="text-muted px-2">GESTÃO</small>
+        <a href="/financeiro"><i class="bi bi-plus-circle"></i> Cadastro de Investimento</a>
+        <a href="/financeiro/resumo"><i class="bi bi-graph-up"></i> Resumo de Investimento</a>
+    </div>
 
     <div class="content">
         {% block content %}{% endblock %}
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 </body>
 </html>
