@@ -171,22 +171,43 @@
      }
 
     function carregarTabela() {
-        fetch('/api/resumo-investimentos')
-        .then(res => res.json())
-        .then(data => {
-            const tbody = document.getElementById('corpoTabela');
-            tbody.innerHTML = '';
-            if(data.status === 'sucesso') {
-                if ($.fn.DataTable.isDataTable('#tabelaInvestimentos')) $('#tabelaInvestimentos').DataTable().destroy();
-                data.dados.forEach(item => {
-                    const v = item.valor_investido ? parseFloat(item.valor_investido).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00';
-                    tbody.innerHTML += `<tr><td>${item.credor}</td><td>R$ ${v}</td><td>${item.tipo_recurso}</td><td>${item.finalidade}</td><td>${item.captador}</td><td>${item.juros}%</td><td>${item.data_pgto}</td>
-                    <td><button class="btn btn-sm btn-outline-danger" onclick="excluirInvestimento(${item.id})">Excluir</button></td></tr>`;
-                });
-                $('#tabelaInvestimentos').DataTable({ language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json' } });
+    fetch('/api/resumo-investimentos')
+    .then(res => res.json())
+    .then(data => {
+        const tbody = document.getElementById('corpoTabela');
+        tbody.innerHTML = ''; // Limpa antes de preencher
+        
+        if(data.status === 'sucesso' && Array.isArray(data.dados)) {
+            // Se já existir tabela, destrói para recriar com novos dados
+            if ($.fn.DataTable.isDataTable('#tabelaInvestimentos')) {
+                $('#tabelaInvestimentos').DataTable().destroy();
             }
-        });
-    }
+
+            data.dados.forEach(item => {
+                const valor = item.valor_investido ? parseFloat(item.valor_investido).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00';
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${item.credor || '-'}</td>
+                        <td>R$ ${valor}</td>
+                        <td>${item.tipo_recurso || '-'}</td>
+                        <td>${item.finalidade || '-'}</td>
+                        <td>${item.captador || '-'}</td>
+                        <td>${item.juros || '0'}%</td>
+                        <td>${item.data_pgto || '-'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger" onclick="excluirInvestimento(${item.id})">Excluir</button>
+                        </td>
+                    </tr>`;
+            });
+
+            // Reinicializa a tabela dinâmica
+            $('#tabelaInvestimentos').DataTable({
+                language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json' }
+            });
+        }
+    });
+}
 
     function salvarInvestimento() {
         const formData = new FormData(document.getElementById('formInvestimento'));
