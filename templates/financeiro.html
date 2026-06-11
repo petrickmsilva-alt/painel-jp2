@@ -71,6 +71,40 @@
     </div>
 </div>
 <script>
+    // Carrega a lista de empresas no select
+    function carregarEmpresas() {
+        fetch('/api/empresas')
+        .then(res => res.json())
+        .then(data => {
+            const select = document.querySelector('select[name="empresa_id"]');
+            select.innerHTML = '<option value="">Selecione uma empresa...</option>';
+            data.dados.forEach(emp => {
+                select.innerHTML += `<option value="${emp.id}">${emp.nome}</option>`;
+            });
+        });
+    }
+
+    // Salva a nova empresa via Modal
+    function salvarEmpresa() {
+        const formData = new FormData();
+        formData.append('nome', document.getElementById('empNome').value);
+        formData.append('cnpj', document.getElementById('empCnpj').value);
+        formData.append('ramo_atividade', document.getElementById('empRamo').value);
+
+        fetch('/api/adicionar-empresa', { method: 'POST', body: formData })
+        .then(() => {
+            $('#modalEmpresa').modal('hide');
+            carregarEmpresas(); // Atualiza a lista após salvar
+        });
+    }
+
+    function abrirModalEmpresa() {
+        $('#modalEmpresa').modal('show');
+    }
+
+    // Chama ao carregar a página
+    document.addEventListener('DOMContentLoaded', carregarEmpresas);
+    
     function carregarTabela() {
         fetch('/api/resumo-investimentos')
         .then(res => res.json())
