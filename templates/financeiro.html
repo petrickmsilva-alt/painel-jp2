@@ -6,39 +6,63 @@
         <h2>Cadastro de Investimento</h2>
     </div>
 
-    <div class="card p-3 mb-4 shadow-sm">
-        <h5 class="mb-3">Registrar Novo Investimento</h5>
-        <form id="formInvestimento" class="row g-2 align-items-end">
-            <div class="col-md-3">
-                <label class="form-label small fw-bold">Credor</label>
-                <input type="text" name="quem" class="form-control form-control-sm" required>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label small fw-bold">Valor (R$)</label>
-                <input type="text" name="valor" class="form-control form-control-sm" onkeyup="formatarMoeda(this)" required>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label small fw-bold">Empresa</label>
-                <input type="text" name="detalhes" class="form-control form-control-sm">
-            </div>
-            <div class="col-md-1">
-                <label class="form-label small fw-bold">Juros (%)</label>
-                <input type="text" name="juros" class="form-control form-control-sm" onblur="formatarJuros(this)" required>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label small fw-bold">Mês/Ano</label>
-                <input type="text" name="mes_ano" class="form-control form-control-sm" required>
-            </div>
-            <div class="col-md-2">
-                <button type="button" class="btn btn-primary btn-sm w-100" onclick="salvarInvestimento()">Salvar Registro</button>
-            </div>
-            <div class="col-12 mt-2">
-                <label class="form-label small fw-bold">Descrição</label>
-                <input type="text" name="descricao" class="form-control form-control-sm" placeholder="Detalhes adicionais...">
-            </div>
-        </form>
-    </div>
+    <div class="card p-4 shadow-sm">
+    <h5 class="mb-4">Novo Lançamento</h5>
+    <form id="formInvestimento" class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Empresa 
+                <button type="button" class="btn btn-sm btn-link p-0 ms-2" onclick="abrirModalEmpresa()">+ Cadastrar Nova</button>
+            </label>
+            <select name="empresa_id" class="form-select"></select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Credor</label>
+            <input type="text" name="quem" class="form-control">
+        </div>
 
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Captador de Recursos</label>
+            <input type="text" name="captador" class="form-control">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Tipo de Recurso</label>
+            <select name="tipo_recurso" class="form-select">
+                <option value="Proprio">Próprio</option>
+                <option value="Terceiros Particular">Terceiros Particular</option>
+                <option value="Instituicoes Financeiras">Instituições Financeiras</option>
+                <option value="Empresas Privadas">Empresas Privadas</option>
+                <option value="Investidor PF">Investidor PF</option>
+            </select>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Finalidade</label>
+            <select name="finalidade" class="form-select">
+                <option value="Pagamento Contas">Pagamento Contas</option>
+                <option value="Aporte Financeiro">Aporte Financeiro</option>
+                <option value="Emprestimo">Empréstimo</option>
+                <option value="Aplicacao Investidor">Aplicação Investidor</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Valor da Verba (R$)</label>
+            <input type="text" name="valor" class="form-control">
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Taxa de Juros (%)</label>
+            <input type="text" name="juros" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Data do Recurso</label>
+            <input type="date" name="data_recurso" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Data de Pagamento</label>
+            <input type="date" name="data_pgto" class="form-control">
+        </div>
+    </form>
+</div>
     <div class="card shadow-sm">
         <div class="card-header bg-dark text-white">
             <h5 class="mb-0">Investimentos Cadastrados</h5>
