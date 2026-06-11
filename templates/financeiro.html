@@ -90,15 +90,30 @@
 <div class="modal fade" id="modalEmpresa" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title">Cadastrar Nova Empresa</h5></div>
+            <div class="modal-header">
+                <h5 class="modal-title">Cadastrar Nova Empresa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
             <div class="modal-body">
                 <form id="formEmpresa">
-                    <div class="mb-3"><label>Nome</label><input type="text" name="nome" class="form-control" required></div>
-                    <div class="mb-3"><label>CNPJ</label><input type="text" name="cnpj" class="form-control" onkeyup="mascaraCNPJ(this)"></div>
-                    <div class="mb-3"><label>Ramo</label><input type="text" name="ramo_atividade" class="form-control"></div>
+                    <div class="mb-3">
+                        <label>Nome da Empresa</label>
+                        <input type="text" id="empNome" name="nome" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>CNPJ</label>
+                        <input type="text" id="empCnpj" name="cnpj" class="form-control" onkeyup="mascaraCNPJ(this)">
+                    </div>
+                    <div class="mb-3">
+                        <label>Ramo de Atividade</label>
+                        <input type="text" id="empRamo" name="ramo_atividade" class="form-control">
+                    </div>
                 </form>
             </div>
-            <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button><button class="btn btn-primary" onclick="salvarEmpresa()">Salvar</button></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarEmpresa()">Salvar Empresa</button>
+            </div>
         </div>
     </div>
 </div>
