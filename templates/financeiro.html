@@ -1,7 +1,7 @@
 {% extends 'layout_base.html' %}
 
 {% block content %}
-<div class="container-fluid p-4">
+<div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Cadastro de Investimento</h2>
     </div>
@@ -20,8 +20,8 @@
                 <input type="text" name="valor" id="inputValor" class="form-control" onkeyup="formatarMoeda(this)" placeholder="0,00" required>
             </div>
             <div class="col-md-3">
-                <label class="form-label">Empresas</label>
-                <input type="text" name="detalhes" class="form-control" placeholder="Ex: Empresa">
+                <label class="form-label">Instituição</label>
+                <input type="text" name="instituicao" class="form-control" placeholder="Ex: Banco X">
             </div>
             <div class="col-md-2">
                 <label class="form-label">Juros (%)</label>
@@ -32,62 +32,27 @@
                 <input type="text" name="mes_ano" class="form-control" placeholder="06/2026" required>
             </div>
             
+            <div class="col-12">
+                <label class="form-label">Descrição</label>
+                <input type="text" name="detalhes" class="form-control" placeholder="Detalhes do investimento">
+            </div>
+
             <div class="col-12 mt-3">
-                <button type="button" class="btn btn-primary px-4" onclick="salvarInvestimento()">Salvar Registro</button>
+                <button type="button" class="btn btn-primary" onclick="salvarInvestimento()">Salvar</button>
                 <button type="reset" class="btn btn-secondary">Limpar</button>
             </div>
         </form>
     </div>
-
-    <div class="card shadow-sm">
-        <div class="card-header bg-dark text-white">
-            <h5 class="mb-0">Investimentos Cadastrados</h5>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-striped table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Credor</th>
-                        <th>Valor Inicial</th>
-                        <th>Empresa</th>
-                        <th>Juros</th>
-                        <th>Mês</th>
-                    </tr>
-                </thead>
-                <tbody id="corpoTabela">
-                    </tbody>
-            </table>
-        </div>
-    </div>
 </div>
 
 <script>
-    function carregarTabela() {
-        fetch('/api/resumo-investimentos')
-        .then(res => res.json())
-        .then(data => {
-            const tbody = document.getElementById('corpoTabela');
-            tbody.innerHTML = '';
-            if(data.status === 'sucesso') {
-                data.dados.forEach(item => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><strong>${item.credor}</strong></td>
-                            <td>R$ ${parseFloat(item.valor_investido).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                            <td>${item.empresa || '-'}</td>
-                            <td>${item.juros || '0'}%</td>
-                            <td>${item.mes_ano || '-'}</td>
-                        </tr>`;
-                });
-            }
-        });
-    }
-
     function salvarInvestimento() {
         const form = document.getElementById('formInvestimento');
         const formData = new FormData(form);
 
+        // Limpa a máscara de moeda (1.000,00 -> 1000.00)
         let valorRaw = formData.get('valor').replace(/\./g, '').replace(',', '.');
+        // Limpa a máscara de juros (0,04 -> 0.04)
         let jurosRaw = formData.get('juros').replace(',', '.');
 
         formData.set('valor', valorRaw);
@@ -97,9 +62,8 @@
         .then(res => res.json())
         .then(data => {
             if(data.status === 'sucesso') { 
-                alert('Investimento cadastrado!');
+                alert('Investimento cadastrado com sucesso!');
                 form.reset(); 
-                carregarTabela(); // Atualiza a tabela na tela
             } else { 
                 alert('Erro: ' + data.msg); 
             }
@@ -117,9 +81,10 @@
 
     function formatarJuros(input) {
         let v = input.value.replace(',', '.');
-        if (v > 1) { input.value = (v / 100).toFixed(2).replace('.', ','); }
+        // Se o valor for maior que 1, assume que digitou 4 (inteiro) e converte para 0,04
+        if (v > 1) { 
+            input.value = (v / 100).toFixed(2).replace('.', ','); 
+        }
     }
-
-    document.addEventListener('DOMContentLoaded', carregarTabela);
 </script>
 {% endblock %}
