@@ -11,28 +11,37 @@ def pagina_financeiro():
     return render_template('financeiro.html')
 
 # --- ROTAS DE EMPRESAS (DINÂMICO) ---
+# Rota para listar empresas (Corrigida)
 @bp_financeiro.route('/api/empresas', methods=['GET'])
 def listar_empresas():
     conn = get_db_connection()
-    cur = conn.cursor(dictionary=True)
+    cur = conn.cursor() # Removemos o 'dictionary=True'
     cur.execute("SELECT * FROM empresas")
-    empresas = cur.fetchall()
+    
+    # Pegamos os nomes das colunas manualmente
+    columns = [desc[0] for desc in cur.description]
+    # Transformamos cada linha em um dicionário
+    empresas = [dict(zip(columns, row)) for row in cur.fetchall()]
+    
     cur.close()
     conn.close()
     return jsonify({'status': 'sucesso', 'dados': empresas})
 
+# Rota para cadastrar empresa (Aproveite e substitua esta também)
 @bp_financeiro.route('/api/adicionar-empresa', methods=['POST'])
 def adicionar_empresa():
-    dados = request.form
+    nome = request.form.get('nome')
+    cnpj = request.form.get('cnpj')
+    ramo = request.form.get('ramo_atividade')
+    
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("INSERT INTO empresas (nome, cnpj, ramo_atividade) VALUES (%s, %s, %s)", 
-                (dados['nome'], dados['cnpj'], dados['ramo_atividade']))
+    cur.execute("INSERT INTO empresas (nome, cnpj, ramo_atividade) VALUES (%s, %s, %s)", (nome, cnpj, ramo))
     conn.commit()
     cur.close()
     conn.close()
     return jsonify({'status': 'sucesso'})
-
+    
 # --- ROTA DE CADASTRO DE INVESTIMENTO (ATUALIZADA) ---
 @bp_financeiro.route('/api/adicionar-investimento', methods=['POST'])
 def adicionar_investimento():
