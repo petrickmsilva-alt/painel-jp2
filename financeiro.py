@@ -30,37 +30,31 @@ def adicionar_investimento():
     
     dados = request.form
     try:
+        # Conversão de segurança para números puros
         valor = float(dados.get('valor', 0))
         juros = float(dados.get('juros', 0))
         
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # INSERT corrigido com os nomes exatos das colunas da sua imagem
+        # 1. INSERT na tabela 'investimentos' ajustado para as suas colunas reais
+        # Colunas reais: nome_investidor, tipo_operacao, valor_inicial, data_inicio, juros_mensais, descricao
         cur.execute("""
-            INSERT INTO investimentos (nome_investidor, valor_inicial, descricao, mes_ano, juros_mensais) 
-            VALUES (%s, %s, %s, %s, %s)
-        """, (dados['quem'], valor, dados['detalhes'], dados['mes_ano'], juros))
+            INSERT INTO investimentos (nome_investidor, tipo_operacao, valor_inicial, data_inicio, juros_mensais, descricao) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (dados['quem'], dados.get('tipo_operacao', 'Investimento'), valor, dados['mes_ano'], juros, dados['detalhes']))
         
         investimento_id = cur.lastrowid
         
-        # Cálculo
+        # 2. Cálculo de juros
         vlr_juros = (valor * (juros / 100)) / 30 * 15
         valor_final = valor + vlr_juros
         
-        # Tente este bloco, ele é mais seguro contra erros de coluna
+        # 3. INSERT na tabela 'calculo_mensal' ajustado para as colunas reais
+        # Colunas reais: investimento_id, mes_referencia, valor_inicial, juros_aplicados, valor_juros, valor_final, pagamento_realizado, saldo_devedor, data_registro
         cur.execute("""
-            INSERT INTO calculo_mensal (
-                idinvestimento, 
-                id_mes_referencia, 
-                valor_inicial, 
-                juros_aplicados, 
-                valor_juros, 
-                valor_final, 
-                saldo_devedor, 
-                data_registro
-            ) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+            INSERT INTO calculo_mensal (investimento_id, mes_referencia, valor_inicial, juros_aplicados, valor_juros, valor_final, pagamento_realizado, saldo_devedor, data_registro)
+            VALUES (%s, %s, %s, %s, %s, %s, 0, %s, NOW())
         """, (investimento_id, dados['mes_ano'], valor, juros, vlr_juros, valor_final, valor_final))
         
         conn.commit()
