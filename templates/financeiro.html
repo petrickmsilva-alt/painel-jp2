@@ -94,20 +94,66 @@
 <div class="modal fade" id="modalEmpresa" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header"><h5>Nova Empresa</h5></div>
+            <div class="modal-header">
+                <h5 class="modal-title">Cadastrar Nova Empresa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
             <div class="modal-body">
-                <input type="text" id="empNome" class="form-control mb-2" placeholder="Nome da Empresa">
-                <input type="text" id="empCnpj" class="form-control mb-2" placeholder="CNPJ">
-                <input type="text" id="empRamo" class="form-control" placeholder="Ramo de Atividade">
+                <form id="formEmpresa">
+                    <div class="mb-3">
+                        <label>Nome da Empresa</label>
+                        <input type="text" id="nome_empresa" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>CNPJ</label>
+                        <input type="text" id="cnpj_empresa" class="form-control" placeholder="00.000.000/0000-00" onkeyup="mascaraCNPJ(this)">
+                    </div>
+                    <div class="mb-3">
+                        <label>Ramo de Atividade</label>
+                        <input type="text" id="ramo_empresa" class="form-control">
+                    </div>
+                </form>
             </div>
             <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
                 <button type="button" class="btn btn-primary" onclick="salvarEmpresa()">Salvar Empresa</button>
             </div>
         </div>
     </div>
 </div>
 
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Gestão de Investimentos</h3>
+        <button class="btn btn-success" onclick="abrirModalEmpresa()">+ Cadastrar Nova Empresa</button>
+    </div>
+    
+    <div class="card p-3">
+        <table class="table table-hover" id="tabelaInvestimentos">
+            <thead>
+                <tr>
+                    <th>Empresa</th>
+                    <th>CNPJ</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="corpoTabelaEmpresas"></tbody>
+        </table>
+    </div>
+</div>
+
 <script>
+    
+    // Máscara para o CNPJ não ficar tudo junto
+    function mascaraCNPJ(i){
+        var v = i.value.replace(/\D/g,'');
+        v = v.replace(/^(\d{2})(\d)/,'$1.$2');
+        v = v.replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3');
+        v = v.replace(/\.(\d{3})(\d)/,'.$1/$2');
+        v = v.replace(/(\d{4})(\d)/,'$1-$2');
+        i.value = v;
+    }
+    
     function carregarEmpresas() {
         fetch('/api/empresas')
         .then(res => res.json())
