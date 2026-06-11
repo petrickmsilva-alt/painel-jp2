@@ -178,20 +178,26 @@
     function salvarInvestimento() {
         const form = document.getElementById('formInvestimento');
         const formData = new FormData(form);
-        formData.set('valor', formData.get('valor').replace(/\./g, '').replace(',', '.'));
-        formData.set('juros', formData.get('juros').replace(',', '.'));
+        
+        // Formatar valores numéricos antes de enviar
+        const valorRaw = formData.get('valor').replace(/\./g, '').replace(',', '.');
+        const jurosRaw = formData.get('juros').replace(',', '.');
+        
+        formData.set('valor', valorRaw);
+        formData.set('juros', jurosRaw);
 
         fetch('/api/adicionar-investimento', { method: 'POST', body: formData })
         .then(res => res.json())
         .then(data => {
             if(data.status === 'sucesso') { 
-                alert('Cadastrado!');
+                alert('Investimento cadastrado com sucesso!');
                 form.reset(); 
                 carregarTabela(); 
-            } else alert('Erro: ' + data.msg);
+            } else {
+                alert('Erro ao salvar: ' + data.msg);
+            }
         });
     }
-
     function formatarMoeda(i) { let v = i.value.replace(/\D/g,''); v=(v/100).toFixed(2).replace('.',','); i.value = v.replace(/(\d)(\d{3})(\d{3}),/g,"$1.$2.$3,").replace(/(\d)(\d{3}),/g,"$1.$2,"); }
     function formatarJuros(i) { let v = i.value.replace(',', '.'); if(v>1) i.value = (v/100).toFixed(2).replace('.',','); }
 
