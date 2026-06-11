@@ -133,7 +133,11 @@
         });
     }
 
-    function abrirModalEmpresa() { $('#modalEmpresa').modal('show'); }
+    function abrirModalEmpresa() {
+    // Usamos o Bootstrap 5 nativo, sem depender de $()
+    var modal = new bootstrap.Modal(document.getElementById('modalEmpresa'));
+    modal.show();
+}
 
     function carregarTabela() {
         fetch('/api/resumo-investimentos')
