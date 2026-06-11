@@ -17,15 +17,15 @@
             
             <div class="col-md-3">
                 <label class="form-label">Valor (R$)</label>
-                <input type="number" step="0.01" name="valor" class="form-control" placeholder="0.00" required>
+                <input type="text" name="valor" id="inputValor" class="form-control" onkeyup="formatarMoeda(this)" placeholder="0,00" required>
             </div>
             <div class="col-md-3">
-                <label class="form-label">Empresa</label>
-                <input type="text" name="instituicao" class="form-control" placeholder="Nome da Instituição">
+                <label class="form-label">Instituição</label>
+                <input type="text" name="instituicao" class="form-control" placeholder="Ex: Banco X">
             </div>
             <div class="col-md-2">
                 <label class="form-label">Juros (%)</label>
-                <input type="number" step="0.01" name="juros" class="form-control" placeholder="0.00" required>
+                <input type="text" name="juros" id="inputJuros" class="form-control" onblur="formatarJuros(this)" placeholder="0,00" required>
             </div>
             <div class="col-md-4">
                 <label class="form-label">Mês/Ano</label>
@@ -46,18 +46,46 @@
 </div>
 
 <script>
+    // Função de Salvar com Limpeza de Máscaras
     function salvarInvestimento() {
-        let formData = new FormData(document.getElementById('formInvestimento'));
+        const form = document.getElementById('formInvestimento');
+        const formData = new FormData(form);
+
+        // Limpa os campos antes de enviar para o servidor não dar erro no banco
+        let valorRaw = formData.get('valor').replace(/\./g, '').replace(',', '.');
+        let jurosRaw = formData.get('juros').replace(',', '.');
+
+        formData.set('valor', valorRaw);
+        formData.set('juros', jurosRaw);
+
         fetch('/api/adicionar-investimento', { method: 'POST', body: formData })
         .then(res => res.json())
         .then(data => {
             if(data.status === 'sucesso') { 
                 alert('Investimento cadastrado com sucesso!');
-                document.getElementById('formInvestimento').reset(); 
+                form.reset(); 
             } else { 
                 alert('Erro: ' + data.msg); 
             }
         });
+    }
+
+    // Máscara para Moeda (Valor)
+    function formatarMoeda(input) {
+        let v = input.value.replace(/\D/g, '');
+        v = (v / 100).toFixed(2) + '';
+        v = v.replace(".", ",");
+        v = v.replace(/(\d)(\d{3})(\d{3}),/g, "$1.$2.$3,");
+        v = v.replace(/(\d)(\d{3}),/g, "$1.$2,");
+        input.value = v;
+    }
+
+    // Máscara para Juros (transforma 4 em 0,04)
+    function formatarJuros(input) {
+        let v = input.value.replace(',', '.');
+        if (v > 1) { 
+            input.value = (v / 100).toFixed(2).replace('.', ','); 
+        }
     }
 </script>
 {% endblock %}
