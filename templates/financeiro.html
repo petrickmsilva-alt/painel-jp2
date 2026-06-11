@@ -144,15 +144,22 @@
         .then(data => {
             const tbody = document.getElementById('corpoTabela');
             tbody.innerHTML = '';
+            
             if(data.status === 'sucesso') {
                 if ($.fn.DataTable.isDataTable('#tabelaInvestimentos')) {
                     $('#tabelaInvestimentos').DataTable().destroy();
                 }
+                
                 data.dados.forEach(item => {
+                    // Aqui a lógica para evitar o NaN: Se valor_investido existir, converte, senão coloca 0.00
+                    const valorFormatado = item.valor_investido ? 
+                        parseFloat(item.valor_investido).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : 
+                        '0,00';
+
                     tbody.innerHTML += `
                         <tr>
-                            <td>${item.credor}</td>
-                            <td>R$ ${parseFloat(item.valor_investido).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                            <td>${item.credor || '-'}</td>
+                            <td>R$ ${valorFormatado}</td>
                             <td>${item.tipo_recurso || '-'}</td>
                             <td>${item.finalidade || '-'}</td>
                             <td>${item.captador || '-'}</td>
@@ -161,13 +168,13 @@
                             <td><button class="btn btn-sm btn-outline-danger" onclick="excluir(${item.id})">Excluir</button></td>
                         </tr>`;
                 });
+                
                 $('#tabelaInvestimentos').DataTable({
                     language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json' }
                 });
             }
         });
     }
-
     function excluir(id) {
         if(confirm('Excluir este registro?')) {
             fetch('/api/excluir-investimento/' + id, { method: 'DELETE' })
