@@ -116,28 +116,39 @@
     fetch('/api/empresas')
     .then(res => res.json())
     .then(data => {
-        console.log("DADOS RECEBIDOS DO SERVIDOR:", data); // <--- ADICIONE ISSO
+        // Log para depuração: verifique no console (F12) o que o servidor devolve
+        console.log("DADOS RECEBIDOS DO SERVIDOR:", data); 
+        
         const tbody = document.getElementById('corpoTabelaEmpresas');
         tbody.innerHTML = '';
-        if(data.status === 'sucesso') {
+        
+        // Verifica se a resposta foi sucesso e se existe a lista 'dados'
+        if(data && data.status === 'sucesso' && Array.isArray(data.dados)) {
             data.dados.forEach(item => {
-                // Aqui garantimos que acessamos o nome do campo correto
+                // Acessamos as propriedades diretamente (certifique-se de que o Python envia exatamente esses nomes)
+                const id = item.id;
                 const nome = item.nome || 'Sem nome';
                 const cnpj = item.cnpj || 'Sem CNPJ';
                 const ramo = item.ramo_atividade || '-';
                 
-                tbody.innerHTML += `<tr>
-                    <td>${nome}</td>
-                    <td>${cnpj}</td>
-                    <td>${ramo}</td>
-                    <td>
-                        <button class="btn btn-sm btn-danger" onclick="excluirEmpresa(${item.id})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                </tr>`;
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${nome}</td>
+                        <td>${cnpj}</td>
+                        <td>${ramo}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="excluirEmpresa('${id}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>`;
             });
+        } else {
+            console.error("Erro ou dados vazios recebidos do servidor:", data);
         }
+    })
+    .catch(error => {
+        console.error("Erro na requisição fetch:", error);
     });
 }
     function salvarEmpresa() {
