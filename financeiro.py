@@ -4,6 +4,16 @@ from datetime import datetime
 
 bp_financeiro = Blueprint('financeiro', __name__)
 
+# Adicione isso temporariamente no seu financeiro.py para testar
+@bp_financeiro.route('/api/testar-colunas')
+def testar_colunas():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DESCRIBE investimentos") # Ou PRAGMA table_info(investimentos) se for SQLite
+    colunas = cur.fetchall()
+    conn.close()
+    return jsonify({'colunas': [c[0] for c in colunas]})
+
 # Rota para renderizar a página do financeiro
 @bp_financeiro.route('/financeiro')
 def pagina_financeiro():
