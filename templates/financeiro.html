@@ -136,14 +136,30 @@
     }
 
     function salvarEmpresa() {
-        const formData = new FormData(document.getElementById('formEmpresa'));
-        fetch('/api/adicionar-empresa', { method: 'POST', body: formData })
-        .then(() => { $('#modalEmpresa').modal('hide'); document.getElementById('formEmpresa').reset(); carregarTabelaEmpresas(); carregarEmpresas(); });
-    }
+    const formData = new FormData();
+    formData.append('nome', document.getElementById('empNome').value);
+    formData.append('cnpj', document.getElementById('empCnpj').value);
+    formData.append('ramo_atividade', document.getElementById('empRamo').value);
+
+    fetch('/api/adicionar-empresa', { method: 'POST', body: formData })
+    .then(res => res.json())
+    .then(data => {
+        $('#modalEmpresa').modal('hide');
+        document.getElementById('formEmpresa').reset();
+        carregarTabelaEmpresas(); // Atualiza a tabela
+        carregarEmpresas();       // ATUALIZA O FILTRO (SELECT)
+    });
+}
 
     function excluirEmpresa(id) {
-        if(confirm('Excluir empresa?')) fetch(`/api/excluir-empresa/${id}`, { method: 'DELETE' }).then(() => carregarTabelaEmpresas());
+    if(confirm('Tem certeza que deseja excluir esta empresa?')) {
+        fetch(`/api/excluir-empresa/${id}`, { method: 'DELETE' })
+        .then(() => {
+            carregarTabelaEmpresas(); // Recarrega a lista
+            carregarEmpresas();       // Atualiza o filtro
+        });
     }
+}
 
     // --- LÓGICA DE INVESTIMENTOS ---
     function carregarTabela() {
