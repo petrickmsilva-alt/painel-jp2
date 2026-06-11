@@ -113,20 +113,32 @@
     }
 
     function carregarTabelaEmpresas() {
-        fetch('/api/empresas')
-        .then(res => res.json())
-        .then(data => {
-            const tbody = document.getElementById('corpoTabelaEmpresas');
-            tbody.innerHTML = '';
-            if(data.status === 'sucesso') {
-                data.dados.forEach(item => {
-                    tbody.innerHTML += `<tr><td>${item.nome}</td><td>${item.cnpj}</td><td>${item.ramo_atividade || '-'}</td>
-                    <td><button class="btn btn-sm btn-danger" onclick="excluirEmpresa(${item.id})"><i class="bi bi-trash"></i></button></td></tr>`;
-                });
-            }
-        });
-    }
-
+    fetch('/api/empresas')
+    .then(res => res.json())
+    .then(data => {
+        const tbody = document.getElementById('corpoTabelaEmpresas');
+        tbody.innerHTML = '';
+        if(data.status === 'sucesso') {
+            data.dados.forEach(item => {
+                // Aqui garantimos que acessamos o nome do campo correto
+                const nome = item.nome || 'Sem nome';
+                const cnpj = item.cnpj || 'Sem CNPJ';
+                const ramo = item.ramo_atividade || '-';
+                
+                tbody.innerHTML += `<tr>
+                    <td>${nome}</td>
+                    <td>${cnpj}</td>
+                    <td>${ramo}</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" onclick="excluirEmpresa(${item.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>`;
+            });
+        }
+    });
+}
     function salvarEmpresa() {
         const formData = new FormData();
         formData.append('nome', document.getElementById('empNome').value);
