@@ -141,29 +141,53 @@
     }
 
     function carregarTabela() {
-        fetch('/api/resumo-investimentos').then(res => res.json()).then(data => {
-            const tbody = document.getElementById('corpoTabela');
-            tbody.innerHTML = '';
-            if(data.status === 'sucesso' && data.dados) {
-                if ($.fn.DataTable.isDataTable('#tabelaInvestimentos')) $('#tabelaInvestimentos').DataTable().destroy();
-                data.dados.forEach(item => {
-                    const v = item.valor_investido ? parseFloat(item.valor_investido).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00';
-                    tbody.innerHTML += `<tr>
-                        <td>${item.credor || '-'}</td>
-                        <td>R$ ${v}</td>
-                        <td>${item.tipo_recurso || '-'}</td>
-                        <td>${item.finalidade || '-'}</td>
-                        <td>${item.captador || '-'}</td>
-                        <td>${item.juros || '0'}%</td>
-                        <td>${item.data_pgto || '-'}</td>
-                        <td><button class="btn btn-sm btn-outline-danger" onclick="excluirInvestimento(${item.id})">Excluir</button></td>
-                    </tr>`;
-                });
-                $('#tabelaInvestimentos').DataTable({ language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json' } });
+    fetch('/api/resumo-investimentos')
+    .then(res => res.json())
+    .then(data => {
+        const tbody = document.getElementById('corpoTabela');
+        tbody.innerHTML = ''; 
+        
+        if(data.status === 'sucesso' && Array.isArray(data.dados)) {
+            if ($.fn.DataTable.isDataTable('#tabelaInvestimentos')) {
+                $('#tabelaInvestimentos').DataTable().destroy();
             }
-        });
-    }
 
+            data.dados.forEach(item => {
+                // Aqui estamos usando os nomes exatos da sua imagem:
+                const nome = item.nome_investidor || '-';
+                const valor = item.valor_inicial ? parseFloat(item.valor_inicial).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00';
+                const tipo = item.tipo_operacao || '-';
+                const finalidade = item.finalidade || '-';
+                const captador = item.captador || '-';
+                const juros = item.juros_mensais || '0';
+                const dataPgto = item.data_pgto || '-';
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${nome}</td>
+                        <td>R$ ${valor}</td>
+                        <td>${tipo}</td>
+                        <td>${finalidade}</td>
+                        <td>${captador}</td>
+                        <td>${juros}%</td>
+                        <td>${dataPgto}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger" onclick="excluirInvestimento(${item.id})">Excluir</button>
+                        </td>
+                    </tr>`;
+            });
+
+            $('#tabelaInvestimentos').DataTable({
+                language: {
+                    "sEmptyTable": "Nenhum registro encontrado",
+                    "sInfo": "Mostrando de _START_ até _END_ de _TOTAL_ registros",
+                    "sSearch": "Pesquisar:",
+                    "oPaginate": { "sNext": "Próximo", "sPrevious": "Anterior" }
+                }
+            });
+        }
+    });
+}
     function salvarInvestimento() {
         const formData = new FormData(document.getElementById('formInvestimento'));
         formData.set('valor', formData.get('valor').replace(/\./g, '').replace(',', '.'));
