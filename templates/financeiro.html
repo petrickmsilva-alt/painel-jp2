@@ -154,11 +154,11 @@
             }
 
             data.dados.forEach(item => {
-                // Tratamento seguro para o valor: garante que seja número antes de formatar
+                // Tratamento seguro para o valor
                 let valorNumerico = parseFloat(item.valor_inicial) || 0;
                 let valorFormatado = valorNumerico.toLocaleString('pt-BR', {minimumFractionDigits: 2});
                 
-                // Mapeamento dos campos baseado exatamente na sua estrutura SQL
+                // Mapeamento dos campos
                 const nome = item.nome_investidor || '-';
                 const tipo = item.tipo_operacao || '-';
                 const finalidade = item.finalidade || '-';
@@ -181,13 +181,22 @@
                     </tr>`;
             });
 
-            // Inicializa a tabela após os dados serem injetados
+            // Inicializa o DataTables de forma profissional
             $('#tabelaInvestimentos').DataTable({
+                pageLength: 10, // Limita a 10 linhas por página
+                lengthMenu: [5, 10, 25, 50], // Opções de visualização
+                responsive: true, // Responsivo
+                ordering: true, // Permite ordenar clicando na coluna
                 language: {
                     "sEmptyTable": "Nenhum registro encontrado",
                     "sInfo": "Mostrando de _START_ até _END_ de _TOTAL_ registros",
+                    "sInfoEmpty": "Mostrando 0 até 0 de 0 registros",
+                    "sLengthMenu": "Exibir _MENU_ resultados por página",
                     "sSearch": "Pesquisar:",
-                    "oPaginate": { "sNext": "Próximo", "sPrevious": "Anterior" }
+                    "oPaginate": {
+                        "sNext": "Próximo",
+                        "sPrevious": "Anterior"
+                    }
                 }
             });
         }
