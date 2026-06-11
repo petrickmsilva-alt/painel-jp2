@@ -116,6 +116,7 @@
     fetch('/api/empresas')
     .then(res => res.json())
     .then(data => {
+        console.log("DADOS RECEBIDOS DO SERVIDOR:", data); // <--- ADICIONE ISSO
         const tbody = document.getElementById('corpoTabelaEmpresas');
         tbody.innerHTML = '';
         if(data.status === 'sucesso') {
