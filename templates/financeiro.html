@@ -161,8 +161,25 @@
     }
 
     function excluirEmpresa(id) {
-        if(confirm('Excluir empresa?')) fetch(`/api/excluir-empresa/${id}`, { method: 'DELETE' }).then(() => { carregarTabelaEmpresas(); carregarEmpresas(); });
+    console.log("ID que vou excluir:", id); // Olhe o console após clicar
+    if(!id) {
+        alert("Erro: ID não identificado!");
+        return;
     }
+    if(confirm('Tem certeza?')) {
+        // A crase aqui é fundamental para concatenar o ID
+        fetch(`/api/excluir-empresa/${id}`, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'sucesso') {
+                carregarTabelaEmpresas();
+                carregarEmpresas();
+            } else {
+                alert('Erro: ' + data.msg);
+            }
+         });
+       }
+     }
 
     function carregarTabela() {
         fetch('/api/resumo-investimentos')
