@@ -64,7 +64,6 @@ def adicionar_investimento():
     except Exception as e:
         return jsonify({'status': 'erro', 'msg': str(e)})
         
-# Rota de Resumo para a Tela de Racional
 @bp_financeiro.route('/api/resumo-investimentos', methods=['GET'])
 def resumo_investimentos():
     if 'usuario_logado' not in session:
@@ -72,21 +71,27 @@ def resumo_investimentos():
     
     try:
         conn = get_db_connection()
-        # O 'dictionary=True' depende do seu conector. Se der erro, use o padrão sem o argumento.
-        cur = conn.cursor(dictionary=True) 
+        cur = conn.cursor() # Removemos o dictionary=True
         
         query = """
             SELECT 
-                i.quem as credor, 
-                i.detalhes as empresa, 
-                i.valor as valor_investido, 
+                i.nome_investidor as credor, 
+                i.descricao as empresa, 
+                i.valor_inicial as valor_investido, 
+                i.juros_mensais as juros,
+                i.data_inicio as mes_ano,
                 c.valor_final, 
                 c.saldo_devedor 
             FROM investimentos i
-            LEFT JOIN calculo_mensal c ON i.id = c.investimento_id
+            LEFT JOIN calculo_mensal c ON i.idinvestimento = c.idinvestimento
         """
         cur.execute(query)
-        dados = cur.fetchall()
+        
+        # Obter os nomes das colunas
+        columns = [col[0] for col in cur.description]
+        
+        # Converter cada linha em um dicionário
+        dados = [dict(zip(columns, row)) for row in cur.fetchall()]
         
         cur.close()
         conn.close()
