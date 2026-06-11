@@ -13,24 +13,28 @@ def pagina_financeiro():
 # --- ROTAS DE EMPRESAS ---
 @bp_financeiro.route('/api/empresas', methods=['GET'])
 def listar_empresas():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT id, nome, cnpj, ramo_atividade FROM empresas")
-    
-    # Extração forçada para formato de dicionário
-    rows = cur.fetchall()
-    empresas = []
-    for row in rows:
-        empresas.append({
-            'id': row[0],
-            'nome': row[1],
-            'cnpj': row[2],
-            'ramo_atividade': row[3]
-        })
-    
-    cur.close()
-    conn.close()
-    return jsonify({'status': 'sucesso', 'dados': empresas})
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT id, nome, cnpj, ramo_atividade FROM empresas")
+        
+        # Mapeamento manual para garantir que o JSON será perfeito
+        dados = []
+        for row in cur.fetchall():
+            dados.append({
+                'id': row[0],
+                'nome': row[1],
+                'cnpj': row[2],
+                'ramo_atividade': row[3]
+            })
+            
+        cur.close()
+        conn.close()
+        return jsonify({'status': 'sucesso', 'dados': dados})
+    except Exception as e:
+        # ISSO VAI TE DIZER O ERRO REAL NO LOG DO RENDER
+        print(f"ERRO NO SERVIDOR: {str(e)}") 
+        return jsonify({'status': 'erro', 'msg': str(e)}), 500
 
 @bp_financeiro.route('/api/adicionar-empresa', methods=['POST'])
 def adicionar_empresa():
