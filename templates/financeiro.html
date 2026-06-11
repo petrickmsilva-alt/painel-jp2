@@ -11,7 +11,7 @@
                 <label class="form-label fw-bold">Empresa 
                     <button type="button" class="btn btn-sm btn-link p-0 ms-2" onclick="abrirModalEmpresa()">+ Cadastrar Nova</button>
                 </label>
-                <select name="empresa_id" class="form-select" id="selectEmpresa"></select>
+                <select name="empresa_id" class="form-select" id="selectEmpresa" required></select>
             </div>
             <div class="col-md-6">
                 <label class="form-label fw-bold">Credor</label>
@@ -106,7 +106,9 @@
         .then(data => {
             const select = document.getElementById('selectEmpresa');
             select.innerHTML = '<option value="">Selecione uma empresa...</option>';
-            data.dados.forEach(emp => { select.innerHTML += `<option value="${emp.id}">${emp.nome}</option>`; });
+            if(data.status === 'sucesso') {
+                data.dados.forEach(emp => { select.innerHTML += `<option value="${emp.id}">${emp.nome}</option>`; });
+            }
         });
     }
 
@@ -135,7 +137,7 @@
     }
 
     function excluirEmpresa(id) {
-        if(confirm('Tem certeza?')) fetch(`/api/excluir-empresa/${id}`, { method: 'DELETE' }).then(() => { carregarTabelaEmpresas(); carregarEmpresas(); });
+        if(confirm('Excluir empresa?')) fetch(`/api/excluir-empresa/${id}`, { method: 'DELETE' }).then(() => { carregarTabelaEmpresas(); carregarEmpresas(); });
     }
 
     function carregarTabela() {
@@ -149,7 +151,7 @@
                 data.dados.forEach(item => {
                     const v = item.valor_investido ? parseFloat(item.valor_investido).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00';
                     tbody.innerHTML += `<tr><td>${item.credor}</td><td>R$ ${v}</td><td>${item.tipo_recurso}</td><td>${item.finalidade}</td><td>${item.captador}</td><td>${item.juros}%</td><td>${item.data_pgto}</td>
-                    <td><button class="btn btn-sm btn-outline-danger" onclick="excluir(${item.id})">Excluir</button></td></tr>`;
+                    <td><button class="btn btn-sm btn-outline-danger" onclick="excluirInvestimento(${item.id})">Excluir</button></td></tr>`;
                 });
                 $('#tabelaInvestimentos').DataTable({ language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json' } });
             }
@@ -158,12 +160,14 @@
 
     function salvarInvestimento() {
         const formData = new FormData(document.getElementById('formInvestimento'));
-        formData.set('valor', formData.get('valor').replace(/\./g, '').replace(',', '.'));
+        // Corrigir valor antes de enviar
+        let v = formData.get('valor').replace(/\./g, '').replace(',', '.');
+        formData.set('valor', v);
         fetch('/api/adicionar-investimento', { method: 'POST', body: formData })
         .then(() => { alert('Cadastrado!'); document.getElementById('formInvestimento').reset(); carregarTabela(); });
     }
 
-    function excluir(id) {
+    function excluirInvestimento(id) {
         if(confirm('Excluir investimento?')) fetch('/api/excluir-investimento/' + id, { method: 'DELETE' }).then(() => carregarTabela());
     }
 
