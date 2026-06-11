@@ -114,44 +114,33 @@
 
     function carregarTabelaEmpresas() {
     fetch('/api/empresas')
-    .then(res => res.json())
+    .then(res => {
+        if (!res.ok) throw new Error("Erro no servidor");
+        return res.json();
+    })
     .then(data => {
-        // Log para depuração: verifique no console (F12) o que o servidor devolve
-        console.log("DADOS RECEBIDOS DO SERVIDOR:", data); 
-        
         const tbody = document.getElementById('corpoTabelaEmpresas');
         tbody.innerHTML = '';
-        
-        // Verifica se a resposta foi sucesso e se existe a lista 'dados'
-        if(data && data.status === 'sucesso' && Array.isArray(data.dados)) {
+        if(data.status === 'sucesso' && data.dados) {
             data.dados.forEach(item => {
-                // Acessamos as propriedades diretamente (certifique-se de que o Python envia exatamente esses nomes)
-                const id = item.id;
-                const nome = item.nome || 'Sem nome';
-                const cnpj = item.cnpj || 'Sem CNPJ';
-                const ramo = item.ramo_atividade || '-';
-                
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${nome}</td>
-                        <td>${cnpj}</td>
-                        <td>${ramo}</td>
-                        <td>
-                            <button class="btn btn-sm btn-danger" onclick="excluirEmpresa('${id}')">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    </tr>`;
+                // O item já é um objeto pronto porque o DictCursor enviou assim
+                tbody.innerHTML += `<tr>
+                    <td>${item.nome || '-'}</td>
+                    <td>${item.cnpj || '-'}</td>
+                    <td>${item.ramo_atividade || '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" onclick="excluirEmpresa('${item.id}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>`;
             });
-        } else {
-            console.error("Erro ou dados vazios recebidos do servidor:", data);
         }
     })
-    .catch(error => {
-        console.error("Erro na requisição fetch:", error);
-    });
+    .catch(err => console.error("Erro ao carregar:", err));
 }
-    function salvarEmpresa() {
+        
+        function salvarEmpresa() {
         const formData = new FormData();
         formData.append('nome', document.getElementById('empNome').value);
         formData.append('cnpj', document.getElementById('empCnpj').value);
