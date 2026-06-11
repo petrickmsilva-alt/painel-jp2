@@ -18,11 +18,17 @@
 </head>
 <body>
 
-    <div id="sidebar">
-        <h4>JP2BUSINESS</h4>
-        <hr>
-          <a href="/financeiro"><i class="bi bi-currency-dollar"></i> Gestão Financeira</a>
-    </div>
+    <div id="sidebar" style="width: 250px; background: #1e293b; color: white; min-height: 100vh; padding: 20px;">
+    <h4>PAINEL DE INVESTIMENTO</h4>
+    <hr>
+    
+    <a href="/" style="color: #cbd5e1; text-decoration: none; display: block; padding: 10px;"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
+    <hr>
+    
+    <small class="text-muted px-2">GESTÃO</small>
+    <a href="/financeiro" style="color: white; text-decoration: none; display: block; padding: 10px;"><i class="bi bi-plus-circle"></i> Cadastro de Investimento</a>
+    <a href="/financeiro/resumo" style="color: #cbd5e1; text-decoration: none; display: block; padding: 10px;"><i class="bi bi-graph-up"></i> Resumo de Investimento</a>
+</div>
 
     <div class="content">
         {% block content %}{% endblock %}
