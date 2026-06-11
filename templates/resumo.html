@@ -1,54 +1,92 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Racional de Investimentos</title>
-    </head>
-<body class="bg-light">
+{% extends 'layout_base.html' %}
 
+{% block content %}
 <div class="container-fluid p-4">
     <h2 class="mb-4">Racional de Investimentos</h2>
 
-    <div class="card p-3 mb-4">
-        <div class="row g-3">
-            <div class="col-md-2"><input type="text" class="form-control" placeholder="Empresa"></div>
-            <div class="col-md-2"><input type="text" class="form-control" placeholder="Credor"></div>
-            <div class="col-md-2"><input type="text" class="form-control" placeholder="Mês/Ano"></div>
+    <div class="card p-3 mb-4 shadow-sm">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-2"><input type="text" id="filtroEmpresa" class="form-control" placeholder="Empresa"></div>
+            <div class="col-md-2"><input type="text" id="filtroCredor" class="form-control" placeholder="Credor"></div>
+            <div class="col-md-2"><input type="text" id="filtroMes" class="form-control" placeholder="Mês/Ano"></div>
             <div class="col-md-2">
-                <button class="btn btn-primary w-100">Filtrar</button>
+                <button class="btn btn-primary w-100" onclick="carregarResumo()">Filtrar</button>
             </div>
             <div class="col-md-4 text-end">
-                <div class="alert alert-info m-0 p-2">Subtotal: R$ 0,00</div>
+                <div class="alert alert-info m-0 p-2" id="subtotalGeral">Subtotal: R$ 0,00</div>
             </div>
         </div>
     </div>
 
-    <div class="card p-3 mb-4">
+    <div class="card p-3 mb-4 shadow-sm">
         <h5>Dados Filtrados</h5>
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover" id="tabelaDados">
                 <thead class="table-dark">
-                    <tr><th>Empresa</th><th>Credor</th><th>Valor</th><th>Data</th></tr>
+                    <tr><th>Empresa</th><th>Credor</th><th>Valor</th><th>Saldo Devedor</th></tr>
                 </thead>
-                <tbody>
-                    </tbody>
+                <tbody id="corpoTabelaDados"></tbody>
             </table>
         </div>
     </div>
 
-    <div class="card p-3">
+    <div class="card p-3 shadow-sm">
         <h5>Correlação de Investimentos</h5>
         <div class="table-responsive">
             <table class="table table-bordered">
                 <thead class="table-light">
                     <tr><th>Credor</th><th>Participação (%)</th><th>ROI Projetado</th><th>Status</th></tr>
                 </thead>
-                <tbody>
-                    </tbody>
+                <tbody id="corpoTabelaCorrelacao"></tbody>
             </table>
         </div>
     </div>
 </div>
 
-</body>
-</html>
+<script>
+    async function carregarResumo() {
+        try {
+            const response = await fetch('/api/resumo-investimentos');
+            const data = await response.json();
+            
+            if (data.status === 'sucesso') {
+                const tbodyDados = document.getElementById('corpoTabelaDados');
+                const tbodyCorrelacao = document.getElementById('corpoTabelaCorrelacao');
+                
+                tbodyDados.innerHTML = '';
+                tbodyCorrelacao.innerHTML = '';
+                let totalValor = 0;
+
+                data.dados.forEach(item => {
+                    const val = parseFloat(item.valor_investido) || 0;
+                    const final = parseFloat(item.valor_final) || 0;
+                    totalValor += val;
+
+                    // Preenche Tabela 1
+                    tbodyDados.innerHTML += `<tr>
+                        <td>${item.empresa || '-'}</td>
+                        <td>${item.credor}</td>
+                        <td>R$ ${val.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td>R$ ${parseFloat(item.saldo_devedor || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    </tr>`;
+
+                    // Preenche Tabela 2 (Correlação)
+                    const roi = val > 0 ? ((final - val) / val * 100).toFixed(2) : 0;
+                    tbodyCorrelacao.innerHTML += `<tr>
+                        <td>${item.credor}</td>
+                        <td>-</td>
+                        <td>${roi}%</td>
+                        <td><span class="badge bg-success">Ativo</span></td>
+                    </tr>`;
+                });
+
+                document.getElementById('subtotalGeral').innerText = `Subtotal: R$ ${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            }
+        } catch (error) {
+            console.error("Erro ao carregar dados:", error);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', carregarResumo);
+</script>
+{% endblock %}
