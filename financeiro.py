@@ -16,6 +16,30 @@ def pagina_resumo():
         return redirect(url_for('tela_login'))
     return render_template('resumo.html')
 
+# Rota para listar empresas (para o seu select no formulário)
+@bp_financeiro.route('/api/empresas', methods=['GET'])
+def listar_empresas():
+    conn = get_db_connection()
+    cur = conn.cursor(dictionary=True)
+    cur.execute("SELECT * FROM empresas")
+    empresas = cur.fetchall()
+    cur.close()
+    conn.close()
+    return jsonify({'status': 'sucesso', 'dados': empresas})
+
+# Rota para cadastrar uma nova empresa via Modal
+@bp_financeiro.route('/api/adicionar-empresa', methods=['POST'])
+def adicionar_empresa():
+    dados = request.form
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("INSERT INTO empresas (nome, cnpj, ramo_atividade) VALUES (%s, %s, %s)", 
+                (dados['nome'], dados['cnpj'], dados['ramo_atividade']))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'status': 'sucesso'})
+
 @bp_financeiro.route('/api/adicionar-investimento', methods=['POST'])
 def adicionar_investimento():
     if 'usuario_logado' not in session:
