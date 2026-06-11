@@ -4,16 +4,29 @@
 <div class="container-fluid p-4">
     <h2 class="mb-4">Racional de Investimentos</h2>
 
-    <div class="card p-3 mb-4 shadow-sm">
-        <div class="row g-3 align-items-center">
-            <div class="col-md-2"><input type="text" id="filtroEmpresa" class="form-control" placeholder="Empresa"></div>
-            <div class="col-md-2"><input type="text" id="filtroCredor" class="form-control" placeholder="Credor"></div>
-            <div class="col-md-2"><input type="text" id="filtroMes" class="form-control" placeholder="Mês/Ano"></div>
-            <div class="col-md-2">
-                <button class="btn btn-primary w-100" onclick="carregarResumo()">Filtrar</button>
+    <div class="card p-4 mb-4 shadow-sm">
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="form-label fw-bold">Empresa</label>
+                <input type="text" id="filtroEmpresa" class="form-control" placeholder="Digite o nome da empresa...">
             </div>
-            <div class="col-md-4 text-end">
-                <div class="alert alert-info m-0 p-2" id="subtotalGeral">Subtotal: R$ 0,00</div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Credor</label>
+                <input type="text" id="filtroCredor" class="form-control" placeholder="Nome do credor">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Mês/Ano</label>
+                <input type="text" id="filtroMes" class="form-control" placeholder="06/2026">
+            </div>
+
+            <div class="col-12 mt-3">
+                <button class="btn btn-primary px-5" onclick="carregarResumo()">Filtrar</button>
+            </div>
+            
+            <div class="col-12">
+                <label class="form-label fw-bold">Subtotal do Investimento</label>
+                <div class="alert alert-info p-3" id="subtotalGeral">R$ 0,00</div>
             </div>
         </div>
     </div>
@@ -62,7 +75,6 @@
                     const final = parseFloat(item.valor_final) || 0;
                     totalValor += val;
 
-                    // Preenche Tabela 1
                     tbodyDados.innerHTML += `<tr>
                         <td>${item.empresa || '-'}</td>
                         <td>${item.credor}</td>
@@ -70,7 +82,6 @@
                         <td>R$ ${parseFloat(item.saldo_devedor || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
                     </tr>`;
 
-                    // Preenche Tabela 2 (Correlação)
                     const roi = val > 0 ? ((final - val) / val * 100).toFixed(2) : 0;
                     tbodyCorrelacao.innerHTML += `<tr>
                         <td>${item.credor}</td>
@@ -80,13 +91,12 @@
                     </tr>`;
                 });
 
-                document.getElementById('subtotalGeral').innerText = `Subtotal: R$ ${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+                document.getElementById('subtotalGeral').innerText = `R$ ${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             }
         } catch (error) {
-            console.error("Erro ao carregar dados:", error);
+            console.error("Erro ao carregar:", error);
         }
     }
-
     document.addEventListener('DOMContentLoaded', carregarResumo);
 </script>
 {% endblock %}
