@@ -80,7 +80,8 @@
                             <td>${item.juros || '0'}%</td>
                             <td>${item.mes_ano || '-'}</td>
                             <td>${item.descricao || '-'}</td>
-                            <td><button class="btn btn-sm btn-outline-danger" onclick="excluir(${id})">Excluir</button></td>
+                            // Dentro do carregarTabela(), verifique se está assim:
+                            <td><button class="btn btn-sm btn-outline-danger" onclick="excluir(${item.id})">Excluir</button></td>
                         </tr>`;
                 });
                 
