@@ -63,13 +63,15 @@
         .then(data => {
             const tbody = document.getElementById('corpoTabela');
             tbody.innerHTML = '';
+            
             if(data.status === 'sucesso') {
-                // Destruir DataTable antigo se existir
                 if ($.fn.DataTable.isDataTable('#tabelaInvestimentos')) {
                     $('#tabelaInvestimentos').DataTable().destroy();
                 }
                 
                 data.dados.forEach(item => {
+                    // Usamos idinvestimento como prioridade para o botão excluir
+                    const id = item.id || item.idinvestimento;
                     tbody.innerHTML += `
                         <tr>
                             <td>${item.credor}</td>
@@ -78,11 +80,10 @@
                             <td>${item.juros || '0'}%</td>
                             <td>${item.mes_ano || '-'}</td>
                             <td>${item.descricao || '-'}</td>
-                            <td><button class="btn btn-sm btn-outline-danger" onclick="excluir(${item.id})">Excluir</button></td>
+                            <td><button class="btn btn-sm btn-outline-danger" onclick="excluir(${id})">Excluir</button></td>
                         </tr>`;
                 });
                 
-                // Ativar filtros
                 $('#tabelaInvestimentos').DataTable({
                     language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json' }
                 });
