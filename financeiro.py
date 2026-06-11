@@ -39,12 +39,16 @@ def adicionar_investimento():
         
         # 1. INSERT na tabela 'investimentos' ajustado para as suas colunas reais
         # Colunas reais: nome_investidor, tipo_operacao, valor_inicial, data_inicio, juros_mensais, descricao
-        cur.execute("""
-            INSERT INTO investimentos (nome_investidor, tipo_operacao, valor_inicial, data_inicio, juros_mensais, descricao) 
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (dados['quem'], dados.get('tipo_operacao', 'Investimento'), valor, dados['mes_ano'], juros, dados['detalhes']))
-        
-        investimento_id = cur.lastrowid
+        # Certifique-se de que o número de %s (na query) é igual ao número de campos (no segundo parêntese)
+        query = """
+        INSERT INTO investimentos (nome_investidor, valor_inicial, detalhes, juros_mensais, data_inicio, descricao) 
+        VALUES (%s, %s, %s, %s, %s, %s)
+       """
+       # Pegue a descrição vindo do formulário
+       descricao = request.form.get('descricao')
+
+       # Execute passando os valores
+       cur.execute(query, (quem, valor, detalhes, juros, mes_ano, descricao))
         
         # 2. Cálculo de juros
         vlr_juros = (valor * (juros / 100)) / 30 * 15
