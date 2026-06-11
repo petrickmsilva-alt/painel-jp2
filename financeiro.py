@@ -33,12 +33,14 @@ def adicionar_investimento():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # 1. INSERT na tabela 'investimentos'
+       # 1. INSERT na tabela 'investimentos'
+        # Removemos 'detalhes' e usamos apenas o que existe na sua imagem
         query = """
-            INSERT INTO investimentos (nome_investidor, valor_inicial, detalhes, juros_mensais, data_inicio, descricao) 
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO investimentos (nome_investidor, valor_inicial, juros_mensais, data_inicio, descricao) 
+            VALUES (%s, %s, %s, %s, %s)
         """
-        cur.execute(query, (quem, valor, detalhes, juros, mes_ano, descricao))
+        # Note que removi 'detalhes' do conjunto de valores abaixo
+        cur.execute(query, (quem, valor, juros, mes_ano, descricao))
         
         # Obtém o ID do registro recém criado
         investimento_id = cur.lastrowid
