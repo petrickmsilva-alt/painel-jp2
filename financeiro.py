@@ -4,16 +4,6 @@ from datetime import datetime
 
 bp_financeiro = Blueprint('financeiro', __name__)
 
-# Adicione isso temporariamente no seu financeiro.py para testar
-@bp_financeiro.route('/api/testar-colunas')
-def testar_colunas():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("DESCRIBE investimentos") # Ou PRAGMA table_info(investimentos) se for SQLite
-    colunas = cur.fetchall()
-    conn.close()
-    return jsonify({'colunas': [c[0] for c in colunas]})
-
 # Rota para renderizar a página do financeiro
 @bp_financeiro.route('/financeiro')
 def pagina_financeiro():
@@ -58,10 +48,19 @@ def adicionar_investimento():
         vlr_juros = (valor * (juros / 100)) / 30 * 15
         valor_final = valor + vlr_juros
         
-        # INSERT em calculo_mensal corrigido
+        # Tente este bloco, ele é mais seguro contra erros de coluna
         cur.execute("""
-            INSERT INTO calculo_mensal (idinvestimento, id_mes_referencia, valor_inicial, juros_aplicados, valor_juros, valor_final, saldo_devedor, data_registro)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
+            INSERT INTO calculo_mensal (
+                idinvestimento, 
+                id_mes_referencia, 
+                valor_inicial, 
+                juros_aplicados, 
+                valor_juros, 
+                valor_final, 
+                saldo_devedor, 
+                data_registro
+            ) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
         """, (investimento_id, dados['mes_ano'], valor, juros, vlr_juros, valor_final, valor_final))
         
         conn.commit()
