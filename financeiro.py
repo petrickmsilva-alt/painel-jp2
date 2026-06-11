@@ -47,19 +47,17 @@ def adicionar_empresa():
     conn.close()
     return jsonify({'status': 'sucesso'})
 
-@bp_financeiro.route('/api/excluir-empresa/<int:id>', methods=['DELETE'])
+@bp_financeiro.route('/api/excluir-empresa/<id>', methods=['DELETE'])
 def excluir_empresa(id):
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("DELETE FROM empresas WHERE id = %s", (id,))
-        conn.commit()
-        cur.close()
-        conn.close()
-        return jsonify({'status': 'sucesso'})
-    except Exception as e:
-        return jsonify({'status': 'erro', 'mensagem': str(e)}), 500
-
+    conn = get_db_connection()
+    cur = conn.cursor()
+    # O SQL vai funcionar mesmo se o id chegar como string
+    cur.execute("DELETE FROM empresas WHERE id = %s", (id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'status': 'sucesso'})
+    
 # --- ROTAS DE INVESTIMENTOS ---
 @bp_financeiro.route('/api/resumo-investimentos', methods=['GET'])
 def resumo_investimentos():
