@@ -11,7 +11,7 @@
                 <label class="form-label fw-bold">Empresa 
                     <button type="button" class="btn btn-sm btn-link p-0 ms-2" onclick="abrirModalEmpresa()">+ Cadastrar Nova</button>
                 </label>
-                <select name="empresa_id" class="form-select"></select>
+                <select name="empresa_id" class="form-select" id="selectEmpresa"></select>
             </div>
             <div class="col-md-6">
                 <label class="form-label fw-bold">Credor</label>
@@ -66,9 +66,7 @@
         <div class="card-header bg-dark text-white"><h5>Investimentos Cadastrados</h5></div>
         <div class="table-responsive p-3">
             <table class="table table-striped table-hover" id="tabelaInvestimentos">
-                <thead>
-                    <tr><th>Credor</th><th>Valor</th><th>Tipo</th><th>Finalidade</th><th>Captador</th><th>Juros</th><th>Data</th><th>Ações</th></tr>
-                </thead>
+                <thead><tr><th>Credor</th><th>Valor</th><th>Tipo</th><th>Finalidade</th><th>Captador</th><th>Juros</th><th>Data</th><th>Ações</th></tr></thead>
                 <tbody id="corpoTabela"></tbody>
             </table>
         </div>
@@ -78,9 +76,7 @@
         <div class="card-header bg-secondary text-white"><h5>Empresas Cadastradas</h5></div>
         <div class="table-responsive p-3">
             <table class="table table-striped table-hover" id="tabelaEmpresas">
-                <thead>
-                    <tr><th>Nome</th><th>CNPJ</th><th>Ramo</th><th>Ações</th></tr>
-                </thead>
+                <thead><tr><th>Nome</th><th>CNPJ</th><th>Ramo</th><th>Ações</th></tr></thead>
                 <tbody id="corpoTabelaEmpresas"></tbody>
             </table>
         </div>
@@ -90,36 +86,30 @@
 <div class="modal fade" id="modalEmpresa" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Cadastrar Nova Empresa</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
+            <div class="modal-header"><h5 class="modal-title">Cadastrar Nova Empresa</h5></div>
             <div class="modal-body">
                 <form id="formEmpresa">
-                    <div class="mb-3">
-                        <label>Nome da Empresa</label>
-                        <input type="text" id="empNome" name="nome" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label>CNPJ</label>
-                        <input type="text" id="empCnpj" name="cnpj" class="form-control" onkeyup="mascaraCNPJ(this)">
-                    </div>
-                    <div class="mb-3">
-                        <label>Ramo de Atividade</label>
-                        <input type="text" id="empRamo" name="ramo_atividade" class="form-control">
-                    </div>
+                    <div class="mb-3"><label>Nome</label><input type="text" id="empNome" class="form-control" required></div>
+                    <div class="mb-3"><label>CNPJ</label><input type="text" id="empCnpj" class="form-control" onkeyup="mascaraCNPJ(this)"></div>
+                    <div class="mb-3"><label>Ramo</label><input type="text" id="empRamo" class="form-control"></div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                <button type="button" class="btn btn-primary" onclick="salvarEmpresa()">Salvar Empresa</button>
-            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button><button class="btn btn-primary" onclick="salvarEmpresa()">Salvar</button></div>
         </div>
     </div>
 </div>
 
 <script>
-    // --- LÓGICA DE EMPRESAS ---
+    function carregarEmpresas() {
+        fetch('/api/empresas')
+        .then(res => res.json())
+        .then(data => {
+            const select = document.getElementById('selectEmpresa');
+            select.innerHTML = '<option value="">Selecione uma empresa...</option>';
+            data.dados.forEach(emp => { select.innerHTML += `<option value="${emp.id}">${emp.nome}</option>`; });
+        });
+    }
+
     function carregarTabelaEmpresas() {
         fetch('/api/empresas')
         .then(res => res.json())
@@ -136,32 +126,18 @@
     }
 
     function salvarEmpresa() {
-    const formData = new FormData();
-    formData.append('nome', document.getElementById('empNome').value);
-    formData.append('cnpj', document.getElementById('empCnpj').value);
-    formData.append('ramo_atividade', document.getElementById('empRamo').value);
-
-    fetch('/api/adicionar-empresa', { method: 'POST', body: formData })
-    .then(res => res.json())
-    .then(data => {
-        $('#modalEmpresa').modal('hide');
-        document.getElementById('formEmpresa').reset();
-        carregarTabelaEmpresas(); // Atualiza a tabela
-        carregarEmpresas();       // ATUALIZA O FILTRO (SELECT)
-    });
-}
+        const formData = new FormData();
+        formData.append('nome', document.getElementById('empNome').value);
+        formData.append('cnpj', document.getElementById('empCnpj').value);
+        formData.append('ramo_atividade', document.getElementById('empRamo').value);
+        fetch('/api/adicionar-empresa', { method: 'POST', body: formData })
+        .then(() => { $('#modalEmpresa').modal('hide'); document.getElementById('formEmpresa').reset(); carregarTabelaEmpresas(); carregarEmpresas(); });
+    }
 
     function excluirEmpresa(id) {
-    if(confirm('Tem certeza que deseja excluir esta empresa?')) {
-        fetch(`/api/excluir-empresa/${id}`, { method: 'DELETE' })
-        .then(() => {
-            carregarTabelaEmpresas(); // Recarrega a lista
-            carregarEmpresas();       // Atualiza o filtro
-        });
+        if(confirm('Tem certeza?')) fetch(`/api/excluir-empresa/${id}`, { method: 'DELETE' }).then(() => { carregarTabelaEmpresas(); carregarEmpresas(); });
     }
-}
 
-    // --- LÓGICA DE INVESTIMENTOS ---
     function carregarTabela() {
         fetch('/api/resumo-investimentos')
         .then(res => res.json())
@@ -187,7 +163,10 @@
         .then(() => { alert('Cadastrado!'); document.getElementById('formInvestimento').reset(); carregarTabela(); });
     }
 
-    // --- UTILITÁRIOS ---
+    function excluir(id) {
+        if(confirm('Excluir investimento?')) fetch('/api/excluir-investimento/' + id, { method: 'DELETE' }).then(() => carregarTabela());
+    }
+
     function mascaraCNPJ(i){ i.value = i.value.replace(/\D/g,'').replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d)/,'.$1/$2').replace(/(\d{4})(\d)/,'$1-$2'); }
     function formatarMoeda(i) { let v = i.value.replace(/\D/g,''); v=(v/100).toFixed(2).replace('.',','); i.value = v.replace(/(\d)(\d{3})(\d{3}),/g,"$1.$2.$3,").replace(/(\d)(\d{3}),/g,"$1.$2,"); }
     function formatarJuros(i) { let v = i.value.replace(',', '.'); if(v>1) i.value = (v/100).toFixed(2).replace('.',','); }
