@@ -142,17 +142,15 @@
                 }
                 
                 data.dados.forEach(item => {
-                    // Usamos idinvestimento como prioridade para o botão excluir
-                    const id = item.id || item.idinvestimento;
                     tbody.innerHTML += `
                         <tr>
                             <td>${item.credor}</td>
                             <td>R$ ${parseFloat(item.valor_investido).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                            <td>${item.empresa || '-'}</td>
+                            <td>${item.tipo_recurso || '-'}</td>
+                            <td>${item.finalidade || '-'}</td>
+                            <td>${item.captador || '-'}</td>
                             <td>${item.juros || '0'}%</td>
-                            <td>${item.mes_ano || '-'}</td>
-                            <td>${item.descricao || '-'}</td>
-                            // Dentro do carregarTabela(), verifique se está assim:
+                            <td>${item.data_pgto || '-'}</td>
                             <td><button class="btn btn-sm btn-outline-danger" onclick="excluir(${item.id})">Excluir</button></td>
                         </tr>`;
                 });
