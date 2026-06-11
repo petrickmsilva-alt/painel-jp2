@@ -15,12 +15,12 @@ def pagina_financeiro():
 def listar_empresas():
     conn = get_db_connection()
     cur = conn.cursor()
-    # Certifique-se de que a ordem dos campos aqui bate com o que você espera
     cur.execute("SELECT id, nome, cnpj, ramo_atividade FROM empresas")
     
-    # Criamos uma lista de dicionários manualmente
+    # Extração forçada para formato de dicionário
+    rows = cur.fetchall()
     empresas = []
-    for row in cur.fetchall():
+    for row in rows:
         empresas.append({
             'id': row[0],
             'nome': row[1],
@@ -30,8 +30,6 @@ def listar_empresas():
     
     cur.close()
     conn.close()
-    
-    # Retorna o JSON estruturado
     return jsonify({'status': 'sucesso', 'dados': empresas})
 
 @bp_financeiro.route('/api/adicionar-empresa', methods=['POST'])
