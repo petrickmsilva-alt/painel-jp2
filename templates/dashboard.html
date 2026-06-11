@@ -739,7 +739,7 @@ gridContainer.appendChild(card);
                 card.style.position = "relative"; // Garante o alinhamento da caixinha
                 
                 let iconHtml = item.tipo === 'pasta' ? '<i class="bi bi-folder-fill text-warning"></i>' : '<i class="bi bi-file-earmark-text-fill text-primary"></i>';
-                let labelAutor = item.tipo === 'pasta' ? 'Pasta de Arquivos' : 'Documento';
+                let labelAutor = item.tipo === 'pasta' ? ' ' : 'Documento';
                 
                 let botoesAcaoHtml = "";
                 let cliqueCorpoCard = "";
