@@ -215,8 +215,20 @@
     }
 
     function excluirInvestimento(id) {
-        if(confirm('Excluir investimento?')) fetch('/api/excluir-investimento/' + id, { method: 'DELETE' }).then(() => carregarTabela());
+    if(confirm('Tem certeza que deseja excluir este investimento?')) {
+        fetch('/api/excluir-investimento/' + id, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'sucesso') {
+                alert('Item excluído com sucesso!');
+                carregarTabela(); // Isso recarrega a tabela automaticamente!
+            } else {
+                alert('Erro ao excluir: ' + (data.msg || 'Erro desconhecido'));
+            }
+        })
+        .catch(err => console.error("Erro na exclusão:", err));
     }
+}
 
     function mascaraCNPJ(i){ i.value = i.value.replace(/\D/g,'').replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d)/,'.$1/$2').replace(/(\d{4})(\d)/,'$1-$2'); }
     function formatarMoeda(i) { let v = i.value.replace(/\D/g,''); v=(v/100).toFixed(2).replace('.',','); i.value = v.replace(/(\d)(\d{3})(\d{3}),/g,"$1.$2.$3,").replace(/(\d)(\d{3}),/g,"$1.$2,"); }
