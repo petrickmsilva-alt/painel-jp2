@@ -147,66 +147,57 @@
     }
 
     function carregarTabela() {
-    fetch('/api/resumo-investimentos')
-    .then(res => res.json())
-    .then(data => {
-        const tbody = document.getElementById('corpoTabela');
-        tbody.innerHTML = ''; 
-        
-        if(data.status === 'sucesso' && Array.isArray(data.dados)) {
-            if ($.fn.DataTable.isDataTable('#tabelaInvestimentos')) {
-                $('#tabelaInvestimentos').DataTable().destroy();
+        fetch('/api/resumo-investimentos')
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.getElementById('corpoTabela');
+            tbody.innerHTML = ''; 
+            
+            if(data.status === 'sucesso' && Array.isArray(data.dados)) {
+                if ($.fn.DataTable.isDataTable('#tabelaInvestimentos')) {
+                    $('#tabelaInvestimentos').DataTable().destroy();
+                }
+
+                data.dados.forEach(item => {
+                    let valorNumerico = parseFloat(item.valor_inicial) || 0;
+                    let valorFormatado = valorNumerico.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                    
+                    let dataLimpa = '-';
+                    if (item.data_pgto) {
+                        let partes = item.data_pgto.split(' ')[0].split('-');
+                        if(partes.length === 3) dataLimpa = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                    }
+                    
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${item.nome_investidor || '-'}</td>
+                            <td>R$ ${valorFormatado}</td>
+                            <td>${item.tipo_operacao || '-'}</td>
+                            <td>${item.finalidade || '-'}</td>
+                            <td>${item.captador || '-'}</td>
+                            <td>${item.juros_mensais || '0'}%</td>
+                            <td>${dataLimpa}</td>
+                            <td><button class="btn btn-sm btn-outline-danger" onclick="excluirInvestimento(${item.id})">Excluir</button></td>
+                        </tr>`;
+                });
+
+                $('#tabelaInvestimentos').DataTable({
+                    pageLength: 10,
+                    lengthMenu: [5, 10, 25, 50],
+                    responsive: true,
+                    ordering: true,
+                    language: {
+                        "sEmptyTable": "Nenhum registro encontrado",
+                        "sInfo": "Mostrando _START_ até _END_ de _TOTAL_ registros",
+                        "sLengthMenu": "Exibir _MENU_ resultados",
+                        "sSearch": "Pesquisar:",
+                        "oPaginate": { "sNext": "Próximo", "sPrevious": "Anterior" }
+                    }
+                });
             }
-
-            data.dados.forEach(item => {
-                let valorNumerico = parseFloat(item.valor_inicial) || 0;
-                let valorFormatado = valorNumerico.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-                
-                // Limpeza da data para formato dd/mm/aaaa
-                let dataLimpa = '-';
-                if (item.data_pgto) {
-                    let partes = item.data_pgto.split(' ')[0].split('-');
-                    if(partes.length === 3) dataLimpa = `${partes[2]}/${partes[1]}/${partes[0]}`;
-                }
-                
-                const nome = item.nome_investidor || '-';
-                const tipo = item.tipo_operacao || '-';
-                const finalidade = item.finalidade || '-';
-                const captador = item.captador || '-';
-                const juros = item.juros_mensais || '0';
-                
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${nome}</td>
-                        <td>R$ ${valorFormatado}</td>
-                        <td>${tipo}</td>
-                        <td>${finalidade}</td>
-                        <td>${captador}</td>
-                        <td>${juros}%</td>
-                        <td>${dataLimpa}</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-danger" onclick="excluirInvestimento(${item.id})">Excluir</button>
-                        </td>
-                    </tr>`;
-            });
-
-            $('#tabelaInvestimentos').DataTable({
-                pageLength: 10,
-                lengthMenu: [5, 10, 25, 50],
-                responsive: true,
-                ordering: true,
-                language: {
-                    "sEmptyTable": "Nenhum registro encontrado",
-                    "sInfo": "Mostrando _START_ até _END_ de _TOTAL_ registros",
-                    "sInfoEmpty": "Mostrando 0 até 0 de 0 registros",
-                    "sLengthMenu": "Exibir _MENU_ resultados por página",
-                    "sSearch": "Pesquisar:",
-                    "oPaginate": { "sNext": "Próximo", "sPrevious": "Anterior" }
-                }
-            });
-        }
-    });
-}
+        });
+    }    
+    
     function salvarInvestimento() {
         const formData = new FormData(document.getElementById('formInvestimento'));
         formData.set('valor', formData.get('valor').replace(/\./g, '').replace(',', '.'));
