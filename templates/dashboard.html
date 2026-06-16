@@ -358,7 +358,237 @@
       border-radius: 12px;
       border: 1px solid #e2e8f0;
       padding: 24px;
-    }  
+    }
+
+    :root {
+      --jp2-ink: #132033;
+      --jp2-muted: #64748b;
+      --jp2-border: #dde6f2;
+      --jp2-soft: #f6f8fb;
+      --jp2-blue: #155eef;
+      --jp2-green: #078c55;
+      --jp2-gold: #f5b400;
+      --sidebar-width: 250px;
+      --workspace-bg: #f6f8fb;
+      --sidebar-bg: #17243a;
+      --sidebar-hover: rgba(255,255,255,.08);
+      --sidebar-active: rgba(21,94,239,.16);
+      --card-border-hover: #9bbdfd;
+    }
+
+    .sidebar-enterprise {
+      background: #17243a !important;
+      box-shadow: 10px 0 26px rgba(15, 23, 42, .12);
+    }
+
+    .sidebar-brand {
+      background: #142136;
+      align-items: flex-start;
+      padding: 22px 18px;
+    }
+
+    .sidebar-brand::after {
+      content: "Central executiva";
+      color: #ffffff;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .menu-header {
+      color: #8fa3bf;
+      letter-spacing: .08em;
+      padding-top: 18px;
+    }
+
+    .menu-item {
+      margin: 2px 12px;
+      border-radius: 7px;
+      border-left: 0;
+      padding: 12px 14px;
+    }
+
+    .menu-item.active {
+      background: rgba(21, 94, 239, .18);
+      color: #ffffff;
+      box-shadow: inset 3px 0 0 #4f8cff;
+    }
+
+    .btn-sidebar-agenda {
+      background: #111d30;
+      border-color: #31445f;
+      border-radius: 7px;
+      min-height: 42px;
+    }
+
+    .topbar-workspace {
+      height: 72px;
+      background: rgba(255,255,255,.96);
+      border-bottom: 1px solid var(--jp2-border);
+      padding: 0 28px;
+    }
+
+    .topbar-title {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .topbar-title strong {
+      color: var(--jp2-ink);
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .topbar-title span {
+      color: var(--jp2-muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .logo-container-topbar {
+      min-height: 48px;
+      border-radius: 8px;
+      border-color: var(--jp2-border);
+      box-shadow: 0 6px 14px rgba(15, 23, 42, .04);
+    }
+
+    .content-workspace-viewport {
+      padding: 28px;
+    }
+
+    .workspace-panel {
+      background: #ffffff;
+      border: 1px solid var(--jp2-border);
+      border-radius: 8px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+      padding: 18px;
+      margin-bottom: 24px;
+    }
+
+    .workspace-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #edf2f7;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .section-title-icon {
+      width: 40px;
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: #eaf2ff;
+      color: var(--jp2-blue);
+      flex: 0 0 auto;
+    }
+
+    .section-title span {
+      color: var(--jp2-muted);
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .section-title strong {
+      color: var(--jp2-ink);
+      display: block;
+      font-size: 18px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-actions .btn,
+    .toolbar-actions .form-select {
+      border-radius: 7px;
+      min-height: 38px;
+      font-weight: 700;
+    }
+
+    .toolbar-actions .btn-primary {
+      background: var(--jp2-blue) !important;
+      border-color: var(--jp2-blue) !important;
+    }
+
+    .toolbar-actions .btn-success {
+      background: var(--jp2-green) !important;
+      border-color: var(--jp2-green) !important;
+    }
+
+    .explorer-grid {
+      gap: 20px;
+    }
+
+    .explorer-card {
+      border-radius: 8px;
+      border-color: var(--jp2-border);
+      min-height: 146px;
+      padding: 20px 12px 18px;
+      box-shadow: 0 8px 22px rgba(15, 23, 42, .04);
+    }
+
+    .explorer-card:hover {
+      transform: translateY(-3px);
+      border-color: #b7cdf8;
+      box-shadow: 0 16px 34px rgba(15, 23, 42, .09);
+      background: #ffffff;
+    }
+
+    .explorer-card .icon-wrapper {
+      font-size: 42px;
+      margin-bottom: 12px;
+    }
+
+    .explorer-card .item-label {
+      color: var(--jp2-ink);
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 3px;
+    }
+
+    .explorer-card .item-author {
+      color: var(--jp2-muted) !important;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .explorer-card .action-trigger .btn {
+      border-radius: 6px;
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @media (max-width: 900px) {
+      .topbar-title { display: none; }
+      .workspace-panel-header { align-items: flex-start; flex-direction: column; }
+      .toolbar-actions { width: 100%; }
+      .toolbar-actions .form-select { margin-left: 0 !important; }
+    }
   </style>
 </head>
 <body>
@@ -432,7 +662,11 @@
 
     <main class="main-workspace">
         <header class="topbar-workspace">
-            <div class="d-flex align-items-center gap-3 ms-auto">
+            <div class="topbar-title">
+                <strong>Painel JP2 Business</strong>
+                <span>Documentos, eventos e investimentos</span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
                 <div class="logo-container-topbar" style="display: flex; align-items: center; gap: 10px;">
                     <img src="{{ url_for('static', filename='image/jp2_business.jpeg') }}" alt="Logo JP2 Business" class="logo-topbar" id="img-logo-jp2" style="height: 35px;">
                     <img src="{{ url_for('static', filename='image/ibd.jpeg') }}" alt="Logo IBDTEC" class="logo-topbar" id="img-logo-ibdtec" style="height: 35px;">
@@ -459,46 +693,49 @@
                 </div>
             </div>
 
-            <div class="mb-4 bg-white p-3 rounded shadow-sm border">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div id="caminho-area" class="d-flex align-items-center">
-            <i class="bi bi-folder2-open me-2 text-primary"></i>
-            <span id="txtCaminhoWindows" class="fw-bold text-secondary" style="font-size: 13px;"></span>
-        </div>
-        <button class="btn btn-sm btn-outline-secondary" onclick="sincronizarGrade()">
-            <i class="bi bi-arrow-clockwise"></i> Sincronizar
-        </button>
-    </div>
+            <section class="workspace-panel">
+                <div class="workspace-panel-header">
+                    <div class="section-title" id="caminho-area">
+                        <span class="section-title-icon"><i class="bi bi-folder2-open"></i></span>
+                        <div>
+                            <span>Area atual</span>
+                            <strong id="txtCaminhoWindows"></strong>
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="sincronizarGrade()">
+                        <i class="bi bi-arrow-clockwise"></i> Sincronizar
+                    </button>
+                </div>
 
-    <div class="d-flex flex-wrap gap-2 align-items-center">
-        <div id="controles-arquivos" class="d-flex gap-2 w-100 flex-wrap">
-            <button class="btn btn-sm btn-outline-secondary" id="btnVoltarExplorer" onclick="volverDiretorio()">
-                <i class="bi bi-arrow-left"></i> Voltar
-            </button>
-            <button type="button" class="btn btn-sm btn-primary" onclick="abrirModalNovaPasta()">
-                <i class="bi bi-folder-plus"></i> Nova Pasta
-            </button>
-            <button class="btn btn-sm btn-success" onclick="abrirModalUploadComContexto()">
-                <i class="bi bi-cloud-arrow-up"></i> Enviar Arquivo
-            </button>
-            <button class="btn btn-sm btn-outline-danger" id="btn-excluir-lote" onclick="dispararExclusaoEmLote()" style="display: none;">
-                <i class="bi bi-trash3-fill"></i> Excluir (<span id="contador-selecionados">0</span>)
-            </button>
-            
-            <select id="selectView" class="form-select form-select-sm ms-auto" style="width: 150px;" onchange="alterarVisualizacao(this.value)">
-                <option value="pequeno">Icones Pequenos</option>
-                <option value="medio" selected>Icones Medios</option>
-                <option value="lista">Lista</option>
-            </select>
-        </div>
+                <div class="toolbar-actions">
+                    <div id="controles-arquivos" class="toolbar-actions w-100">
+                        <button class="btn btn-sm btn-outline-secondary" id="btnVoltarExplorer" onclick="volverDiretorio()">
+                            <i class="bi bi-arrow-left"></i> Voltar
+                        </button>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="abrirModalNovaPasta()">
+                            <i class="bi bi-folder-plus"></i> Nova Pasta
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="abrirModalUploadComContexto()">
+                            <i class="bi bi-cloud-arrow-up"></i> Enviar Arquivo
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" id="btn-excluir-lote" onclick="dispararExclusaoEmLote()" style="display: none;">
+                            <i class="bi bi-trash3-fill"></i> Excluir (<span id="contador-selecionados">0</span>)
+                        </button>
+                        
+                        <select id="selectView" class="form-select form-select-sm ms-auto" style="width: 158px;" onchange="alterarVisualizacao(this.value)">
+                            <option value="pequeno">Icones Pequenos</option>
+                            <option value="medio" selected>Icones Medios</option>
+                            <option value="lista">Lista</option>
+                        </select>
+                    </div>
 
-        <div id="controles-sites" class="d-none gap-2">
-            <button class="btn btn-sm btn-primary" onclick="abrirModalCadastroSite()">
-                <i class="bi bi-plus-circle"></i> Incluir Site
-            </button>
-        </div>
-    </div>
-</div>
+                    <div id="controles-sites" class="d-none gap-2">
+                        <button class="btn btn-sm btn-primary" onclick="abrirModalCadastroSite()">
+                            <i class="bi bi-plus-circle"></i> Incluir Site
+                        </button>
+                    </div>
+                </div>
+            </section>
 
 <div id="wrapper-explorer-grid" class="explorer-grid"></div>
 
