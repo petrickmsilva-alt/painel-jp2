@@ -76,7 +76,7 @@ def home():
     template_path = os.path.join(app.root_path, 'templates', 'home.html')
     print("DEBUG: O Flask estÃ¡ buscando o arquivo em ->", template_path)
     
-    return render_template('home.html', nome_sÃ³cio=session.get('nome_exibicao', 'SÃ³cio'))
+    return render_template('home.html', nome_socio=session.get('nome_exibicao', 'Socio'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def tela_login():
@@ -126,7 +126,7 @@ def logout():
 @app.route('/agenda')
 def pagina_agenda():
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
-    return render_template('agenda.html', nome_sÃ³cio=session.get('nome_exibicao', 'SÃ³cio'))
+    return render_template('agenda.html', nome_socio=session.get('nome_exibicao', 'Socio'))
 
 @app.route('/admin/usuarios', methods=['GET', 'POST'])
 def admin_usuarios():
@@ -562,5 +562,6 @@ def manifest(): return send_from_directory('static', 'manifest.json')
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 

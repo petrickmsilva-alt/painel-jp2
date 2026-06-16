@@ -1,0 +1,1362 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Executivo | JP2 & Instituto</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+  body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background-color: var(--workspace-bg);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .workspace-wrapper {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* SIDEBAR LATERAL ESQUERDA CORPORATIVA */
+    .sidebar-enterprise {
+      width: var(--sidebar-width);
+      background-color: #1e293b !important; /* <--- Mude aqui */
+      color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      flex-shrink: 0;
+      box-shadow: 4px 0 15px rgba(0,0,0,0.05);
+      z-index: 100;
+    }
+    
+    .sidebar-brand {
+      padding: 20px;
+      background-color: #1e293b; /* <--- Mude aqui tambÃ©m */
+      border-bottom: 1px solid #334155;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-container-sidebar {
+      background-color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 55px;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .logo-sidebar {
+      max-height: 48px;
+      max-width: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .sidebar-menu {
+      flex-grow: 1;
+      padding: 15px 0;
+      overflow-y: auto;
+    }
+
+    .menu-header {
+      padding: 12px 20px 6px 20px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #94a3b8;
+      font-weight: 700;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      padding: 14px 20px;
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border-left: 4px solid transparent;
+    }
+
+    .menu-item:hover {
+      background-color: var(--sidebar-hover);
+      color: #ffffff;
+    }
+
+    .menu-item.active {
+      background-color: var(--sidebar-active);
+      color: #3b82f6;
+      border-left-color: #3b82f6;
+    }
+
+    .menu-item i {
+      margin-right: 12px;
+      font-size: 16px;
+    }
+    /* Checkbox Minimalista - Oculto atÃ© passar o mouse */
+    .chk-item-excluir {
+        width: 14px !important;
+        height: 14px !important;
+        cursor: pointer;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 3px;
+        appearance: none;
+        background-color: transparent;
+        transition: all 0.2s ease;
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        z-index: 20;
+        opacity: 0; /* ComeÃ§a invisÃ­vel */
+    }
+
+    /* Ao passar o mouse no card, o checkbox aparece */
+    .explorer-card:hover .chk-item-excluir {
+        opacity: 1;
+        background-color: white;
+    }
+
+    /* Efeito de marcado (sempre visÃ­vel se estiver marcado) */
+    .chk-item-excluir:checked {
+        opacity: 1 !important;
+        background-color: #ef4444;
+        border-color: #ef4444;
+        background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+    }
+
+    /* BOTÃƒO INTERNO DA AGENDA */
+    .sidebar-agenda-box {
+      padding: 10px 20px;
+      border-bottom: 1px solid #334155;
+    }
+    
+    .btn-sidebar-agenda {
+      width: 100%;
+      background-color: #0f172a;
+      color: #ffffff;
+      border: 1px solid #475569;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s;
+    }
+
+    .btn-sidebar-agenda:hover {
+      background-color: #ef4444;
+      border-color: #ef4444;
+      color: white;
+    }
+
+    /* ÃREA OPERACIONAL DIREITA */
+    .main-workspace {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* TOPBAR */
+    .topbar-workspace {
+      background-color: #ffffff;
+      height: 70px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 30px;
+      flex-shrink: 0;
+    }
+
+    .logo-container-topbar {
+      background-color: #ffffff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 100px;
+      min-height: 45px;
+    }
+
+    .logo-topbar {
+      max-height: 40px;
+      max-width: 130px;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* VIEWPORT CENTRAL */
+    .content-workspace-viewport {
+      padding: 30px;
+      flex-grow: 1;
+      overflow-y: auto;
+      height: 100%;
+    }
+
+    /* BARRA DE ENDEREÃ‡O */
+    .explorer-address-bar {
+      display: flex;
+      align-items: center;
+      background-color: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 10px 16px;
+      font-size: 13px;
+      color: #334155;
+      font-weight: 500;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    
+    .explorer-address-bar i {
+      color: #3b82f6;
+      margin-right: 10px;
+    }
+
+   /* GRADE CORPORATIVA E MODOS DE VISUALIZAÃ‡ÃƒO */
+    .explorer-grid {
+      display: grid;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    /* PadrÃ£o MÃ©dio */
+    .explorer-grid { grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); }
+    
+    /* Modos de VisualizaÃ§Ã£o */
+    
+    /* Modo Pequeno: Ãcones menores e texto compacto */
+    .view-pequeno { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)) !important; }
+    .view-pequeno .explorer-card { min-height: 100px; padding: 10px 5px; }
+    .view-pequeno .icon-wrapper { font-size: 32px !important; margin-bottom: 4px; }
+    .view-pequeno .item-label { font-size: 11px !important; line-height: 1.2; }
+
+    /* Modo Lista: Compacto, Ã­cone Ã  esquerda e texto alinhado */
+    .view-lista { grid-template-columns: 1fr !important; }
+    .view-lista .explorer-card { 
+        flex-direction: row; 
+        justify-content: flex-start; 
+        min-height: 40px !important; 
+        padding: 5px 15px !important; 
+        text-align: left;
+    }
+    .view-lista .icon-wrapper { font-size: 22px !important; margin-bottom: 0; margin-right: 15px; }
+    .view-lista .item-label { width: auto; font-size: 13px; font-weight: 500; }
+    /* Esconde o autor na lista para deixar limpo igual o Windows */
+    .view-lista .item-author { display: none !important; }
+    
+    /* Card padrÃ£o (Pastas e Arquivos) */
+    .explorer-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 22px 12px;
+      text-align: center;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 135px;
+    }
+
+    /* VersÃ£o Compacta para os SITES (Adicione a classe .explorer-site-card no HTML) */
+    .explorer-card.explorer-site-card {
+      min-height: 110px !important; 
+      padding: 12px 10px !important;
+    }
+    .explorer-card.explorer-site-card .icon-wrapper img {
+      width: 35px !important;
+      height: 35px !important;
+    }
+    .explorer-card.explorer-site-card .item-label {
+      font-size: 11px !important;
+    }
+
+    .explorer-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--card-border-hover);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      background-color: #f8fafc;
+    }
+
+    .explorer-card .icon-wrapper {
+      font-size: 46px;
+      margin-bottom: 8px;
+      line-height: 1;
+    }
+
+    .explorer-card .item-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1e293b;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .explorer-card .action-trigger {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 10;
+    }
+
+    .explorer-card:hover .action-trigger {
+      opacity: 1;
+    }
+    .btn-action-primary {
+      background-color: #1d4ed8;
+      color: #ffffff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    
+    .btn-primary {
+      background-color: #0d6efd !important;
+      border-color: #0d6efd !important;
+      color: #ffffff !important;
+    }
+    
+    .btn-action-primary:hover {
+      background-color: #1e40af;
+    }
+
+    .agenda-fullscreen-container {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      padding: 24px;
+    }  
+  </style>
+</head>
+<body>
+
+<div class="workspace-wrapper">
+    <aside class="sidebar-enterprise">
+        <div class="sidebar-brand">
+            <span style="font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px;">CONSOLE DE GESTÃƒO</span>
+        </div>
+        <div class="px-3 py-2">
+            <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#menuResumo">
+                <i class="bi bi-bar-chart-line"></i> Consultar Status
+            </button>
+            
+            <div class="collapse mt-2" id="menuResumo">
+                <div class="bg-dark p-2 rounded border border-secondary text-white">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small style="font-size: 0.6rem;">ARQUIVOS:</small>
+                        <span id="dash-arquivos" style="font-size: 0.7rem; font-weight: bold;">...</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <small style="font-size: 0.6rem;">SÃ“CIOS:</small>
+                        <span id="dash-socios" style="font-size: 0.7rem; font-weight: bold;">...</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small style="font-size: 0.6rem;">PRÃ“XIMO EVENTO:</small>
+                        <span id="dash-agenda" style="font-size: 0.6rem; font-weight: bold; color: #0dcaf0;">...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-agenda-box">
+            <button class="btn-sidebar-agenda" onclick="abrirConfiguradorComContexto()">
+                <i class="bi bi-calendar3-event text-danger"></i> Agendar Compromisso
+            </button>
+        </div>
+        
+        <div class="sidebar-menu">
+            <a href="/" class="menu-item"><i class="bi bi-house"></i> Voltar ao Painel</a>
+                                  
+            <div class="menu-header">MÃ³dulos de Arquivo</div>
+            <a class="menu-item" id="menu-bloco-instituto" onclick="clicarBlocoMestre('instituto', this)">
+                <i class="bi bi-building-fill text-warning"></i> Instituto (IBDTEC)
+            </a>
+            <a class="menu-item" id="menu-bloco-jp2" onclick="clicarBlocoMestre('jp2_business', this)">
+                <i class="bi bi-briefcase-fill text-info"></i> JP2 Business
+            </a>
+            
+            <div class="menu-header mt-3">GESTÃƒO</div>
+            <a href="/agenda" class="menu-item">
+                 <i class="bi bi-calendar-event-fill text-danger"></i> Agenda 
+            </a>
+            <a href="/financeiro" class="menu-item">
+               <i class="bi bi-plus-circle text-primary"></i> Painel de Investimento
+            </a>
+            <a href="/admin/usuarios" class="menu-item">
+                <i class="bi bi-people-fill text-warning"></i> GestÃ£o de SÃ³cios
+            </a>
+            <a href="/admin/logs" class="menu-item">
+                <i class="bi bi-clipboard-data text-secondary"></i> Auditoria (Logs) 
+            </a>
+
+            <div class="menu-header mt-3">Ecossistema Digital</div>
+            <a class="menu-item" id="menu-bloco-sites" onclick="clicarBlocoMestre('sites_jp2', this)">
+                <i class="bi bi-globe2 text-success"></i> Sites JP2 Business
+            </a>
+        </div>    
+    </aside>
+
+    <main class="main-workspace">
+        <header class="topbar-workspace">
+            <div class="d-flex align-items-center gap-3 ms-auto">
+                <div class="logo-container-topbar" style="display: flex; align-items: center; gap: 10px;">
+                    <img src="{{ url_for('static', filename='image/jp2_business.jpeg') }}" alt="Logo JP2 Business" class="logo-topbar" id="img-logo-jp2" style="height: 35px;">
+                    <img src="{{ url_for('static', filename='image/ibd.jpeg') }}" alt="Logo IBDTEC" class="logo-topbar" id="img-logo-ibdtec" style="height: 35px;">
+                </div>
+                <div style="height: 25px; width: 1px; background-color: #cbd5e1;"></div>
+                <div class="text-end">
+                    <span class="text-dark" style="font-size: 13.5px; font-weight: 600;">{{ nome_socio }}</span>
+                    <small class="text-muted d-block" style="font-size: 10px;">SÃ³cio Logado</small>
+                </div>
+                <div style="height: 25px; width: 1px; background-color: #cbd5e1;"></div>
+                <a href="/logout" class="btn btn-sm btn-outline-danger px-2 py-1" style="font-size:12px;">Sair</a>
+            </div>
+        </header>
+
+        <div class="content-workspace-viewport">
+            <!-- ELEMENTO ADICIONADO: CONTENER DE PROGRESSO GLOBAL PARA UPLOADS CORPORATIVOS ACELERADOS -->
+            <div id="containerProgresso" class="d-none mb-3 p-3 bg-light rounded border border-info">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-info fw-bold"><i class="bi bi-lightning-charge-fill"></i> Transmitindo Lote por Fragmentos Ultra-Leves...</small>
+                    <span class="spinner-border spinner-border-sm text-info"></span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" style="width: 100%"></div>
+                </div>
+            </div>
+
+            <div class="mb-4 bg-white p-3 rounded shadow-sm border">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div id="caminho-area" class="d-flex align-items-center">
+            <i class="bi bi-folder2-open me-2 text-primary"></i>
+            <span id="txtCaminhoWindows" class="fw-bold text-secondary" style="font-size: 13px;"></span>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" onclick="sincronizarGrade()">
+            <i class="bi bi-arrow-clockwise"></i> Sincronizar
+        </button>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+        <div id="controles-arquivos" class="d-flex gap-2 w-100 flex-wrap">
+            <button class="btn btn-sm btn-outline-secondary" id="btnVoltarExplorer" onclick="volverDiretorio()">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="abrirModalNovaPasta()">
+                <i class="bi bi-folder-plus"></i> Nova Pasta
+            </button>
+            <button class="btn btn-sm btn-success" onclick="abrirModalUploadComContexto()">
+                <i class="bi bi-cloud-arrow-up"></i> Enviar Arquivo
+            </button>
+            <button class="btn btn-sm btn-outline-danger" id="btn-excluir-lote" onclick="dispararExclusaoEmLote()" style="display: none;">
+                <i class="bi bi-trash3-fill"></i> Excluir (<span id="contador-selecionados">0</span>)
+            </button>
+            
+            <select id="selectView" class="form-select form-select-sm ms-auto" style="width: 150px;" onchange="alterarVisualizacao(this.value)">
+                <option value="pequeno">Ãcones Pequenos</option>
+                <option value="medio" selected>Ãcones MÃ©dios</option>
+                <option value="lista">Lista</option>
+            </select>
+        </div>
+
+        <div id="controles-sites" class="d-none gap-2">
+            <button class="btn btn-sm btn-primary" onclick="abrirModalCadastroSite()">
+                <i class="bi bi-plus-circle"></i> Incluir Site
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="wrapper-explorer-grid" class="explorer-grid"></div>
+
+<div class="modal fade" id="eventoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 15px 35px rgba(0,0,0,0.2); overflow: hidden;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; border: none; padding: 20px 24px;">
+                <h5 class="modal-title" style="font-weight: 600; letter-spacing: 0.5px;">
+                    <i class="bi bi-calendar-plus me-2"></i> Agendar Compromisso
+                </h5>
+            </div>
+            
+            <div class="modal-body" style="padding: 16px; background-color: #f8fafc;">
+                <div class="mb-4">
+                    <label style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; display: block;">Tipo de Registro</label>
+                    <select id="tipoEventoSelect" class="form-select" onchange="alternarCamposAgenda(this.value)" 
+                        style="border-radius: 10px; border: 2px solid #e2e8f0; padding: 12px; font-weight: 600; color: #1e293b;">
+                        <option value="reuniao">ðŸ¤ ReuniÃ£o</option>
+                        <option value="evento">ðŸŽ‰ Evento</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <input type="text" id="tituloEvento" class="form-control" placeholder="O que serÃ¡ agendado?" 
+                        style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 12px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                </div>
+                <div class="mb-3">
+                    <input type="text" id="localEvento" class="form-control" placeholder="Local ou Link da ReuniÃ£o" 
+                        style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 12px;">
+                </div>
+
+                <hr style="border-top: 1px solid #e2e8f0; margin: 20px 0;">
+
+                <div id="blocoReuniao">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">Data</label>
+                           <input type="date" id="dataReuniaoInput" name="dataReuniaoInput" class="form-control" style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 10px;">
+                        </div>
+                        <div class="col-md-6">
+                            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">HorÃ¡rio</label>
+                            <input type="time" id="horaEventoInput" class="form-control" style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 10px;">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="blocoEvento" class="d-none">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">InÃ­cio do Evento</label>
+                            <input type="date" id="dataInicioEventoInput" class="form-control" style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 10px;">
+                        </div>
+                        <div class="col-md-6">
+                            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">Fim do Evento</label>
+                            <input type="date" id="dataFimEventoInput" class="form-control" style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 10px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer" style="background: white; border-top: 1px solid #e2e8f0; padding: 16px 24px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn" 
+                    style="border-radius: 8px; font-weight: 600; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; padding: 10px 20px;" 
+                    onmouseover="this.style.backgroundColor='#fecaca'" 
+                    onmouseout="this.style.backgroundColor='#fee2e2'"
+                    onclick="fecharModalAgendaCorretamente()">
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" 
+                    onclick="salvarEventoFormulario()"
+                    style="border-radius: 8px; font-weight: 600; background: #2563eb; border: none; padding: 10px 25px;">
+                    Salvar Agendamento
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+  <script>
+    let estadoDoPainel = { bloco: 'instituto', categoria: 'raiz', pasta_pai_id: null, nivel_atual: 'raiz_bloco', string_caminho: 'INSTITUTO' };
+    let instanciaCalendario = null;
+
+    const subpastasFixas = {
+        sites_jp2: ['IBDTEC', 'Expo Feiras CO', 'Expo Centro Oeste', 'Expo Fashion Brasil', 'Capital Mix', 'Sabor Fest', 'JP2 Ticket', 'Brobond Wear', 'Atacado Brobond', 'Nutrallis']
+    };
+
+    const linksDirecionamento = {
+        'Expo Feiras CO': 'https://expofeirasco.com.br',
+        'Brobond Wear': 'https://brobond.com.br',
+        'Atacado Brobond': 'https://atacado.brobond.com.br',
+        'Nutrallis': 'https://www.nutrallis.com.br',
+        'IBDTEC': 'https://ibdtec.ong.br',
+        'Capital Mix': 'https://capitalmix.expofeirasco.com.br',
+        'Expo Centro Oeste': 'https://expoco.expofeirasco.com.br',
+        'Sabor Fest': 'https://saborfest.com.br',
+        'JP2 Ticket': 'https://jp2ticket.com.br',
+        'Expo Fashion Brasil': 'https://expofashion.expofeirasco.com.br'
+    };
+    const mapeamentoLogos = {
+        'Expo Feiras CO': 'ExpoFeirasCO.jpeg',
+        'Brobond Wear': 'BrobondWear.jpeg',
+        'Atacado Brobond': 'AtacadoBrobond.jpeg',
+        'Nutrallis': 'Nutralis.jpeg',
+        'Capital Mix': 'CapitalMix.jpeg',
+        'Expo Centro Oeste': 'ExpoCentroOeste.jpeg',
+        'Sabor Fest': 'SaborFest.jpeg',
+        'JP2 Ticket': 'JP2Ticket.jpeg',
+        'Expo Fashion Brasil': 'ExpoFashion.jpeg',
+        'IBDTEC': 'IBDTEC.jpeg'
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Sistema carregado. Tentando carregar Instituto...");
+        let el = document.getElementById('menu-bloco-instituto');
+        if(el) {
+            clicarBlocoMestre('instituto', el);
+        } else {
+            console.error("Erro: Elemento 'menu-bloco-instituto' not found mestre!");
+        }
+    });
+
+    function clicarBlocoMestre(bloco, elementoDom) {
+        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+        if (elementoDom) elementoDom.classList.add('active');
+        let explorer = document.getElementById('viewport-explorer');
+        let agenda = document.getElementById('viewport-agenda');
+        
+        if (explorer) explorer.classList.remove('d-none');
+        if (agenda) agenda.classList.add('d-none');
+        
+        estadoDoPainel.bloco = bloco;
+        estadoDoPainel.categoria = 'raiz';
+        estadoDoPainel.pasta_pai_id = null;
+        estadoDoPainel.nivel_atual = 'raiz_bloco';
+        estadoDoPainel.string_caminho = bloco.toUpperCase().replace('_', ' ');
+        sincronizarGrade();
+    }
+
+    JavaScript
+function sincronizarGrade() {
+    let gridContainer = document.getElementById("wrapper-explorer-grid");
+    let caminhoEl = document.getElementById('txtCaminhoWindows');
+    let divArquivos = document.getElementById('controles-arquivos');
+    let divSites = document.getElementById('controles-sites');
+
+    if (!gridContainer || !caminhoEl) return;
+
+    caminhoEl.innerText = estadoDoPainel.string_caminho;
+    gridContainer.innerHTML = '<div class="text-center w-100 py-4"><div class="spinner-border text-primary"></div><br>Buscando na nuvem...</div>';
+    
+    if (estadoDoPainel.bloco === 'sites_jp2') {
+        if(divArquivos) divArquivos.classList.add('d-none');
+        if(divSites) divSites.classList.remove('d-none');
+    } else {
+        if(divArquivos) divArquivos.classList.remove('d-none');
+        if(divSites) divSites.classList.add('d-none');
+    }
+
+    let btnVoltar = document.getElementById('btnVoltarExplorer');
+    if(btnVoltar) btnVoltar.style.setProperty('visibility', (estadoDoPainel.nivel_atual === 'raiz_bloco') ? 'hidden' : 'visible', 'important');
+    
+    const catBusca = (estadoDoPainel.pasta_pai_id === null || estadoDoPainel.pasta_pai_id === '') ? estadoDoPainel.bloco : 'raiz';
+    let urlListar = `/listar?bloco=${estadoDoPainel.bloco}&categoria=${catBusca}&pasta_pai_id=${estadoDoPainel.pasta_pai_id || ''}&t=${new Date().getTime()}`;
+    
+    fetch(urlListar)
+    .then(res => res.json())
+    .then(data => {
+        gridContainer.innerHTML = "";
+        
+        // 1. Renderiza a base fixa estruturada original (MODIFICADO COM explorer-site-card)
+        if (estadoDoPainel.bloco === 'sites_jp2' && estadoDoPainel.nivel_atual === 'raiz_bloco') {
+            let itensRenderizados = [];
+            let sortedFixos = subpastasFixas['sites_jp2'];
+            
+            sortedFixos.forEach(cat => {
+                let card = document.createElement("div");
+                card.className = "explorer-card explorer-site-card"; // <--- CLASSE APLICADA
+                let urlDestino = linksDirecionamento[cat] || '#';
+                let nomeArquivo = mapeamentoLogos[cat] || 'default.png';
+                
+                card.onclick = function() { window.open(urlDestino, '_blank'); };
+// Removi o div item-author e adicionei a classe site-title-large
+card.innerHTML = `
+    <div class="action-trigger">
+        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="event.stopPropagation(); alert('Item fixo do sistema: nÃ£o pode ser excluÃ­do diretamente.');">
+            <i class="bi bi-trash"></i>
+        </button>
+    </div>
+    <div class="icon-wrapper">
+        <img src="/static/image/${nomeArquivo}" style="width: 40px; height: 40px; object-fit: contain; border-radius: 8px;">
+    </div>
+    <div class="item-label site-title-large">${cat}</div>
+`;
+gridContainer.appendChild(card);
+itensRenderizados.push(cat.toLowerCase().trim());
+            });
+
+            // 2. Renderiza de forma dinÃ¢mica os novos sites (MODIFICADO COM explorer-site-card)
+            if (data.itens && data.itens.length > 0) {
+                data.itens.forEach(item => {
+                    let nomeVerificacao = item.nome ? item.nome.toLowerCase().trim() : '';
+                    if (item.tipo === 'link' && !itensRenderizados.includes(nomeVerificacao)) {
+                        let card = document.createElement("div");
+                        card.className = "explorer-card explorer-site-card"; // <--- CLASSE APLICADA
+                        
+                        let urlRealDoSite = item.caminho || '#';
+                        card.onclick = function() { window.open(urlRealDoSite, '_blank'); };
+                        
+                        let imagemDoCard = item.imagem_bg || '/static/image/ibd.jpeg';
+                        card.innerHTML = `
+    <div class="action-trigger">
+        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})">
+            <i class="bi bi-trash"></i>
+        </button>
+    </div>
+    <div class="icon-wrapper">
+        <img src="${imagemDoCard}" style="width: 40px; height: 40px; object-fit: contain; border-radius: 8px;">
+    </div>
+    <div class="item-label site-title-large" title="${item.nome || ''}">${item.nome || ''}</div>
+`;
+gridContainer.appendChild(card);
+                    }
+                });
+            }
+            return;
+        }
+
+        // 3. Renderiza pastas normais (continua o cÃ³digo original...)
+        if (!data.itens || data.itens.length === 0) {
+            gridContainer.innerHTML = '<div class="text-center w-100 py-4 text-muted"><i class="bi bi-folder-x fs-3"></i><br>Nenhum item ou subpasta aqui.</div>';
+            return;
+        }
+        
+        data.itens.forEach(item => {
+          let card = document.createElement("div");
+                card.className = "explorer-card";
+                card.style.position = "relative"; // Garante o alinhamento da caixinha
+                
+                let iconHtml = item.tipo === 'pasta' ? '<i class="bi bi-folder-fill text-warning"></i>' : '<i class="bi bi-file-earmark-text-fill text-primary"></i>';
+                let labelAutor = item.tipo === 'pasta' ? 'Pasta de Arquivos' : 'Documento';
+                
+                let botoesAcaoHtml = "";
+                let cliqueCorpoCard = "";
+                
+                // ðŸŸ¢ ADICIONADO: Desenha a caixinha Checkbox no topo esquerdo do card se for arquivo/pasta deletÃ¡vel
+                let checkboxHtml = "";
+                if (item.tipo === 'pasta' || item.tipo === 'arquivo') {
+                    checkboxHtml = `
+                        <input type="checkbox" class="chk-item-excluir" data-id="${item.id}" 
+                               style="position: absolute; top: 10px; left: 10px; width: 18px; height: 18px; cursor: pointer; z-index: 20;" 
+                               onclick="event.stopPropagation(); gerenciarBotaoLote();">
+                    `;
+                }
+        
+                if (item.tipo === 'pasta') {
+                    cliqueCorpoCard = `entrarSubpastaReal(${item.id}, '${item.nome}')`;
+                    botoesAcaoHtml = `
+                        <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="event.stopPropagation(); let novoNome = prompt('Digite o novo nome da pasta:', '${item.nome}'); if(novoNome){ let s = prompt('Confirme sua senha de sÃ³cio:'); if(s){ let fd = new FormData(); fd.append('id', ${item.id}); fd.append('novo_nome', novoNome); fd.append('senha', s); fetch('/renomear', {method:'POST', body:fd}).then(r=>r.json()).then(d=>{ if(d.status==='sucesso'){ alert('Renomeado com sucesso!'); sincronizarGrade(); }else{ alert(d.mensagem); } }); } }">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    `;
+                } else {
+                    cliqueCorpoCard = "void(0)";
+                    botoesAcaoHtml = `
+                        <button class="btn btn-sm btn-light border py-0 px-1 text-success" title="Visualizar" onclick="event.stopPropagation(); window.open('/baixar_recurso/${item.id}?download=false', '_blank')">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-light border py-0 px-1 text-dark" title="Baixar Arquivo" onclick="event.stopPropagation(); window.open('/baixar_recurso/${item.id}?download=true', '_blank')">
+                            <i class="bi bi-cloud-download"></i>
+                        </button>
+                        <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="event.stopPropagation(); let novoNome = prompt('Digite o novo nome do arquivo:', '${item.nome}'); if(novoNome){ let s = prompt('Confirme sua senha de sÃ³cio:'); if(s){ let fd = new FormData(); fd.append('id', ${item.id}); fd.append('novo_nome', novoNome); fd.append('senha', s); fetch('/renomear', {method:'POST', body:fd}).then(r=>r.json()).then(d=>{ if(d.status==='sucesso'){ alert('Renomeado com sucesso!'); sincronizarGrade(); }else{ alert(d.mensagem); } }); } }">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" title="Mover para Lixeira" onclick="abrirModalExcluirDireto(event, ${item.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    `;
+                }
+                
+                card.innerHTML = `
+                    ${checkboxHtml}
+                    <div class="action-trigger">${botoesAcaoHtml}</div>
+                    <div class="icon-wrapper" onclick="${cliqueCorpoCard}">${iconHtml}</div>
+                    <div class="item-label" onclick="${cliqueCorpoCard}" title="${item.nome}">${item.nome}</div>
+                    <div class="item-author text-muted d-none d-md-block">${labelAutor}</div>`;
+                gridContainer.appendChild(card);
+            });
+            // Oculta o botÃ£o mestre ao recarregar a grade de arquivos limpa
+            let btnLote = document.getElementById('btn-excluir-lote');
+            if(btnLote) btnLote.style.display = 'none';
+       })
+       .catch(err => console.error("Erro na listagem:", err));
+    }
+
+    function alterarVisualizacao(modo) {
+        let grid = document.getElementById("wrapper-explorer-grid");
+        // Remove as classes de visualizaÃ§Ã£o anteriores para nÃ£o conflitar
+        grid.classList.remove('view-pequeno', 'view-lista');
+        
+        // Se o modo selecionado for diferente de 'medio' (o padrÃ£o), aplica a classe
+        if(modo !== 'medio') {
+            grid.classList.add('view-' + modo);
+        }
+    }
+
+    // ðŸŸ¢ FUNÃ‡Ã•ES NOVAS ADICIONADAS: CONTROLE DE SELEÃ‡ÃƒO E EXCLUSÃƒO EM LOTE
+    function gerenciarBotaoLote() {
+        let selecionados = document.querySelectorAll('.chk-item-excluir:checked');
+        let btnLote = document.getElementById('btn-excluir-lote');
+        let contador = document.getElementById('contador-selecionados');
+        
+        if (btnLote && contador) {
+            if (selecionados.length > 0) {
+                btnLote.style.display = 'inline-block';
+                contador.innerText = selecionados.length;
+            } else {
+                btnLote.style.display = 'none';
+                contador.innerText = '0';
+            }
+        }
+    }
+
+    function dispararExclusaoEmLote() {
+        let selecionados = document.querySelectorAll('.chk-item-excluir:checked');
+        if (selecionados.length === 0) return;
+        
+        // Junta todos os IDs marcados separados por vÃ­rgula para enviar ao app.py
+        let ids = Array.from(selecionados).map(cb => cb.getAttribute('data-id')).join(',');
+        
+        let confirmacao = confirm(`Deseja realmente mover esses ${selecionados.length} itens para a lixeira?`);
+        if (confirmacao) {
+            let senha = prompt("Confirme sua senha de sÃ³cio para validar a operaÃ§Ã£o:");
+            if (!senha) return;
+            
+            let formData = new FormData();
+            formData.append('id', ids);
+            formData.append('senha', senha);
+            
+            fetch('/excluir', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'sucesso') {
+                    alert("Todos os itens selecionados foram enviados para a lixeira!");
+                    sincronizarGrade();
+                } else {
+                    alert("Erro: " + data.mensagem);
+                }
+            })
+            .catch(err => {
+                console.error("Erro na exclusÃ£o em lote:", err);
+                alert("Erro ao tentar processar exclusÃ£o.");
+            });
+        }
+    }    
+    function entrarSubpastaReal(id, nomePasta) {
+        estadoDoPainel.pasta_pai_id = id;
+        estadoDoPainel.nivel_atual = 'subpasta';
+        
+        let partes = estadoDoPainel.string_caminho.split(' âž” ');
+        if (partes[partes.length - 1] !== nomePasta) {
+            estadoDoPainel.string_caminho += ` âž” ${nomePasta}`;
+        }
+        
+        sincronizarGrade();
+    }
+
+    function volverDiretorio() {
+        let partes = estadoDoPainel.string_caminho.split(' âž” ');
+        if (partes.length > 1) {
+            partes.pop();
+            let novoCaminho = partes.join(' âž” ');
+            estadoDoPainel.string_caminho = novoCaminho;
+            
+            if (partes.length === 1) {
+                estadoDoPainel.nivel_atual = 'raiz_bloco';
+                estadoDoPainel.categoria = 'raiz';
+                estadoDoPainel.pasta_pai_id = null;
+                sincronizarGrade();
+            } else {
+                fetch(`/obter-pai-id?bloco=${estadoDoPainel.bloco}&caminho=${encodeURIComponent(novoCaminho)}`)
+                .then(res => res.json())
+                .then(data => {
+                    estadoDoPainel.pasta_pai_id = data.pasta_pai_id;
+                    estadoDoPainel.nivel_atual = 'subpasta';
+                    sincronizarGrade();
+                })
+                .catch(() => {
+                    estadoDoPainel.nivel_atual = 'raiz_bloco';
+                    estadoDoPainel.pasta_pai_id = null;
+                    sincronizarGrade();
+                });
+            }
+        }
+    }
+
+    function abrirModalNovaPasta() {
+        const modalExistente = document.getElementById('modal-global-overlay-pasta');
+        if (modalExistente) modalExistente.remove();
+
+        let overlay = document.createElement('div');
+        overlay.id = 'modal-global-overlay-pasta';
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.5); z-index: 9999999; display: flex; 
+            align-items: center; justify-content: center; overflow: hidden;
+        `;
+        overlay.innerHTML = `
+            <div style="background:white; padding:30px; border-radius:12px; width:400px; max-width: 90%; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
+                <h4 style="margin-bottom:20px; color:#1e293b; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                    <i class="bi bi-folder-plus"></i> Nova Pasta
+                </h4>
+                <div style="margin-bottom:25px;">
+                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:8px; display:block;">NOME DA PASTA</label>
+                    <input type="text" id="nome_nova_pasta_temp" placeholder="Digite o nome..." 
+                           style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:6px; outline:none; box-sizing: border-box;">
+                </div>
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                    <button id="btn_cancelar_pasta" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; font-weight:600; cursor:pointer; color:#475569;">Cancelar</button>
+                    <button id="btn_criar_pasta" style="padding:10px 20px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Criar Pasta</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        overlay.querySelector('#btn_cancelar_pasta').onclick = () => overlay.remove();
+
+        overlay.querySelector('#btn_criar_pasta').onclick = function() {
+            let nome = overlay.querySelector('#nome_nova_pasta_temp').value;
+            if(!nome) return alert("Digite um nome!");
+            
+            let paiId = estadoDoPainel.pasta_pai_id;
+            if (paiId === null || paiId === undefined) paiId = '';
+
+            fetch('/criar-pasta', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `nome=${encodeURIComponent(nome)}&bloco=${encodeURIComponent(estadoDoPainel.bloco)}&categoria=${encodeURIComponent(estadoDoPainel.categoria)}&pasta_pai_id=${paiId}` 
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text); });
+                }
+                return response.json();
+            })
+            .then(() => {
+                overlay.remove();
+                setTimeout(() => { sincronizarGrade(); }, 300);
+            })
+            .catch(err => {
+                console.error("Erro no servidor:", err);
+                alert("Erro ao criar pasta.");
+            });
+        };
+    }
+
+    function abrirModalCadastroSite() {
+        let overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:9999999; display:flex; align-items:center; justify-content:center; overflow:hidden;';
+        overlay.innerHTML = `
+            <div style="background:white; padding:30px; border-radius:12px; width:450px; max-width: 90%; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
+                <h4 style="margin-bottom:20px; color:#1e293b; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                    <i class="bi bi-globe"></i> Incluir Site
+                </h4>
+                <div style="margin-bottom:15px;">
+                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">NOME DO SITE</label>
+                    <input type="text" id="site_nome_temp" placeholder="Ex: Meu Portal" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:20px;">
+                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">URL DO SITE</label>
+                    <input type="url" id="site_url_temp" placeholder="https://exemplo.com.br" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+                </div>
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                    <button id="btn_cancelar_site" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; cursor:pointer;">Cancelar</button>
+                    <button id="btn_salvar_site" style="padding:10px 20px; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer;">Salvar Site</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        overlay.querySelector('#btn_cancelar_site').onclick = () => overlay.remove();
+
+        overlay.querySelector('#btn_salvar_site').onclick = function() {
+            let nome = overlay.querySelector('#site_nome_temp').value;
+            let url = overlay.querySelector('#site_url_temp').value;
+
+            if(!nome || !url) return alert("Preencha todos os campos!");
+           
+            let formData = new FormData();
+            formData.append('nome', nome);
+            formData.append('url', url);
+            formData.append('bloco', estadoDoPainel.bloco); 
+
+            fetch('/salvar-site', { method: 'POST', body: formData })
+            .then(res => {
+                if (!res.ok) return res.text().then(text => { throw new Error(text); });
+                return res.json();
+            })
+            .then(data => {
+                if(data.status === 'sucesso') {
+                    alert("Site incluÃ­do com sucesso!");
+                    overlay.remove();
+                    sincronizarGrade();
+                } else {
+                    alert("Erro: " + data.mensagem);
+                }
+            })
+            .catch(err => {
+                console.error("Erro ao salvar site:", err);
+                alert("Erro ao salvar site.");
+            });
+        };
+    }
+
+    function abrirModalUploadLogo() {
+        let modalEl = document.getElementById('uploadLogoModal');
+        if (modalEl) new bootstrap.Modal(modalEl).show();
+    }
+
+    function abrirModalExcluirDireto(event, id) {
+        if(event) { event.preventDefault(); event.stopPropagation(); }
+        let overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:9999999; display:flex; align-items:center; justify-content:center; overflow:hidden;';
+        overlay.innerHTML = `
+            <div style="background:white; padding:30px; border-radius:12px; width:400px; max-width: 90%; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
+                <h4 style="margin-bottom:20px; color:#dc2626; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                    <i class="bi bi-trash"></i> Confirmar ExclusÃ£o
+                </h4>
+                <p style="margin-bottom:20px; color:#475569;">Deseja realmente excluir este item?<br>Esta aÃ§Ã£o nÃ£o pode ser desfeita.</p>
+                <div style="margin-bottom:20px;">
+                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">CONFIRME A SENHA</label>
+                    <input type="password" id="senha_exclusao_temp" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
+                </div>
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                    <button id="btn_cancelar_excluir" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; cursor:pointer;">Cancelar</button>
+                    <button id="btn_confirmar_excluir" style="padding:10px 20px; background:#dc2626; color:white; border:none; border-radius:6px; cursor:pointer;">Excluir</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        overlay.querySelector('#btn_cancelar_excluir').onclick = () => overlay.remove();
+        overlay.querySelector('#btn_confirmar_excluir').onclick = function() {
+            let senha = overlay.querySelector('#senha_exclusao_temp').value;
+            let formData = new FormData();
+            formData.append('id', id);
+            formData.append('senha', senha);
+
+            fetch('/excluir', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'sucesso') {
+                    alert("Item excluÃ­do com sucesso!");
+                    overlay.remove();
+                    sincronizarGrade();
+                } else {
+                    alert("Erro: " + (data.mensagem || "NÃ£o foi possÃ­vel excluir."));
+                }
+            })
+            .catch(err => {
+                console.error("Erro na exclusÃ£o:", err);
+                alert("Erro de conexÃ£o com o servidor.");
+            });
+        };
+    }
+
+    function abrirModalUploadComContexto() {
+        let overlay = document.createElement('div');
+        overlay.id = 'modal-global-overlay';
+        overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999999; display:flex; align-items:center; justify-content:center;';
+        overlay.innerHTML = `
+            <div style="background:white; padding:30px; border-radius:12px; width:450px; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
+                <h4 style="margin-bottom:20px; color:#1e293b; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
+                    <i class="bi bi-cloud-arrow-up"></i> Upload de Arquivo
+                </h4>
+                <div style="margin-bottom:15px;">
+                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">BLOCO</label>
+                    <input type="text" value="${estadoDoPainel.bloco.charAt(0).toUpperCase() + estadoDoPainel.bloco.slice(1)}" readonly style="width:100%; margin-bottom:10px; padding:5px;">
+                </div>
+                <div style="margin-bottom:20px;">
+                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">SELECIONE O ARQUIVO</label>
+                    <input type="file" id="arquivo_temp" style="width:100%; padding:8px; border:1px dashed #cbd5e1; border-radius:6px;">
+                </div>
+                <div style="background:#f8fafc; padding:12px; border-radius:6px; margin-bottom:20px; font-size:13px; color:#334155;">
+                    Destino: <strong style="color:#2563eb;">${estadoDoPainel.string_caminho}</strong>
+                </div>
+                <div style="display:flex; gap:10px; justify-content:flex-end;">
+                    <button id="btn_fechar_temp" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; font-weight:600; cursor:pointer;">Cancelar</button>
+                    <button id="btn_enviar_temp" style="padding:10px 20px; background:#16a34a; color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Enviar Arquivo</button>
+                </div>
+            </div>`;
+        
+        document.documentElement.appendChild(overlay);
+
+        overlay.querySelector('#btn_enviar_temp').onclick = function() {
+            let fileInput = overlay.querySelector('#arquivo_temp');
+            if(fileInput.files.length === 0) return alert("Selecione um arquivo!");
+            
+            // ðŸŸ¢ ADICIONADO: Fecha a caixa cinza na hora para liberar a visÃ£o da faixa azul no topo!
+            overlay.remove();
+            
+            // Repassa o arquivo selecionado diretamente para o fatiador mestre acelerado
+            dispararUploadAvancado(fileInput);
+        };
+
+        overlay.querySelector('#btn_fechar_temp').onclick = () => overlay.remove();
+    }        
+
+    // ðŸš€ ATUALIZAÃ‡ÃƒO: SISTEMA DE UPLOAD FRAGMENTADO DE ALTA VELOCIDADE COM FATIAS DE 1MB
+    function dispararUploadAvancado(inputPassado) {
+        let filesInput = inputPassado || document.getElementById('inputArquivosAvancado');
+        if (!filesInput || filesInput.files.length === 0) return alert("Selecione os arquivos!");
+        
+        // Ativa visualmente o painel de progresso na tela
+        let progressoContainer = document.getElementById('containerProgresso');
+        if (progressoContainer) progressoContainer.classList.remove('d-none');
+        
+        let arquivosParaSubir = Array.from(filesInput.files);
+        let indiceArquivoAtual = 0;
+
+        // âš¡ MINI-FATIAS DE 1MB: Passam voando pela Render sem ativar o limite 413 ou estourar a memÃ³ria
+        const CHUNK_SIZE = 1 * 1024 * 1024;
+        
+        function subirProximoArquivo() {
+            if (indiceArquivoAtual >= arquivosParaSubir.length) {
+                if (progressoContainer) progressoContainer.classList.add('d-none');
+                filesInput.value = "";
+                
+                let modalEl = document.getElementById('modalUploadArquivo');
+                if (modalEl) {
+                    let modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    if(modalInstance) modalInstance.hide();
+                }
+                
+                let overlay = document.getElementById('modal-global-overlay');
+                if(overlay) overlay.remove();
+
+                alert("Todos os arquivos foram fatiados e gravados com velocidade absoluta!");
+                sincronizarGrade();
+                return;
+            }
+
+            let arquivo = arquivosParaSubir[indiceArquivoAtual];
+            let guidUnico = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            let totalChunks = Math.ceil(arquivo.size / CHUNK_SIZE);
+            let chunkIndex = 0;
+            
+            function enviarFatia() {
+                let inicio = chunkIndex * CHUNK_SIZE;
+                let fim = Math.min(inicio + CHUNK_SIZE, arquivo.size);
+                let fatiaBlob = arquivo.slice(inicio, fim);
+
+                let formData = new FormData();
+                formData.append('arquivos', fatiaBlob, arquivo.name);
+                formData.append('bloco', estadoDoPainel.bloco);
+                
+                const paiId = estadoDoPainel.pasta_pai_id;
+                const catFinal = (paiId !== null && paiId !== undefined && paiId !== '') ? 'raiz' : estadoDoPainel.bloco;
+                formData.append('categoria', catFinal);
+                formData.append('pasta_pai_id', paiId || '');
+                
+                formData.append('chunkIndex', chunkIndex);
+                formData.append('totalChunks', totalChunks);
+                formData.append('guid', guidUnico);
+                formData.append('nome_original', arquivo.name);
+
+                let xhr = new XMLHttpRequest();
+                xhr.open('POST', '/upload-avancado', true);
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        chunkIndex++;
+                        if (chunkIndex < totalChunks) {
+                            enviarFatia(); // Despacha a prÃ³xima fatia leve imediatamente
+                        } else {
+                            indiceArquivoAtual++;
+                            subirProximoArquivo(); // Arquivo finalizado! Passa para o prÃ³ximo do lote
+                        }
+                    } else {
+                        alert("Erro ao transmitir fragmento de rede. Tentativa abortada.");
+                        if (progressoContainer) progressoContainer.classList.add('d-none');
+                    }
+                };
+                xhr.send(formData);
+            }
+
+            enviarFatia();
+        }
+
+        subirProximoArquivo();
+    }
+    
+    function abrirConfiguradorAgenda() {
+        let hoje = new Date().toISOString().split('T')[0];
+        let elementos = {
+            'dataReuniaoInput': hoje,
+            'dataInicioEventoInput': hoje,
+            'dataFimEventoInput': hoje,
+            'tituloEvento': "",
+            'tipoEventoSelect': "reuniao"
+        };
+        for (let id in elementos) {
+            let el = document.getElementById(id);
+            if (el) el.value = elementos[id];
+        }
+
+        alternarCamposAgenda("reuniao");
+        let modalEl = document.getElementById('eventoModal');
+        if (modalEl) new bootstrap.Modal(modalEl).show();
+    }
+
+    function alternarCamposAgenda(tipo) {
+        let MonacoReuniao = document.getElementById('blocoReuniao');
+        let MonacoEvento = document.getElementById('blocoEvento');
+        if (!MonacoReuniao || !MonacoEvento) return;
+
+        if (tipo === 'evento') {
+            MonacoEvento.classList.remove('d-none');
+            MonacoReuniao.classList.add('d-none');
+        } else {
+            MonacoReuniao.classList.remove('d-none');
+            MonacoEvento.classList.add('d-none');
+        }
+    }
+
+    function fecharModalAgendaCorretamente() {
+        const modalEl = document.getElementById('eventoModal');
+        if (modalEl) {
+            modalEl.style.setProperty('display', 'none', 'important');
+            modalEl.classList.remove('show');
+            modalEl.removeAttribute('aria-modal');
+            modalEl.setAttribute('aria-hidden', 'true');
+        }
+        const backdrops = document.getElementsByClassName('modal-backdrop');
+        while(backdrops.length > 0){
+            backdrops[0].parentNode.removeChild(backdrops[0]);
+        }
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+    }
+
+    function salvarEventoFormulario() {
+        let t = document.getElementById('tituloEvento').value.trim();
+        let tipo = document.getElementById('tipoEventoSelect').value;
+        if (!t) return alert("Por favor, digite o tÃ­tulo do compromisso!");
+
+        let fd = new URLSearchParams();
+        fd.append('titulo', t);
+        fd.append('tipo_evento', tipo);
+
+        if (tipo === 'reuniao') {
+            let data = document.getElementById('dataReuniaoInput').value;
+            let hora = document.getElementById('horaEventoInput').value;
+            if (!data) return alert("Selecione a data!");
+            fd.append('dataReuniaoInput', data); 
+            fd.append('data_fim', '');
+            fd.append('horario', hora);
+        } else {
+            let dataIni = document.getElementById('dataInicioEventoInput').value;
+            let dataFim = document.getElementById('dataFimEventoInput').value;
+            if (!dataIni || !dataFim) return alert("Preencha o perÃ­odo completo do evento!");
+            fd.append('dataReuniaoInput', dataIni);
+            fd.append('data_fim', dataFim);
+            fd.append('horario', '00:00');
+        }
+
+        fetch('/adicionar-evento', { method: 'POST', body: fd })
+        .then(response => response.json())
+        .then(data => {
+            fecharModalAgendaCorretamente();
+            alert("Compromisso agendado com sucesso!");
+            if (window.location.pathname === '/agenda') {
+                window.location.reload(); 
+            }
+        })
+        .catch(err => {
+            console.error("Erro ao salvar:", err);
+            alert("Erro ao salvar o compromisso.");
+        });
+    }
+
+    function abrirConfiguradorComContexto() {
+        let caminhoAtual = estadoDoPainel.string_caminho;
+        let ultimaPasta = caminhoAtual.split(' âž” ').pop(); 
+        abrirConfiguradorAgenda();
+        if (ultimaPasta !== 'INSTITUTO' && ultimaPasta !== 'JP2 BUSINESS' && ultimaPasta !== 'SITES JP2') {
+            document.getElementById('tituloEvento').value = "ReuniÃ£o: " + ultimaPasta;
+        }
+    }
+  </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('/api/resumo-dashboard')
+        .then(res => res.json())
+        .then(data => {
+            const elArq = document.getElementById('dash-arquivos');
+            const elSoc = document.getElementById('dash-socios');
+            const elAge = document.getElementById('dash-agenda');
+            
+            if(elArq) elArq.innerText = data.total_arquivos || 0;
+            if(elSoc) elSoc.innerText = data.total_socios || 0;
+            if(elAge) elAge.innerText = data.proximo_evento || "Nenhum";
+        })
+        .catch(err => console.error("Erro ao carregar resumo:", err));
+    });
+  </script>
+
+  <div id="mobile-only-ui">
+      <nav class="mobile-nav">
+        <a href="/" class="nav-item">ðŸ  InÃ­cio</a>
+        <a href="/agenda" class="nav-item">ðŸ“… Agenda</a>
+        <a href="#" class="nav-item" onclick="toggleMenu()">â˜° Mais</a>
+      </nav>
+
+      <div id="mobile-menu" class="mobile-menu-drawer">
+        <div class="menu-header"><span>Menu</span><button onclick="toggleMenu()">X</button></div>
+        <a onclick="clicarBlocoMestre('instituto', this)" style="cursor:pointer;">ðŸ¢ Instituto (IBDTEC)</a>
+        <a onclick="clicarBlocoMestre('jp2_business', this)" style="cursor:pointer;">ðŸ’¼ JP2 Business</a>
+        <a href="/admin/usuarios">ðŸ‘¥ GestÃ£o de SÃ³cios</a>
+        <a href="/admin/logs">ðŸ“Š Auditoria (Logs)</a>
+        <a onclick="clicarBlocoMestre('sites_jp2', this)" style="cursor:pointer;">ðŸŒ Sites JP2 Business</a>
+      </div>
+      <a href="/agendar" class="fab">+</a>
+  </div>
+
+  <style>
+     #mobile-only-ui { display: none; }
+     @media (max-width: 768px) {
+        #mobile-only-ui { display: block !important; }
+        .sidebar-enterprise, .sidebar, div[class*="sidebar"] { display: none !important; }
+        .explorer-grid { 
+          display: grid !important;
+          grid-template-columns: 1fr 1fr !important; 
+          gap: 10px !important; 
+          padding: 10px !important;
+          max-height: 70vh !important;
+          overflow-y: auto !important;
+        }
+      .mobile-nav { position: fixed; bottom: 0; width: 100%; height: 60px; background: #001f3f; display: flex; justify-content: space-around; align-items: center; color: white; z-index: 1000; }
+      .nav-item { color: white; text-decoration: none; font-size: 12px; }
+      .fab { position: fixed; bottom: 80px; right: 20px; background: #28a745; color: white; border-radius: 50%; width: 60px; height: 60px; text-align: center; line-height: 60px; font-size: 30px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); z-index: 999; text-decoration: none; }
+      .mobile-menu-drawer { display: none; position: fixed; bottom: 60px; left: 0; width: 100%; background: white; border-top: 2px solid #001f3f; padding: 20px; z-index: 998; }
+      .mobile-menu-drawer a { display: block; padding: 15px; border-bottom: 1px solid #eee; text-decoration: none; color: #333; }
+    }
+  </style>
+
+  <script>
+    function toggleMenu() {
+      var menu = document.getElementById('mobile-menu');
+      menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+    }
+  </script>
+  </body>
+</html>
+
+
