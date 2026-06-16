@@ -859,79 +859,58 @@
 
 <div class="modal fade" id="eventoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 15px 35px rgba(0,0,0,0.2); overflow: hidden;">
-            <div class="modal-header" style="background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; border: none; padding: 20px 24px;">
-                <h5 class="modal-title" style="font-weight: 600; letter-spacing: 0.5px;">
-                    <i class="bi bi-calendar-plus me-2"></i> Agendar Compromisso
-                </h5>
+        <div class="modal-content">
+            <div class="jp2-modal-header">
+                <h5 class="jp2-modal-title"><i class="bi bi-calendar2-plus text-primary"></i> Agendar compromisso</h5>
             </div>
-            
-            <div class="modal-body" style="padding: 16px; background-color: #f8fafc;">
-                <div class="mb-4">
-                    <label style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; display: block;">Tipo de Registro</label>
-                    <select id="tipoEventoSelect" class="form-select" onchange="alternarCamposAgenda(this.value)" 
-                        style="border-radius: 10px; border: 2px solid #e2e8f0; padding: 12px; font-weight: 600; color: #1e293b;">
-                        <option value="reuniao">ðŸ¤ ReuniÃ£o</option>
-                        <option value="evento">ðŸŽ‰ Evento</option>
-                    </select>
-                </div>
-
-                <div class="mb-3">
-                    <input type="text" id="tituloEvento" class="form-control" placeholder="O que serÃ¡ agendado?" 
-                        style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 12px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
-                </div>
-                <div class="mb-3">
-                    <input type="text" id="localEvento" class="form-control" placeholder="Local ou Link da ReuniÃ£o" 
-                        style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 12px;">
-                </div>
-
-                <hr style="border-top: 1px solid #e2e8f0; margin: 20px 0;">
+            <div class="jp2-modal-body">
+                <label class="jp2-modal-label" for="tipoEventoSelect">Tipo de compromisso</label>
+                <select id="tipoEventoSelect" class="form-select mb-3" onchange="alternarCamposAgenda(this.value)">
+                    <option value="reuniao">Reuniao</option>
+                    <option value="evento">Evento</option>
+                </select>
 
                 <div id="blocoReuniao">
+                    <label class="jp2-modal-label" for="tituloEvento">Pessoa ou assunto da reuniao</label>
+                    <input type="text" id="tituloEvento" class="form-control mb-3" placeholder="Ex: Reuniao com patrocinador X">
+                    <label class="jp2-modal-label" for="localEvento">Local ou link da reuniao</label>
+                    <input type="text" id="localEvento" class="form-control mb-3" placeholder="Ex: Escritorio JP2 ou link do Meet">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">Data</label>
-                           <input type="date" id="dataReuniaoInput" name="dataReuniaoInput" class="form-control" style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 10px;">
+                            <label class="jp2-modal-label" for="dataReuniaoInput">Data da reuniao</label>
+                            <input type="date" id="dataReuniaoInput" name="dataReuniaoInput" class="form-control">
                         </div>
                         <div class="col-md-6">
-                            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">HorÃ¡rio</label>
-                            <input type="time" id="horaEventoInput" class="form-control" style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 10px;">
+                            <label class="jp2-modal-label" for="horaEventoInput">Horario</label>
+                            <input type="time" id="horaEventoInput" class="form-control">
                         </div>
                     </div>
                 </div>
 
                 <div id="blocoEvento" class="d-none">
+                    <label class="jp2-modal-label" for="tituloEventoEvento">Nome do evento</label>
+                    <input type="text" id="tituloEventoEvento" class="form-control mb-3" placeholder="Ex: Expo Fashion Brasil">
+                    <label class="jp2-modal-label" for="localEventoEvento">Local do evento</label>
+                    <input type="text" id="localEventoEvento" class="form-control mb-3" placeholder="Ex: Centro de Convencoes">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">InÃ­cio do Evento</label>
-                            <input type="date" id="dataInicioEventoInput" class="form-control" style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 10px;">
+                            <label class="jp2-modal-label" for="dataInicioEventoInput">Data inicial</label>
+                            <input type="date" id="dataInicioEventoInput" class="form-control">
                         </div>
                         <div class="col-md-6">
-                            <label style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">Fim do Evento</label>
-                            <input type="date" id="dataFimEventoInput" class="form-control" style="border-radius: 10px; border: 1px solid #cbd5e1; padding: 10px;">
+                            <label class="jp2-modal-label" for="dataFimEventoInput">Data final</label>
+                            <input type="date" id="dataFimEventoInput" class="form-control">
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <div class="modal-footer" style="background: white; border-top: 1px solid #e2e8f0; padding: 16px 24px; display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" class="btn" 
-                    style="border-radius: 8px; font-weight: 600; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; padding: 10px 20px;" 
-                    onmouseover="this.style.backgroundColor='#fecaca'" 
-                    onmouseout="this.style.backgroundColor='#fee2e2'"
-                    onclick="fecharModalAgendaCorretamente()">
-                    Cancelar
-                </button>
-                <button type="button" class="btn btn-primary" 
-                    onclick="salvarEventoFormulario()"
-                    style="border-radius: 8px; font-weight: 600; background: #2563eb; border: none; padding: 10px 25px;">
-                    Salvar Agendamento
-                </button>
+            <div class="jp2-modal-footer">
+                <button type="button" class="btn btn-outline-secondary" onclick="fecharModalAgendaCorretamente()">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarEventoFormulario()">Salvar agendamento</button>
             </div>
         </div>
     </div>
 </div>
-
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
@@ -1623,6 +1602,10 @@ gridContainer.appendChild(card);
             'dataInicioEventoInput': hoje,
             'dataFimEventoInput': hoje,
             'tituloEvento': "",
+            'tituloEventoEvento': "",
+            'localEvento': "",
+            'localEventoEvento': "",
+            'horaEventoInput': "",
             'tipoEventoSelect': "reuniao"
         };
         for (let id in elementos) {
@@ -1667,42 +1650,56 @@ gridContainer.appendChild(card);
     }
 
     function salvarEventoFormulario() {
-        let t = document.getElementById('tituloEvento').value.trim();
         let tipo = document.getElementById('tipoEventoSelect').value;
-        if (!t) return alert("Por favor, digite o tÃ­tulo do compromisso!");
+        let titulo = "";
+        let local = "";
 
         let fd = new URLSearchParams();
-        fd.append('titulo', t);
         fd.append('tipo_evento', tipo);
 
         if (tipo === 'reuniao') {
+            titulo = document.getElementById('tituloEvento').value.trim();
+            local = document.getElementById('localEvento').value.trim();
             let data = document.getElementById('dataReuniaoInput').value;
             let hora = document.getElementById('horaEventoInput').value;
-            if (!data) return alert("Selecione a data!");
+            if (!titulo) return mostrarToast("Titulo obrigatorio", "Informe a pessoa ou assunto da reuniao.", "erro");
+            if (!data) return mostrarToast("Data obrigatoria", "Selecione a data da reuniao.", "erro");
+            if (!hora) return mostrarToast("Horario obrigatorio", "Informe o horario da reuniao.", "erro");
             fd.append('dataReuniaoInput', data); 
             fd.append('data_fim', '');
             fd.append('horario', hora);
         } else {
+            titulo = document.getElementById('tituloEventoEvento').value.trim();
+            local = document.getElementById('localEventoEvento').value.trim();
             let dataIni = document.getElementById('dataInicioEventoInput').value;
             let dataFim = document.getElementById('dataFimEventoInput').value;
-            if (!dataIni || !dataFim) return alert("Preencha o perÃ­odo completo do evento!");
+            if (!titulo) return mostrarToast("Evento obrigatorio", "Informe qual evento sera realizado.", "erro");
+            if (!dataIni || !dataFim) return mostrarToast("Periodo obrigatorio", "Preencha a data inicial e final do evento.", "erro");
+            if (dataFim < dataIni) return mostrarToast("Periodo invalido", "A data final nao pode ser anterior a data inicial.", "erro");
             fd.append('dataReuniaoInput', dataIni);
             fd.append('data_fim', dataFim);
-            fd.append('horario', '00:00');
+            fd.append('horario', '');
         }
+
+        fd.append('titulo', titulo);
+        fd.append('local_evento', local);
 
         fetch('/adicionar-evento', { method: 'POST', body: fd })
         .then(response => response.json())
         .then(data => {
-            fecharModalAgendaCorretamente();
-            alert("Compromisso agendado com sucesso!");
-            if (window.location.pathname === '/agenda') {
-                window.location.reload(); 
+            if (data.status === 'sucesso') {
+                fecharModalAgendaCorretamente();
+                mostrarToast("Compromisso salvo", "O compromisso foi registrado na agenda.");
+                if (window.location.pathname === '/agenda') {
+                    window.location.reload(); 
+                }
+            } else {
+                mostrarToast("Nao foi possivel salvar", data.mensagem || "Verifique os dados e tente novamente.", "erro");
             }
         })
         .catch(err => {
             console.error("Erro ao salvar:", err);
-            alert("Erro ao salvar o compromisso.");
+            mostrarToast("Erro ao salvar", "Nao foi possivel falar com o servidor.", "erro");
         });
     }
 
@@ -1711,7 +1708,7 @@ gridContainer.appendChild(card);
         let ultimaPasta = caminhoAtual.split(' âž” ').pop(); 
         abrirConfiguradorAgenda();
         if (ultimaPasta !== 'INSTITUTO' && ultimaPasta !== 'JP2 BUSINESS' && ultimaPasta !== 'SITES JP2') {
-            document.getElementById('tituloEvento').value = "ReuniÃ£o: " + ultimaPasta;
+            document.getElementById('tituloEvento').value = "Reuniao: " + ultimaPasta;
         }
     }
   </script>
@@ -1780,6 +1777,7 @@ gridContainer.appendChild(card);
   </script>
   </body>
 </html>
+
 
 
 
