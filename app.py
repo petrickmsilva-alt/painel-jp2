@@ -2,6 +2,7 @@
 import uuid
 import re
 import hashlib
+import traceback
 import urllib.request
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
@@ -331,7 +332,8 @@ def upload_avancado():
             
         return jsonify({'status': 'sucesso', 'guid': guid_uuid})
     except Exception as e:
-        print(f"ERRO NO UPLOAD FRAGMENTADO: {e}")
+        print(f"ERRO NO UPLOAD FRAGMENTADO: {e}", flush=True)
+        print(traceback.format_exc(), flush=True)
         return jsonify({'status': 'erro', 'mensagem': str(e)}), 500
     finally:
         if conn: conn.close()
