@@ -135,6 +135,9 @@
                                         </select>
                                         <button type="submit" class="btn btn-outline-primary btn-sm">Salvar</button>
                                     </form>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm btn-icon" title="Alterar senha" onclick="abrirModalSenha('{{ u.id }}', '{{ u.usuario }}')">
+                                        <i class="bi bi-key"></i>
+                                    </button>
                                     <form action="/admin/excluir_usuario/{{ u.id }}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir este usuario?');">
                                         <button type="submit" class="btn btn-outline-danger btn-sm btn-icon" title="Excluir usuario">
                                             <i class="bi bi-trash3"></i>
@@ -150,6 +153,43 @@
         </section>
     </main>
 
+    <div class="modal fade" id="modalSenha" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="formAlterarSenha" method="POST">
+                    <div class="modal-header">
+                        <div>
+                            <h5 class="modal-title fw-bold">Alterar senha</h5>
+                            <div class="muted-small">Usuario: <span id="modalSenhaUsuario"></span></div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label small text-secondary fw-semibold">Nova senha</label>
+                        <div class="input-group mb-3">
+                            <input type="password" name="nova_senha" id="senhaAlterar" class="form-control" required minlength="8">
+                            <button type="button" class="btn btn-outline-secondary btn-icon" onclick="alternarSenha('senhaAlterar', this)" title="Mostrar ou ocultar senha">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <label class="form-label small text-secondary fw-semibold">Confirmar senha</label>
+                        <div class="input-group">
+                            <input type="password" name="confirmar_senha" id="senhaConfirmar" class="form-control" required minlength="8">
+                            <button type="button" class="btn btn-outline-secondary btn-icon" onclick="alternarSenha('senhaConfirmar', this)" title="Mostrar ou ocultar senha">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar senha</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function alternarSenha(inputId, botao) {
             const input = document.getElementById(inputId);
@@ -157,6 +197,15 @@
             const mostrando = input.type === 'text';
             input.type = mostrando ? 'password' : 'text';
             icon.className = mostrando ? 'bi bi-eye' : 'bi bi-eye-slash';
+        }
+
+        function abrirModalSenha(usuarioId, usuario) {
+            const form = document.getElementById('formAlterarSenha');
+            form.action = `/admin/alterar_senha/${usuarioId}`;
+            document.getElementById('modalSenhaUsuario').innerText = usuario;
+            document.getElementById('senhaAlterar').value = '';
+            document.getElementById('senhaConfirmar').value = '';
+            new bootstrap.Modal(document.getElementById('modalSenha')).show();
         }
     </script>
 </body>

@@ -263,6 +263,46 @@ def alterar_perfil_usuario(usuario_id):
 
     return redirect(url_for('admin_usuarios'))
 
+@app.route('/admin/alterar_senha/<int:usuario_id>', methods=['POST'])
+def alterar_senha_usuario(usuario_id):
+    if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
+    if not usuario_atual_e_admin():
+        return acesso_negado()
+
+    nova_senha = request.form.get('nova_senha', '').strip()
+    confirmar_senha = request.form.get('confirmar_senha', '').strip()
+
+    if len(nova_senha) < 8:
+        flash("A nova senha precisa ter pelo menos 8 caracteres.")
+        return redirect(url_for('admin_usuarios'))
+
+    if nova_senha != confirmar_senha:
+        flash("A confirmacao da senha nao confere.")
+        return redirect(url_for('admin_usuarios'))
+
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute("SELECT usuario FROM usuarios WHERE id = %s", (usuario_id,))
+            usuario_alvo = cur.fetchone()
+            if not usuario_alvo:
+                flash("Usuario nao encontrado.")
+                conn.close()
+                return redirect(url_for('admin_usuarios'))
+
+            cur.execute(
+                "UPDATE usuarios SET senha = %s WHERE id = %s",
+                (gerar_hash_senha(nova_senha), usuario_id)
+            )
+        conn.close()
+        registrar_log(f"Alterou a senha do usuario {usuario_alvo.get('usuario')}")
+        flash("Senha atualizada com sucesso.")
+    except Exception as e:
+        print(f"Erro ao alterar senha: {e}")
+        flash("Nao foi possivel alterar a senha.")
+
+    return redirect(url_for('admin_usuarios'))
+
 @app.route('/admin/logs')
 def admin_logs():
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
