@@ -66,8 +66,43 @@ def usuarios_admin():
     usuarios = os.environ.get("ADMIN_USERS", "petrick")
     return {u.strip().lower() for u in usuarios.split(",") if u.strip()}
 
+def garantir_coluna_perfil_usuarios():
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SHOW COLUMNS FROM usuarios LIKE 'perfil'")
+            if not cur.fetchone():
+                cur.execute("ALTER TABLE usuarios ADD COLUMN perfil VARCHAR(20) NOT NULL DEFAULT 'socio'")
+                for usuario in usuarios_admin():
+                    cur.execute("UPDATE usuarios SET perfil = 'admin' WHERE usuario = %s", (usuario,))
+    finally:
+        conn.close()
+
+def obter_perfil_usuario(usuario):
+    if not usuario:
+        return None
+
+    garantir_coluna_perfil_usuarios()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT perfil FROM usuarios WHERE usuario = %s", (usuario,))
+            dados = cur.fetchone()
+            return dados.get("perfil") if dados else None
+    finally:
+        conn.close()
+
 def usuario_atual_e_admin():
-    return session.get("usuario_logado", "").lower() in usuarios_admin()
+    usuario = session.get("usuario_logado", "").lower()
+    return usuario in usuarios_admin() or session.get("perfil_usuario") == "admin" or obter_perfil_usuario(usuario) == "admin"
+
+def acesso_negado():
+    registrar_log("Tentou acessar uma area restrita de administrador")
+    return render_template("acesso_negado.html"), 403
+
+@app.context_processor
+def contexto_global():
+    return {"usuario_e_admin": usuario_atual_e_admin()}
     
 @app.route('/')
 def home():
@@ -102,6 +137,7 @@ def tela_login():
 
                     session['usuario_logado'] = user['usuario']
                     session['nome_exibicao'] = user.get('nome_exibicao', user['usuario'])
+                    session['perfil_usuario'] = user.get('perfil', obter_perfil_usuario(user['usuario']) or 'socio')
                     registrar_log("Realizou login no sistema")
                     return redirect(url_for('home'))
 
@@ -134,22 +170,25 @@ def pagina_agenda():
 def admin_usuarios():
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
     if not usuario_atual_e_admin():
-        flash("Acesso restrito ao administrador.")
-        return redirect(url_for('home'))
+        return acesso_negado()
     
     if request.method == 'POST':
         novo_user = request.form.get('novo_usuario', '').lower().strip()
         senha_pura = request.form.get('nova_senha', '').strip()
         nome_exib = request.form.get('nome_exibicao', '')
+        perfil = request.form.get('perfil', 'socio')
+        if perfil not in ['admin', 'socio', 'leitura']:
+            perfil = 'socio'
         senha_cripto = gerar_hash_senha(senha_pura)
         
         try:
+            garantir_coluna_perfil_usuarios()
             conn = get_db_connection()
             with conn.cursor() as cur:
                 cur.execute("""
-                    INSERT INTO usuarios (usuario, senha, nome_exibicao)
-                    VALUES (%s, %s, %s)
-                """, (novo_user, senha_cripto, nome_exib))
+                    INSERT INTO usuarios (usuario, senha, nome_exibicao, perfil)
+                    VALUES (%s, %s, %s, %s)
+                """, (novo_user, senha_cripto, nome_exib, perfil))
             conn.commit()
             conn.close()
             registrar_log(f"Cadastrou um novo usuÃ¡rio no painel: {novo_user}")
@@ -158,7 +197,8 @@ def admin_usuarios():
             
     conn = get_db_connection()
     with conn.cursor() as cur:
-        cur.execute("SELECT id, usuario, nome_exibicao FROM usuarios")
+        garantir_coluna_perfil_usuarios()
+        cur.execute("SELECT id, usuario, nome_exibicao, perfil FROM usuarios ORDER BY perfil, nome_exibicao")
         lista_usuarios = cur.fetchall()
     conn.close()
     return render_template('admin_usuarios.html', usuarios=lista_usuarios)
@@ -167,11 +207,16 @@ def admin_usuarios():
 def excluir_usuario(usuario_id):
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
     if not usuario_atual_e_admin():
-        flash("Acesso restrito ao administrador.")
-        return redirect(url_for('home'))
+        return acesso_negado()
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
+            cur.execute("SELECT usuario, perfil FROM usuarios WHERE id = %s", (usuario_id,))
+            usuario_alvo = cur.fetchone()
+            if usuario_alvo and usuario_alvo.get('usuario') == session.get('usuario_logado'):
+                flash("Voce nao pode excluir seu proprio usuario.")
+                conn.close()
+                return redirect(url_for('admin_usuarios'))
             cur.execute("DELETE FROM usuarios WHERE id = %s", (usuario_id,))
         conn.commit()
         conn.close()
@@ -181,12 +226,48 @@ def excluir_usuario(usuario_id):
         print(f"Erro ao deletar usuÃ¡rio: {e}")
     return redirect(url_for('admin_usuarios'))
 
+@app.route('/admin/alterar_perfil/<int:usuario_id>', methods=['POST'])
+def alterar_perfil_usuario(usuario_id):
+    if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
+    if not usuario_atual_e_admin():
+        return acesso_negado()
+
+    novo_perfil = request.form.get('perfil', 'socio')
+    if novo_perfil not in ['admin', 'socio', 'leitura']:
+        flash("Perfil invalido.")
+        return redirect(url_for('admin_usuarios'))
+
+    try:
+        garantir_coluna_perfil_usuarios()
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute("SELECT usuario, perfil FROM usuarios WHERE id = %s", (usuario_id,))
+            usuario_alvo = cur.fetchone()
+            if not usuario_alvo:
+                flash("Usuario nao encontrado.")
+                conn.close()
+                return redirect(url_for('admin_usuarios'))
+
+            if usuario_alvo.get('usuario') == session.get('usuario_logado') and novo_perfil != 'admin':
+                flash("Voce nao pode remover seu proprio perfil de administrador.")
+                conn.close()
+                return redirect(url_for('admin_usuarios'))
+
+            cur.execute("UPDATE usuarios SET perfil = %s WHERE id = %s", (novo_perfil, usuario_id))
+        conn.close()
+        registrar_log(f"Alterou perfil do usuario {usuario_alvo.get('usuario')} para {novo_perfil}")
+        flash("Perfil atualizado com sucesso.")
+    except Exception as e:
+        print(f"Erro ao alterar perfil: {e}")
+        flash("Nao foi possivel atualizar o perfil.")
+
+    return redirect(url_for('admin_usuarios'))
+
 @app.route('/admin/logs')
 def admin_logs():
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
     if not usuario_atual_e_admin():
-        flash("Acesso restrito ao administrador.")
-        return redirect(url_for('home'))
+        return acesso_negado()
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
