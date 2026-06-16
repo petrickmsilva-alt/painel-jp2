@@ -1,2 +1,7 @@
 backups/
 __pycache__/
+.env
+*.env
+static/uploads/
+*.pyc
+.pytest_cache/

@@ -13,6 +13,8 @@ def pagina_financeiro():
 # --- ROTAS DE EMPRESAS ---
 @bp_financeiro.route('/api/empresas', methods=['GET'])
 def listar_empresas():
+    if 'usuario_logado' not in session:
+        return jsonify({'status': 'erro', 'mensagem': 'Nao autorizado'}), 401
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -27,6 +29,8 @@ def listar_empresas():
 
 @bp_financeiro.route('/api/adicionar-empresa', methods=['POST'])
 def adicionar_empresa():
+    if 'usuario_logado' not in session:
+        return jsonify({'status': 'erro', 'mensagem': 'Nao autorizado'}), 401
     nome = request.form.get('nome')
     cnpj = request.form.get('cnpj')
     ramo = request.form.get('ramo_atividade')
@@ -40,6 +44,8 @@ def adicionar_empresa():
 
 @bp_financeiro.route('/api/excluir-empresa/<id>', methods=['DELETE'])
 def excluir_empresa(id):
+    if 'usuario_logado' not in session:
+        return jsonify({'status': 'erro', 'mensagem': 'Nao autorizado'}), 401
     conn = get_db_connection()
     cur = conn.cursor()
     # O SQL vai funcionar mesmo se o id chegar como string
@@ -95,6 +101,8 @@ def adicionar_investimento():
 
 @bp_financeiro.route('/api/excluir-investimento/<int:id>', methods=['DELETE'])
 def excluir_investimento(id):
+    if 'usuario_logado' not in session:
+        return jsonify({'status': 'erro', 'msg': 'Nao autorizado'}), 401
     try:
         conn = get_db_connection()
         cur = conn.cursor()

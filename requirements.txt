@@ -1,6 +1,7 @@
-flask
-gunicorn
-pymysql
-pandas
-beautifulsoup4
-openpyxl
+Flask>=3.0,<4.0
+Werkzeug>=3.0,<4.0
+gunicorn>=22.0,<24.0
+PyMySQL>=1.1,<2.0
+pandas>=2.2,<3.0
+beautifulsoup4>=4.12,<5.0
+openpyxl>=3.1,<4.0
