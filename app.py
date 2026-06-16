@@ -100,6 +100,23 @@ def acesso_negado():
     registrar_log("Tentou acessar uma area restrita de administrador")
     return render_template("acesso_negado.html"), 403
 
+def garantir_colunas_agenda():
+    colunas = {
+        "tipo_evento": "VARCHAR(20) NOT NULL DEFAULT 'reuniao'",
+        "local_evento": "VARCHAR(255) NULL",
+        "horario": "VARCHAR(10) NULL",
+        "criado_por": "VARCHAR(120) NULL",
+    }
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            for coluna, definicao in colunas.items():
+                cur.execute("SHOW COLUMNS FROM agenda_eventos LIKE %s", (coluna,))
+                if not cur.fetchone():
+                    cur.execute(f"ALTER TABLE agenda_eventos ADD COLUMN {coluna} {definicao}")
+    finally:
+        conn.close()
+
 @app.context_processor
 def contexto_global():
     return {"usuario_e_admin": usuario_atual_e_admin()}
@@ -621,26 +638,37 @@ def salvar_site():
 @app.route('/api/listar-eventos')
 def api_listar_eventos():
     try:
+        garantir_colunas_agenda()
         conn = get_db_connection()
         with conn.cursor() as cur:
-            cur.execute("SELECT id, titulo, data_evento, data_fim FROM agenda_eventos")
+            cur.execute("SELECT id, titulo, data_evento, data_fim, tipo_evento, local_evento, horario FROM agenda_eventos")
             eventos = cur.fetchall()
         conn.close()
         
         lista_diaria = []
         for ev in eventos:
             titulo, inicio_str, fim_str = ev['titulo'], str(ev['data_evento']), str(ev['data_fim'] or ev['data_evento'])
-            cor = '#dc2626' if "reuniao" in titulo.lower() else ('#7c3aed' if "evento" in titulo.lower() else '#3b82f6')
+            tipo = ev.get('tipo_evento') or 'reuniao'
+            cor = '#155eef' if tipo == 'reuniao' else '#078c55'
+            horario = ev.get('horario') or ''
+            local = ev.get('local_evento') or ''
+            titulo_calendario = f"{horario} - {titulo}" if horario and tipo == 'reuniao' else titulo
             try:
                 inicio = datetime.strptime(inicio_str[:10], '%Y-%m-%d')
                 fim = datetime.strptime(fim_str[:10], '%Y-%m-%d')
                 for i in range((fim - inicio).days + 1):
                     lista_diaria.append({
                         'id': ev.get('id'),
-                        'title': titulo, 
+                        'title': titulo_calendario,
                         'start': (inicio + timedelta(days=i)).strftime('%Y-%m-%d'), 
                         'allDay': True, 
-                        'color': cor
+                        'color': cor,
+                        'extendedProps': {
+                            'tipo': tipo,
+                            'local': local,
+                            'horario': horario,
+                            'titulo_original': titulo
+                        }
                     })
             except: continue
         resp = make_response(jsonify(lista_diaria))
@@ -651,16 +679,26 @@ def api_listar_eventos():
 @app.route('/adicionar-evento', methods=['POST'])
 def calendar_adicionar():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
-    titulo, data_ini = request.form.get('titulo'), request.form.get('dataReuniaoInput')
+    tipo = request.form.get('tipo_evento', 'reuniao')
+    titulo = request.form.get('titulo', '').strip()
+    local = request.form.get('local_evento', '').strip()
+    horario = request.form.get('horario', '').strip()
+    data_ini = request.form.get('dataReuniaoInput')
     data_fim = request.form.get('data_fim') or data_ini
-    if not data_ini: return {"status": "erro", "mensagem": "Data nÃ£o enviada!"}, 400
+    if tipo not in ['reuniao', 'evento']:
+        tipo = 'reuniao'
+    if not titulo: return {"status": "erro", "mensagem": "Informe o titulo do compromisso."}, 400
+    if not data_ini: return {"status": "erro", "mensagem": "Data nao enviada."}, 400
+    if tipo == 'evento' and data_fim and data_fim < data_ini:
+        return {"status": "erro", "mensagem": "A data final nao pode ser anterior a data inicial."}, 400
     try:
+        garantir_colunas_agenda()
         conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO agenda_eventos (titulo, data_evento, data_fim)
-                VALUES (%s, %s, %s)
-            """, (titulo, data_ini, data_fim))
+                INSERT INTO agenda_eventos (titulo, data_evento, data_fim, tipo_evento, local_evento, horario, criado_por)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (titulo, data_ini, data_fim, tipo, local, horario, session.get('nome_exibicao', 'Sistema')))
         conn.commit()
         conn.close()
         registrar_log(f"Adicionou um compromisso na agenda: {titulo}")
@@ -673,6 +711,8 @@ def excluir_evento():
     evento_id = request.form.get('id')
     titulo = request.form.get('titulo', '').strip()
     senha = request.form.get('senha', '').strip()
+    if not senha:
+        return jsonify({'status': 'erro', 'mensagem': 'Informe sua senha para excluir.'}), 400
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
@@ -680,17 +720,25 @@ def excluir_evento():
             dados_u = cur.fetchone()
             user_senha = str(dados_u['senha']) if dados_u else ""
             
-            if senha_confere(user_senha, senha):
-                if evento_id and evento_id != "" and evento_id != "undefined" and evento_id != "null":
-                    cur.execute("DELETE FROM agenda_eventos WHERE id = %s", (int(evento_id),))
-                    registrar_log(f"Apagou o compromisso da agenda ID: {evento_id}")
-                elif titulo:
-                    cur.execute("DELETE FROM agenda_eventos WHERE titulo LIKE %s", (titulo,))
-                    registrar_log(f"Apagou o compromisso da agenda por tÃ­tulo: {titulo}")
+            if not senha_confere(user_senha, senha):
+                conn.close()
+                return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta.'}), 401
+
+            if evento_id and evento_id != "" and evento_id != "undefined" and evento_id != "null":
+                cur.execute("DELETE FROM agenda_eventos WHERE id = %s", (int(evento_id),))
+                registrar_log(f"Apagou o compromisso da agenda ID: {evento_id}")
+            elif titulo:
+                cur.execute("DELETE FROM agenda_eventos WHERE titulo LIKE %s", (titulo,))
+                registrar_log(f"Apagou o compromisso da agenda por titulo: {titulo}")
+            else:
+                conn.close()
+                return jsonify({'status': 'erro', 'mensagem': 'Compromisso nao identificado.'}), 400
         conn.commit()
         conn.close()
         return jsonify({'status': 'sucesso'})
-    except: return jsonify({'status': 'erro'})
+    except Exception as e:
+        print(f"Erro ao excluir compromisso: {e}")
+        return jsonify({'status': 'erro', 'mensagem': 'Erro interno ao excluir compromisso.'}), 500
 
 @app.route('/api/resumo-dashboard')
 def resumo_dashboard():
