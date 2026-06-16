@@ -1,10 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-br">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Login | JP2 BUSINESS</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <style>
     body { background-color: #eef2f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: 'Segoe UI', sans-serif; }
     .login-card { width: 100%; max-width: 380px; padding: 40px; background: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
@@ -33,12 +34,17 @@
 
     <form action="/login" method="POST">
       <div class="mb-3">
-        <label class="form-label text-secondary small">Usuário</label>
-        <input type="text" name="usuario" class="form-control" placeholder="Seu usuário" required>
+        <label class="form-label text-secondary small">UsuÃ¡rio</label>
+        <input type="text" name="usuario" class="form-control" placeholder="Seu usuÃ¡rio" required>
       </div>
       <div class="mb-3">
         <label class="form-label text-secondary small">Senha</label>
-        <input type="password" name="senha" class="form-control" placeholder="••••••••" required>
+        <div class="input-group">
+          <input type="password" name="senha" id="senhaLogin" class="form-control" placeholder="••••••••" required>
+          <button type="button" class="btn btn-outline-secondary" onclick="alternarSenha()" title="Mostrar ou ocultar senha">
+            <i id="iconeSenha" class="bi bi-eye"></i>
+          </button>
+        </div>
       </div>
       <button type="submit" class="btn btn-primary w-100 mt-3 shadow-sm">Acessar Painel</button>
     </form>
@@ -48,5 +54,14 @@
     </div>
   </div>
 
+  <script>
+    function alternarSenha() {
+      const input = document.getElementById('senhaLogin');
+      const icon = document.getElementById('iconeSenha');
+      const mostrando = input.type === 'text';
+      input.type = mostrando ? 'password' : 'text';
+      icon.className = mostrando ? 'bi bi-eye' : 'bi bi-eye-slash';
+    }
+  </script>
 </body>
 </html>
