@@ -561,6 +561,14 @@
       margin-bottom: 12px;
     }
 
+    .explorer-card .icon-wrapper .text-warning {
+      color: #d8a11d !important;
+    }
+
+    .explorer-card .icon-wrapper .text-primary {
+      color: #1f5fd1 !important;
+    }
+
     .explorer-card .item-label {
       color: var(--jp2-ink);
       font-size: 13px;
@@ -581,6 +589,87 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+    }
+
+    .modal-content {
+      border: 0;
+      border-radius: 8px;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, .22);
+    }
+
+    .jp2-modal-header {
+      border-bottom: 1px solid #e6edf6;
+      padding: 22px 28px 14px;
+    }
+
+    .jp2-modal-title {
+      align-items: center;
+      color: var(--jp2-ink);
+      display: flex;
+      font-size: 22px;
+      font-weight: 800;
+      gap: 10px;
+      margin: 0;
+    }
+
+    .jp2-modal-body {
+      padding: 22px 28px;
+    }
+
+    .jp2-modal-footer {
+      border-top: 0;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      padding: 0 28px 26px;
+    }
+
+    .jp2-modal-label {
+      color: #667085;
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .jp2-toast {
+      position: fixed;
+      right: 24px;
+      top: 88px;
+      z-index: 20000000;
+      min-width: 310px;
+      max-width: 420px;
+      background: #ffffff;
+      border: 1px solid #dbe6f3;
+      border-left: 4px solid var(--jp2-green);
+      border-radius: 8px;
+      box-shadow: 0 18px 46px rgba(15, 23, 42, .18);
+      color: var(--jp2-ink);
+      display: none;
+      padding: 14px 16px;
+    }
+
+    .jp2-toast.show {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .jp2-toast.error {
+      border-left-color: #dc2626;
+    }
+
+    .jp2-toast strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .jp2-toast span {
+      color: var(--jp2-muted);
+      font-size: 13px;
     }
 
     @media (max-width: 900px) {
@@ -739,6 +828,35 @@
 
 <div id="wrapper-explorer-grid" class="explorer-grid"></div>
 
+<div id="jp2Toast" class="jp2-toast" role="status" aria-live="polite">
+    <i id="jp2ToastIcon" class="bi bi-check-circle-fill text-success"></i>
+    <div>
+        <strong id="jp2ToastTitle">Operacao concluida</strong>
+        <span id="jp2ToastMessage">Tudo certo.</span>
+    </div>
+</div>
+
+<div class="modal fade" id="modalRenomearItem" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="jp2-modal-header">
+                <h5 class="jp2-modal-title"><i class="bi bi-pencil-square text-primary"></i> Renomear item</h5>
+            </div>
+            <div class="jp2-modal-body">
+                <input type="hidden" id="renomearItemId">
+                <label class="jp2-modal-label" for="renomearNovoNome">Novo nome</label>
+                <input type="text" id="renomearNovoNome" class="form-control mb-3" placeholder="Digite o novo nome">
+                <label class="jp2-modal-label" for="renomearSenha">Confirme sua senha</label>
+                <input type="password" id="renomearSenha" class="form-control" placeholder="Senha do usuario">
+            </div>
+            <div class="jp2-modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="confirmarRenomearItem()">Salvar nome</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="eventoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 15px 35px rgba(0,0,0,0.2); overflow: hidden;">
@@ -818,6 +936,64 @@
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
   <script>
+    function mostrarToast(titulo, mensagem, tipo = 'sucesso') {
+        const toast = document.getElementById('jp2Toast');
+        const title = document.getElementById('jp2ToastTitle');
+        const message = document.getElementById('jp2ToastMessage');
+        const icon = document.getElementById('jp2ToastIcon');
+        if (!toast || !title || !message || !icon) return alert(mensagem || titulo);
+
+        title.innerText = titulo;
+        message.innerText = mensagem || '';
+        toast.classList.toggle('error', tipo === 'erro');
+        icon.className = tipo === 'erro'
+            ? 'bi bi-exclamation-triangle-fill text-danger'
+            : 'bi bi-check-circle-fill text-success';
+        toast.classList.add('show');
+        clearTimeout(window.jp2ToastTimer);
+        window.jp2ToastTimer = setTimeout(() => toast.classList.remove('show'), 3600);
+    }
+
+    function abrirModalRenomear(event, id, nomeAtual) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        document.getElementById('renomearItemId').value = id;
+        document.getElementById('renomearNovoNome').value = nomeAtual || '';
+        document.getElementById('renomearSenha').value = '';
+        new bootstrap.Modal(document.getElementById('modalRenomearItem')).show();
+        setTimeout(() => document.getElementById('renomearNovoNome').focus(), 200);
+    }
+
+    function confirmarRenomearItem() {
+        const id = document.getElementById('renomearItemId').value;
+        const novoNome = document.getElementById('renomearNovoNome').value.trim();
+        const senha = document.getElementById('renomearSenha').value.trim();
+
+        if (!novoNome || !senha) {
+            mostrarToast('Dados incompletos', 'Informe o novo nome e confirme sua senha.', 'erro');
+            return;
+        }
+
+        const fd = new FormData();
+        fd.append('id', id);
+        fd.append('novo_nome', novoNome);
+        fd.append('senha', senha);
+
+        fetch('/renomear', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(d => {
+            if (d.status === 'sucesso') {
+                bootstrap.Modal.getInstance(document.getElementById('modalRenomearItem')).hide();
+                mostrarToast('Nome atualizado', 'O item foi renomeado com sucesso.');
+                sincronizarGrade();
+            } else {
+                mostrarToast('Nao foi possivel renomear', d.mensagem || 'Verifique a senha e tente novamente.', 'erro');
+            }
+        })
+        .catch(() => mostrarToast('Erro de conexao', 'Nao foi possivel falar com o servidor.', 'erro'));
+    }
     let estadoDoPainel = { bloco: 'instituto', categoria: 'raiz', pasta_pai_id: null, nivel_atual: 'raiz_bloco', string_caminho: 'INSTITUTO' };
     let instanciaCalendario = null;
 
@@ -922,7 +1098,7 @@ function sincronizarGrade() {
 // Removi o div item-author e adicionei a classe site-title-large
 card.innerHTML = `
     <div class="action-trigger">
-        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="event.stopPropagation(); alert('Item fixo do sistema: nÃ£o pode ser excluÃ­do diretamente.');">
+        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="event.stopPropagation(); mostrarToast('Item protegido', 'Este item fixo do sistema nao pode ser excluido diretamente.', 'erro');">
             <i class="bi bi-trash"></i>
         </button>
     </div>
@@ -995,7 +1171,7 @@ gridContainer.appendChild(card);
                 if (item.tipo === 'pasta') {
                     cliqueCorpoCard = `entrarSubpastaReal(${item.id}, '${item.nome}')`;
                     botoesAcaoHtml = `
-                        <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="event.stopPropagation(); let novoNome = prompt('Digite o novo nome da pasta:', '${item.nome}'); if(novoNome){ let s = prompt('Confirme sua senha de sÃ³cio:'); if(s){ let fd = new FormData(); fd.append('id', ${item.id}); fd.append('novo_nome', novoNome); fd.append('senha', s); fetch('/renomear', {method:'POST', body:fd}).then(r=>r.json()).then(d=>{ if(d.status==='sucesso'){ alert('Renomeado com sucesso!'); sincronizarGrade(); }else{ alert(d.mensagem); } }); } }">
+                        <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="abrirModalRenomear(event, ${item.id}, '${item.nome.replace(/'/g, "\\'")}')">
                             <i class="bi bi-pencil"></i>
                         </button>
                         <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})">
@@ -1011,7 +1187,7 @@ gridContainer.appendChild(card);
                         <button class="btn btn-sm btn-light border py-0 px-1 text-dark" title="Baixar Arquivo" onclick="event.stopPropagation(); window.open('/baixar_recurso/${item.id}?download=true', '_blank')">
                             <i class="bi bi-cloud-download"></i>
                         </button>
-                        <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="event.stopPropagation(); let novoNome = prompt('Digite o novo nome do arquivo:', '${item.nome}'); if(novoNome){ let s = prompt('Confirme sua senha de sÃ³cio:'); if(s){ let fd = new FormData(); fd.append('id', ${item.id}); fd.append('novo_nome', novoNome); fd.append('senha', s); fetch('/renomear', {method:'POST', body:fd}).then(r=>r.json()).then(d=>{ if(d.status==='sucesso'){ alert('Renomeado com sucesso!'); sincronizarGrade(); }else{ alert(d.mensagem); } }); } }">
+                        <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="abrirModalRenomear(event, ${item.id}, '${item.nome.replace(/'/g, "\\'")}')">
                             <i class="bi bi-pencil"></i>
                         </button>
                         <button class="btn btn-sm btn-light border py-0 px-1 text-danger" title="Mover para Lixeira" onclick="abrirModalExcluirDireto(event, ${item.id})">
@@ -1083,15 +1259,15 @@ gridContainer.appendChild(card);
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'sucesso') {
-                    alert("Todos os itens selecionados foram enviados para a lixeira!");
+                    mostrarToast("Itens excluidos", "Os itens selecionados foram enviados para a lixeira.");
                     sincronizarGrade();
                 } else {
-                    alert("Erro: " + data.mensagem);
+                    mostrarToast("Nao foi possivel excluir", data.mensagem || "Verifique a senha e tente novamente.", "erro");
                 }
             })
             .catch(err => {
                 console.error("Erro na exclusÃ£o em lote:", err);
-                alert("Erro ao tentar processar exclusÃ£o.");
+                mostrarToast("Erro ao excluir", "Nao foi possivel processar a exclusao.", "erro");
             });
         }
     }    
@@ -1170,7 +1346,7 @@ gridContainer.appendChild(card);
 
         overlay.querySelector('#btn_criar_pasta').onclick = function() {
             let nome = overlay.querySelector('#nome_nova_pasta_temp').value;
-            if(!nome) return alert("Digite um nome!");
+            if(!nome) return mostrarToast("Nome obrigatorio", "Digite um nome para a pasta.", "erro");
             
             let paiId = estadoDoPainel.pasta_pai_id;
             if (paiId === null || paiId === undefined) paiId = '';
@@ -1188,11 +1364,12 @@ gridContainer.appendChild(card);
             })
             .then(() => {
                 overlay.remove();
+                mostrarToast("Pasta criada", "A nova pasta foi adicionada ao painel.");
                 setTimeout(() => { sincronizarGrade(); }, 300);
             })
             .catch(err => {
                 console.error("Erro no servidor:", err);
-                alert("Erro ao criar pasta.");
+                mostrarToast("Erro ao criar pasta", "Tente novamente em alguns instantes.", "erro");
             });
         };
     }
@@ -1267,9 +1444,9 @@ gridContainer.appendChild(card);
         overlay.innerHTML = `
             <div style="background:white; padding:30px; border-radius:12px; width:400px; max-width: 90%; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
                 <h4 style="margin-bottom:20px; color:#dc2626; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
-                    <i class="bi bi-trash"></i> Confirmar ExclusÃ£o
+                    <i class="bi bi-trash"></i> Confirmar exclusao
                 </h4>
-                <p style="margin-bottom:20px; color:#475569;">Deseja realmente excluir este item?<br>Esta aÃ§Ã£o nÃ£o pode ser desfeita.</p>
+                <p style="margin-bottom:20px; color:#475569;">Deseja realmente excluir este item?<br>Esta acao nao pode ser desfeita.</p>
                 <div style="margin-bottom:20px;">
                     <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">CONFIRME A SENHA</label>
                     <input type="password" id="senha_exclusao_temp" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
@@ -1293,16 +1470,16 @@ gridContainer.appendChild(card);
             .then(res => res.json())
             .then(data => {
                 if(data.status === 'sucesso') {
-                    alert("Item excluÃ­do com sucesso!");
                     overlay.remove();
+                    mostrarToast("Item excluido", "O item foi enviado para a lixeira.");
                     sincronizarGrade();
                 } else {
-                    alert("Erro: " + (data.mensagem || "NÃ£o foi possÃ­vel excluir."));
+                    mostrarToast("Nao foi possivel excluir", data.mensagem || "Verifique a senha e tente novamente.", "erro");
                 }
             })
             .catch(err => {
                 console.error("Erro na exclusÃ£o:", err);
-                alert("Erro de conexÃ£o com o servidor.");
+                mostrarToast("Erro de conexao", "Nao foi possivel falar com o servidor.", "erro");
             });
         };
     }
@@ -1337,7 +1514,7 @@ gridContainer.appendChild(card);
 
         overlay.querySelector('#btn_enviar_temp').onclick = function() {
             let fileInput = overlay.querySelector('#arquivo_temp');
-            if(fileInput.files.length === 0) return alert("Selecione um arquivo!");
+            if(fileInput.files.length === 0) return mostrarToast("Arquivo obrigatorio", "Selecione um arquivo para enviar.", "erro");
             
             // ðŸŸ¢ ADICIONADO: Fecha a caixa cinza na hora para liberar a visÃ£o da faixa azul no topo!
             overlay.remove();
@@ -1352,7 +1529,7 @@ gridContainer.appendChild(card);
     // ðŸš€ ATUALIZAÃ‡ÃƒO: SISTEMA DE UPLOAD FRAGMENTADO DE ALTA VELOCIDADE COM FATIAS DE 1MB
     function dispararUploadAvancado(inputPassado) {
         let filesInput = inputPassado || document.getElementById('inputArquivosAvancado');
-        if (!filesInput || filesInput.files.length === 0) return alert("Selecione os arquivos!");
+        if (!filesInput || filesInput.files.length === 0) return mostrarToast("Arquivo obrigatorio", "Selecione os arquivos para enviar.", "erro");
         
         // Ativa visualmente o painel de progresso na tela
         let progressoContainer = document.getElementById('containerProgresso');
@@ -1378,7 +1555,7 @@ gridContainer.appendChild(card);
                 let overlay = document.getElementById('modal-global-overlay');
                 if(overlay) overlay.remove();
 
-                alert("Todos os arquivos foram fatiados e gravados com velocidade absoluta!");
+                mostrarToast("Upload concluido", "Todos os arquivos foram enviados com sucesso.");
                 sincronizarGrade();
                 return;
             }
@@ -1426,7 +1603,7 @@ gridContainer.appendChild(card);
                         } catch (e) {
                             if (xhr.responseText) mensagemErro += "\n\nDetalhe: " + xhr.responseText.substring(0, 300);
                         }
-                        alert(mensagemErro);
+                        mostrarToast("Falha no upload", mensagemErro, "erro");
                         if (progressoContainer) progressoContainer.classList.add('d-none');
                     }
                 };
