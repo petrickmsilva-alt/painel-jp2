@@ -414,12 +414,14 @@
             <a href="/financeiro" class="menu-item">
                <i class="bi bi-plus-circle text-primary"></i> Painel de Investimento
             </a>
-            <a href="/admin/usuarios" class="menu-item">
-                <i class="bi bi-people-fill text-warning"></i> GestÃ£o de SÃ³cios
-            </a>
-            <a href="/admin/logs" class="menu-item">
-                <i class="bi bi-clipboard-data text-secondary"></i> Auditoria (Logs) 
-            </a>
+            {% if usuario_e_admin %}
+                <a href="/admin/usuarios" class="menu-item">
+                    <i class="bi bi-people-fill text-warning"></i> Gestao de Socios
+                </a>
+                <a href="/admin/logs" class="menu-item">
+                    <i class="bi bi-clipboard-data text-secondary"></i> Auditoria (Logs)
+                </a>
+            {% endif %}
 
             <div class="menu-header mt-3">Ecossistema Digital</div>
             <a class="menu-item" id="menu-bloco-sites" onclick="clicarBlocoMestre('sites_jp2', this)">
