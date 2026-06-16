@@ -285,17 +285,147 @@
       min-height: 135px;
     }
 
-    /* VersÃ£o Compacta para os SITES (Adicione a classe .explorer-site-card no HTML) */
+    .explorer-grid.sites-premium-grid {
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      align-items: stretch;
+    }
+
+    .site-hub-intro {
+      grid-column: 1 / -1;
+      background: #ffffff;
+      border: 1px solid var(--jp2-border);
+      border-radius: 8px;
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
+    }
+
+    .site-hub-intro strong {
+      color: var(--jp2-ink);
+      display: block;
+      font-size: 18px;
+      font-weight: 850;
+      line-height: 1.1;
+    }
+
+    .site-hub-intro span {
+      color: var(--jp2-muted);
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .site-hub-metric {
+      align-items: center;
+      background: #f8fafc;
+      border: 1px solid #e5eaf2;
+      border-radius: 8px;
+      color: #344054;
+      display: inline-flex;
+      font-size: 12px;
+      font-weight: 800;
+      gap: 8px;
+      padding: 10px 12px;
+      white-space: nowrap;
+    }
+
+    .site-hub-metric i {
+      color: var(--jp2-blue);
+    }
+
+    /* VersÃ£o Premium para os SITES */
     .explorer-card.explorer-site-card {
-      min-height: 110px !important; 
-      padding: 12px 10px !important;
+      align-items: stretch;
+      justify-content: space-between;
+      min-height: 190px !important;
+      padding: 16px !important;
+      text-align: left;
+      overflow: hidden;
     }
+
+    .explorer-card.explorer-site-card::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--jp2-blue), var(--jp2-green));
+      opacity: 0;
+      transition: opacity .2s ease;
+    }
+
+    .explorer-card.explorer-site-card:hover::after {
+      opacity: 1;
+    }
+
+    .explorer-card.explorer-site-card .site-card-top {
+      align-items: flex-start;
+      display: flex;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .explorer-card.explorer-site-card .icon-wrapper {
+      align-items: center;
+      background: #f8fafc;
+      border: 1px solid #e5eaf2;
+      border-radius: 8px;
+      display: inline-flex;
+      flex: 0 0 58px;
+      height: 58px;
+      justify-content: center;
+      margin: 0;
+      width: 58px;
+    }
+
     .explorer-card.explorer-site-card .icon-wrapper img {
-      width: 35px !important;
-      height: 35px !important;
+      border-radius: 6px !important;
+      height: 42px !important;
+      object-fit: contain;
+      width: 42px !important;
     }
+
     .explorer-card.explorer-site-card .item-label {
-      font-size: 11px !important;
+      color: #111827;
+      font-size: 14px !important;
+      font-weight: 850;
+      line-height: 1.2;
+      white-space: normal;
+    }
+
+    .site-card-desc {
+      color: var(--jp2-muted);
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.35;
+      margin-top: 5px;
+    }
+
+    .site-card-footer {
+      align-items: center;
+      border-top: 1px solid #edf2f7;
+      color: var(--jp2-blue);
+      display: flex;
+      font-size: 12px;
+      font-weight: 850;
+      justify-content: space-between;
+      margin-top: 18px;
+      padding-top: 12px;
+    }
+
+    .site-status-pill {
+      align-items: center;
+      background: #e7f8ef;
+      border-radius: 999px;
+      color: var(--jp2-green);
+      display: inline-flex;
+      font-size: 11px;
+      font-weight: 850;
+      gap: 5px;
+      padding: 5px 8px;
     }
 
     .explorer-card:hover {
@@ -980,6 +1110,19 @@
         sites_jp2: ['IBDTEC', 'Expo Feiras CO', 'Expo Centro Oeste', 'Expo Fashion Brasil', 'Capital Mix', 'Sabor Fest', 'JP2 Ticket', 'Brobond Wear', 'Atacado Brobond', 'Nutrallis']
     };
 
+    const descricoesSitesJP2 = {
+        'IBDTEC': 'Instituto, tecnologia, eventos e desenvolvimento institucional.',
+        'Expo Feiras CO': 'Portal principal das feiras, exposicoes e projetos comerciais.',
+        'Expo Centro Oeste': 'Evento regional para negocios, marcas e experiencias.',
+        'Expo Fashion Brasil': 'Moda, vestuario e relacionamento com o mercado fashion.',
+        'Capital Mix': 'Ativacoes, experiencias e agenda de entretenimento.',
+        'Sabor Fest': 'Gastronomia, marcas parceiras e eventos de alimentacao.',
+        'JP2 Ticket': 'Ingressos, credenciamento e controle de acesso.',
+        'Brobond Wear': 'Marca de vestuario e operacao de varejo.',
+        'Atacado Brobond': 'Canal comercial B2B e vendas no atacado.',
+        'Nutrallis': 'Bem-estar, saude e linhas de produtos naturais.'
+    };
+
     const linksDirecionamento = {
         'Expo Feiras CO': 'https://expofeirasco.com.br',
         'Brobond Wear': 'https://brobond.com.br',
@@ -1041,6 +1184,7 @@ function sincronizarGrade() {
     if (!gridContainer || !caminhoEl) return;
 
     caminhoEl.innerText = estadoDoPainel.string_caminho;
+    gridContainer.classList.toggle('sites-premium-grid', estadoDoPainel.bloco === 'sites_jp2' && estadoDoPainel.nivel_atual === 'raiz_bloco');
     gridContainer.innerHTML = '<div class="text-center w-100 py-4"><div class="spinner-border text-primary"></div><br>Buscando na nuvem...</div>';
     
     if (estadoDoPainel.bloco === 'sites_jp2') {
@@ -1066,12 +1210,25 @@ function sincronizarGrade() {
         if (estadoDoPainel.bloco === 'sites_jp2' && estadoDoPainel.nivel_atual === 'raiz_bloco') {
             let itensRenderizados = [];
             let sortedFixos = subpastasFixas['sites_jp2'];
+            let intro = document.createElement("div");
+            intro.className = "site-hub-intro";
+            intro.innerHTML = `
+                <div>
+                    <strong>Ecossistema digital JP2 Business</strong>
+                    <span>Acesso rapido aos portais, marcas, eventos e operacoes conectadas ao grupo.</span>
+                </div>
+                <div class="site-hub-metric">
+                    <i class="bi bi-globe2"></i> ${sortedFixos.length} canais principais
+                </div>
+            `;
+            gridContainer.appendChild(intro);
             
             sortedFixos.forEach(cat => {
                 let card = document.createElement("div");
                 card.className = "explorer-card explorer-site-card"; // <--- CLASSE APLICADA
                 let urlDestino = linksDirecionamento[cat] || '#';
                 let nomeArquivo = mapeamentoLogos[cat] || 'default.png';
+                let descricaoSite = descricoesSitesJP2[cat] || 'Canal digital conectado ao ecossistema JP2 Business.';
                 
                 card.onclick = function() { window.open(urlDestino, '_blank'); };
 // Removi o div item-author e adicionei a classe site-title-large
@@ -1081,10 +1238,19 @@ card.innerHTML = `
             <i class="bi bi-trash"></i>
         </button>
     </div>
-    <div class="icon-wrapper">
-        <img src="/static/image/${nomeArquivo}" style="width: 40px; height: 40px; object-fit: contain; border-radius: 8px;">
+    <div class="site-card-top">
+        <div class="icon-wrapper">
+            <img src="/static/image/${nomeArquivo}">
+        </div>
+        <div>
+            <div class="item-label site-title-large">${cat}</div>
+            <div class="site-card-desc">${descricaoSite}</div>
+        </div>
     </div>
-    <div class="item-label site-title-large">${cat}</div>
+    <div class="site-card-footer">
+        <span class="site-status-pill"><i class="bi bi-check-circle-fill"></i> Ativo</span>
+        <span>Abrir site <i class="bi bi-box-arrow-up-right"></i></span>
+    </div>
 `;
 gridContainer.appendChild(card);
 itensRenderizados.push(cat.toLowerCase().trim());
@@ -1108,10 +1274,19 @@ itensRenderizados.push(cat.toLowerCase().trim());
             <i class="bi bi-trash"></i>
         </button>
     </div>
-    <div class="icon-wrapper">
-        <img src="${imagemDoCard}" style="width: 40px; height: 40px; object-fit: contain; border-radius: 8px;">
+    <div class="site-card-top">
+        <div class="icon-wrapper">
+            <img src="${imagemDoCard}">
+        </div>
+        <div>
+            <div class="item-label site-title-large" title="${item.nome || ''}">${item.nome || ''}</div>
+            <div class="site-card-desc">Site adicionado ao ecossistema digital do painel.</div>
+        </div>
     </div>
-    <div class="item-label site-title-large" title="${item.nome || ''}">${item.nome || ''}</div>
+    <div class="site-card-footer">
+        <span class="site-status-pill"><i class="bi bi-check-circle-fill"></i> Ativo</span>
+        <span>Abrir site <i class="bi bi-box-arrow-up-right"></i></span>
+    </div>
 `;
 gridContainer.appendChild(card);
                     }
