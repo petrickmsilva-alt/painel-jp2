@@ -35,12 +35,11 @@ def enviar_arquivo_r2(caminho_local, chave, content_type=None):
     if content_type:
         extra_args["ContentType"] = content_type
 
-    r2_client().upload_file(
-        caminho_local,
-        r2_bucket_name(),
-        chave,
-        ExtraArgs=extra_args or None,
-    )
+    kwargs = {}
+    if extra_args:
+        kwargs["ExtraArgs"] = extra_args
+
+    r2_client().upload_file(caminho_local, r2_bucket_name(), chave, **kwargs)
     return f"r2://{r2_bucket_name()}/{chave}"
 
 
@@ -55,4 +54,3 @@ def baixar_arquivo_r2(uri):
     r2_client().download_fileobj(bucket, chave, buffer)
     buffer.seek(0)
     return buffer
-

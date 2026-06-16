@@ -1181,7 +1181,14 @@ gridContainer.appendChild(card);
                             subirProximoArquivo(); // Arquivo finalizado! Passa para o prÃ³ximo do lote
                         }
                     } else {
-                        alert("Erro ao transmitir fragmento de rede. Tentativa abortada.");
+                        let mensagemErro = "Erro ao transmitir fragmento de rede. Tentativa abortada.";
+                        try {
+                            const resposta = JSON.parse(xhr.responseText);
+                            if (resposta.mensagem) mensagemErro += "\n\nDetalhe: " + resposta.mensagem;
+                        } catch (e) {
+                            if (xhr.responseText) mensagemErro += "\n\nDetalhe: " + xhr.responseText.substring(0, 300);
+                        }
+                        alert(mensagemErro);
                         if (progressoContainer) progressoContainer.classList.add('d-none');
                     }
                 };
