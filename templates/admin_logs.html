@@ -40,6 +40,14 @@
             margin-bottom: 18px;
         }
 
+        .audit-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
         .audit-eyebrow {
             color: var(--jp2-muted);
             font-size: .76rem;
@@ -74,7 +82,7 @@
 
         .summary-grid {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(6, minmax(0, 1fr));
             gap: 14px;
             margin-bottom: 16px;
         }
@@ -96,7 +104,7 @@
 
         .summary-card .value {
             color: #0f172a;
-            font-size: 1.65rem;
+            font-size: 1.48rem;
             font-weight: 850;
             line-height: 1.1;
             margin-top: 8px;
@@ -241,6 +249,10 @@
                 flex-direction: column;
             }
 
+            .audit-actions {
+                justify-content: flex-start;
+            }
+
             .summary-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
@@ -265,9 +277,14 @@
                 <h1><i class="bi bi-shield-check text-success"></i> Auditoria do Sistema</h1>
                 <div class="audit-subtitle">Ultimos registros de uso, acessos e acoes sensiveis do painel.</div>
             </div>
-            <a href="/" class="btn btn-outline-secondary btn-audit">
-                <i class="bi bi-arrow-left"></i> Voltar ao Painel
-            </a>
+            <div class="audit-actions">
+                <a href="/admin/logs/exportar" class="btn btn-success btn-audit">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
+                </a>
+                <a href="/" class="btn btn-outline-secondary btn-audit">
+                    <i class="bi bi-arrow-left"></i> Voltar ao Painel
+                </a>
+            </div>
         </section>
 
         <section class="summary-grid">
@@ -290,6 +307,16 @@
                 <div class="label">Exclusoes</div>
                 <div class="value">{{ resumo.exclusoes }}</div>
                 <div class="hint">Acoes que merecem revisao</div>
+            </article>
+            <article class="summary-card">
+                <div class="label">Criacoes</div>
+                <div class="value">{{ resumo.criacoes }}</div>
+                <div class="hint">Novos itens registrados</div>
+            </article>
+            <article class="summary-card">
+                <div class="label">Acessos</div>
+                <div class="value">{{ resumo.acessos }}</div>
+                <div class="hint">Entradas e consultas</div>
             </article>
         </section>
 
