@@ -328,12 +328,46 @@ def admin_logs():
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
-            cur.execute("SELECT * FROM logs_auditoria ORDER BY data_registro DESC LIMIT 100")
+            cur.execute("SELECT * FROM logs_auditoria ORDER BY data_registro DESC LIMIT 250")
             lista_logs = cur.fetchall()
         conn.close()
     except:
         lista_logs = []
-    return render_template('admin_logs.html', logs=lista_logs)
+
+    hoje = datetime.now().date()
+    usuarios = set()
+    logs_hoje = 0
+    exclusoes = 0
+    criacoes = 0
+    acessos = 0
+
+    for log in lista_logs:
+        usuario_log = str(log.get('usuario') or '').strip()
+        acao_log = str(log.get('acao') or '').lower()
+        if usuario_log:
+            usuarios.add(usuario_log)
+
+        data_log = log.get('data_registro')
+        if hasattr(data_log, 'date') and data_log.date() == hoje:
+            logs_hoje += 1
+
+        if any(palavra in acao_log for palavra in ['apagou', 'removeu', 'excluiu', 'deletou']):
+            exclusoes += 1
+        elif any(palavra in acao_log for palavra in ['criou', 'adicionou', 'cadastrou', 'incluiu', 'upload']):
+            criacoes += 1
+        elif any(palavra in acao_log for palavra in ['login', 'logout', 'acessou', 'tentou acessar']):
+            acessos += 1
+
+    resumo_logs = {
+        'total': len(lista_logs),
+        'hoje': logs_hoje,
+        'usuarios': len(usuarios),
+        'exclusoes': exclusoes,
+        'criacoes': criacoes,
+        'acessos': acessos,
+    }
+
+    return render_template('admin_logs.html', logs=lista_logs, resumo=resumo_logs)
 
 @app.route('/listar')
 def listar_arquivos():
