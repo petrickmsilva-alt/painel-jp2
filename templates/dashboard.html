@@ -366,7 +366,7 @@
 <div class="workspace-wrapper">
     <aside class="sidebar-enterprise">
         <div class="sidebar-brand">
-            <span style="font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px;">CONSOLE DE GESTÃƒO</span>
+            <span style="font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px;">CONSOLE DE GESTAO</span>
         </div>
         <div class="px-3 py-2">
             <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#menuResumo">
@@ -380,11 +380,11 @@
                         <span id="dash-arquivos" style="font-size: 0.7rem; font-weight: bold;">...</span>
                     </div>
                     <div class="d-flex justify-content-between mb-1">
-                        <small style="font-size: 0.6rem;">SÃ“CIOS:</small>
+                        <small style="font-size: 0.6rem;">SOCIOS:</small>
                         <span id="dash-socios" style="font-size: 0.7rem; font-weight: bold;">...</span>
                     </div>
                     <div class="d-flex justify-content-between">
-                        <small style="font-size: 0.6rem;">PRÃ“XIMO EVENTO:</small>
+                        <small style="font-size: 0.6rem;">PROXIMO EVENTO:</small>
                         <span id="dash-agenda" style="font-size: 0.6rem; font-weight: bold; color: #0dcaf0;">...</span>
                     </div>
                 </div>
@@ -399,7 +399,7 @@
         <div class="sidebar-menu">
             <a href="/" class="menu-item"><i class="bi bi-house"></i> Voltar ao Painel</a>
                                   
-            <div class="menu-header">MÃ³dulos de Arquivo</div>
+            <div class="menu-header">Modulos de Arquivo</div>
             <a class="menu-item" id="menu-bloco-instituto" onclick="clicarBlocoMestre('instituto', this)">
                 <i class="bi bi-building-fill text-warning"></i> Instituto (IBDTEC)
             </a>
@@ -407,7 +407,7 @@
                 <i class="bi bi-briefcase-fill text-info"></i> JP2 Business
             </a>
             
-            <div class="menu-header mt-3">GESTÃƒO</div>
+            <div class="menu-header mt-3">GESTAO</div>
             <a href="/agenda" class="menu-item">
                  <i class="bi bi-calendar-event-fill text-danger"></i> Agenda 
             </a>
@@ -440,7 +440,7 @@
                 <div style="height: 25px; width: 1px; background-color: #cbd5e1;"></div>
                 <div class="text-end">
                     <span class="text-dark" style="font-size: 13.5px; font-weight: 600;">{{ nome_socio }}</span>
-                    <small class="text-muted d-block" style="font-size: 10px;">SÃ³cio Logado</small>
+                    <small class="text-muted d-block" style="font-size: 10px;">Socio Logado</small>
                 </div>
                 <div style="height: 25px; width: 1px; background-color: #cbd5e1;"></div>
                 <a href="/logout" class="btn btn-sm btn-outline-danger px-2 py-1" style="font-size:12px;">Sair</a>
@@ -486,8 +486,8 @@
             </button>
             
             <select id="selectView" class="form-select form-select-sm ms-auto" style="width: 150px;" onchange="alterarVisualizacao(this.value)">
-                <option value="pequeno">Ãcones Pequenos</option>
-                <option value="medio" selected>Ãcones MÃ©dios</option>
+                <option value="pequeno">Icones Pequenos</option>
+                <option value="medio" selected>Icones Medios</option>
                 <option value="lista">Lista</option>
             </select>
         </div>
@@ -1330,7 +1330,7 @@ gridContainer.appendChild(card);
         <div class="menu-header"><span>Menu</span><button onclick="toggleMenu()">X</button></div>
         <a onclick="clicarBlocoMestre('instituto', this)" style="cursor:pointer;">ðŸ¢ Instituto (IBDTEC)</a>
         <a onclick="clicarBlocoMestre('jp2_business', this)" style="cursor:pointer;">ðŸ’¼ JP2 Business</a>
-        <a href="/admin/usuarios">ðŸ‘¥ GestÃ£o de SÃ³cios</a>
+        <a href="/admin/usuarios">ðŸ‘¥ Gestao de Socios</a>
         <a href="/admin/logs">ðŸ“Š Auditoria (Logs)</a>
         <a onclick="clicarBlocoMestre('sites_jp2', this)" style="cursor:pointer;">ðŸŒ Sites JP2 Business</a>
       </div>
@@ -1366,5 +1366,6 @@ gridContainer.appendChild(card);
   </script>
   </body>
 </html>
+
 
 
