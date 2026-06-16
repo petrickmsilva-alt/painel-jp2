@@ -4,6 +4,8 @@ import re
 import hashlib
 import traceback
 import urllib.request
+import csv
+import io
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from datetime import datetime, timedelta
@@ -368,6 +370,40 @@ def admin_logs():
     }
 
     return render_template('admin_logs.html', logs=lista_logs, resumo=resumo_logs)
+
+@app.route('/admin/logs/exportar')
+def exportar_logs_auditoria():
+    if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
+    if not usuario_atual_e_admin():
+        return acesso_negado()
+
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute("SELECT data_registro, usuario, acao, ip_origem FROM logs_auditoria ORDER BY data_registro DESC LIMIT 1000")
+            lista_logs = cur.fetchall()
+        conn.close()
+    except Exception as e:
+        print(f"Erro ao exportar logs: {e}")
+        lista_logs = []
+
+    saida = io.StringIO()
+    saida.write('\ufeff')
+    writer = csv.writer(saida, delimiter=';')
+    writer.writerow(['Data/Hora', 'Usuario', 'Acao executada', 'IP de origem'])
+    for log in lista_logs:
+        writer.writerow([
+            log.get('data_registro'),
+            log.get('usuario'),
+            log.get('acao'),
+            log.get('ip_origem')
+        ])
+
+    registrar_log("Exportou o relatorio de auditoria em CSV")
+    resposta = make_response(saida.getvalue())
+    resposta.headers['Content-Type'] = 'text/csv; charset=utf-8'
+    resposta.headers['Content-Disposition'] = 'attachment; filename=auditoria-jp2.csv'
+    return resposta
 
 @app.route('/listar')
 def listar_arquivos():
