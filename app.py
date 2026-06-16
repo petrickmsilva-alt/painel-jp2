@@ -8,6 +8,7 @@ from urllib.parse import urljoin
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory, send_file
 from database import get_db_connection
+from storage import baixar_arquivo_r2, enviar_arquivo_r2, r2_configurado
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
@@ -303,12 +304,30 @@ def upload_avancado():
                 f.write(file.read())
         
         if chunk_index + 1 == total_chunks:
+            if not r2_configurado():
+                return jsonify({
+                    'status': 'erro',
+                    'mensagem': 'Armazenamento R2 nao configurado no servidor.'
+                }), 500
+
+            chave_r2 = f"uploads/{bloco or 'geral'}/{nome_unico}"
+            caminho_sistema = enviar_arquivo_r2(
+                destino_completo,
+                chave_r2,
+                getattr(file, "content_type", None)
+            )
+
             conn = get_db_connection()
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO arquivos_painel (nome_original, caminho_sistema, bloco, categoria, tipo, criado_por, pasta_pai_id, deletado)
                     VALUES (%s, %s, %s, %s, 'arquivo', %s, %s, 0)
-                """, (nome_original, f"/static/uploads/{nome_unico}", bloco, cat, session.get('nome_exibicao', 'Sistema'), p_id))
+                """, (nome_original, caminho_sistema, bloco, cat, session.get('nome_exibicao', 'Sistema'), p_id))
+
+            try:
+                os.remove(destino_completo)
+            except OSError:
+                pass
             
         return jsonify({'status': 'sucesso', 'guid': guid_uuid})
     except Exception as e:
@@ -330,6 +349,16 @@ def baixar_recurso_corporativo(arquivo_id):
         conn.close()
         
         if dados and dados['deletado'] != 1:
+            caminho_sistema = dados.get('caminho_sistema') or ''
+            if caminho_sistema.startswith('r2://'):
+                registrar_log(f"Acessou o arquivo: {dados['nome_original']} (Download={force_download})")
+                arquivo_memoria = baixar_arquivo_r2(caminho_sistema)
+                return send_file(
+                    arquivo_memoria,
+                    download_name=dados['nome_original'],
+                    as_attachment=force_download
+                )
+
             nome_arquivo_fisico = dados['caminho_sistema'].split('/')[-1]
             arquivo_path = os.path.join(UPLOAD_FOLDER, nome_arquivo_fisico)
             
