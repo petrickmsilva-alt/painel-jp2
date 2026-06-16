@@ -1,43 +1,34 @@
-import os
+﻿import os
 import uuid
 import re
-import tempfile
 import hashlib
-import pymysql
 import urllib.request
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory, send_file
-from flask import Blueprint 
 from database import get_db_connection
+from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
 
-# Configurações iniciais
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "chave_secreta_super_segura_jp2")
+# ConfiguraÃ§Ãµes iniciais
+SECRET_KEY = os.environ.get("FLASK_SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("Defina a variavel FLASK_SECRET_KEY antes de iniciar o painel.")
+app.secret_key = SECRET_KEY
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
-# Registro do módulo financeiro
+# Registro do mÃ³dulo financeiro
 from financeiro import bp_financeiro
 app.register_blueprint(bp_financeiro)
 
-# DIRETÓRIO LOCAL DE ARMAZENAMENTO
+# DIRETÃ“RIO LOCAL DE ARMAZENAMENTO
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-# Conexão otimizada com o banco
-def get_db_connection():
-    return pymysql.connect(
-        host=os.environ.get("DB_HOST", "localhost"),
-        user=os.environ.get("DB_USER"),
-        password=os.environ.get("DB_PASSWORD"),
-        database=os.environ.get("DB_NAME"),
-        cursorclass=pymysql.cursors.DictCursor,
-        autocommit=True
-    )
-
+# ConexÃ£o otimizada com o banco
 def registrar_log(acao):
     try:
         usuario = session.get('nome_exibicao', 'Sistema / Desconhecido')
@@ -56,6 +47,25 @@ def registrar_log(acao):
 
 def criptografar_sha256(senha_pura):
     return hashlib.sha256(senha_pura.encode('utf-8')).hexdigest()
+
+def gerar_hash_senha(senha_pura):
+    return generate_password_hash(senha_pura)
+
+def senha_confere(hash_salvo, senha_pura):
+    hash_salvo = str(hash_salvo or "")
+    if hash_salvo.startswith(("pbkdf2:", "scrypt:")):
+        return check_password_hash(hash_salvo, senha_pura)
+    return hash_salvo == criptografar_sha256(senha_pura)
+
+def senha_precisa_atualizar(hash_salvo):
+    return not str(hash_salvo or "").startswith(("pbkdf2:", "scrypt:"))
+
+def usuarios_admin():
+    usuarios = os.environ.get("ADMIN_USERS", "petrick")
+    return {u.strip().lower() for u in usuarios.split(",") if u.strip()}
+
+def usuario_atual_e_admin():
+    return session.get("usuario_logado", "").lower() in usuarios_admin()
     
 @app.route('/')
 def home():
@@ -64,45 +74,47 @@ def home():
     
     # Debug: Printa o caminho real onde o Flask busca o 'home.html'
     template_path = os.path.join(app.root_path, 'templates', 'home.html')
-    print("DEBUG: O Flask está buscando o arquivo em ->", template_path)
+    print("DEBUG: O Flask estÃ¡ buscando o arquivo em ->", template_path)
     
-    return render_template('home.html', nome_sócio=session.get('nome_exibicao', 'Sócio'))
+    return render_template('home.html', nome_sÃ³cio=session.get('nome_exibicao', 'SÃ³cio'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def tela_login():
     if request.method == 'POST':
         u = request.form.get('usuario', '').lower().strip()
         s = request.form.get('senha', '').strip()
-        
-        # ACESSO MESTRE TEMPORÁRIO PARA O SEU PRIMEIRO ACESSO LOCAL
-        if u == 'petrick':
-            session['usuario_logado'] = 'petrick'
-            session['nome_exibicao'] = 'Petrick Martins'
-            registrar_log("Realizou login via mestre temporário")
-            return redirect(url_for('home'))
-        
+
+        conn = None
         try:
             conn = get_db_connection()
             with conn.cursor() as cur:
                 cur.execute("SELECT * FROM usuarios WHERE usuario = %s", (u,))
                 user = cur.fetchone()
-            conn.close()
-            
-            if user:
-                if str(user['senha']) == criptografar_sha256(s):
+
+                if user and senha_confere(user.get('senha'), s):
+                    if senha_precisa_atualizar(user.get('senha')):
+                        cur.execute(
+                            "UPDATE usuarios SET senha = %s WHERE usuario = %s",
+                            (gerar_hash_senha(s), user['usuario'])
+                        )
+
                     session['usuario_logado'] = user['usuario']
                     session['nome_exibicao'] = user.get('nome_exibicao', user['usuario'])
                     registrar_log("Realizou login no sistema")
                     return redirect(url_for('home'))
-                else:
+
+                if user:
                     flash("Senha incorreta digitada!")
-            else:
-                flash("Usuário não encontrado no sistema!")
+                else:
+                    flash("Usuario nao encontrado no sistema!")
         except Exception as e:
             print(f"Erro no Login: {e}")
-            flash(f"Erro de conexão com o banco: {str(e)}")
+            flash(f"Erro de conexao com o banco: {str(e)}")
             return redirect(url_for('tela_login'))
-            
+        finally:
+            if conn:
+                conn.close()
+
     return render_template('login.html')
 
 @app.route('/logout')
@@ -114,17 +126,20 @@ def logout():
 @app.route('/agenda')
 def pagina_agenda():
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
-    return render_template('agenda.html', nome_sócio=session.get('nome_exibicao', 'Sócio'))
+    return render_template('agenda.html', nome_sÃ³cio=session.get('nome_exibicao', 'SÃ³cio'))
 
 @app.route('/admin/usuarios', methods=['GET', 'POST'])
 def admin_usuarios():
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
+    if not usuario_atual_e_admin():
+        flash("Acesso restrito ao administrador.")
+        return redirect(url_for('home'))
     
     if request.method == 'POST':
         novo_user = request.form.get('novo_usuario', '').lower().strip()
         senha_pura = request.form.get('nova_senha', '').strip()
         nome_exib = request.form.get('nome_exibicao', '')
-        senha_cripto = criptografar_sha256(senha_pura)
+        senha_cripto = gerar_hash_senha(senha_pura)
         
         try:
             conn = get_db_connection()
@@ -135,7 +150,7 @@ def admin_usuarios():
                 """, (novo_user, senha_cripto, nome_exib))
             conn.commit()
             conn.close()
-            registrar_log(f"Cadastrou um novo usuário no painel: {novo_user}")
+            registrar_log(f"Cadastrou um novo usuÃ¡rio no painel: {novo_user}")
         except Exception as e:
             print(f"Erro cadastro: {e}")
             
@@ -149,21 +164,27 @@ def admin_usuarios():
 @app.route('/admin/excluir_usuario/<int:usuario_id>', methods=['POST'])
 def excluir_usuario(usuario_id):
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
+    if not usuario_atual_e_admin():
+        flash("Acesso restrito ao administrador.")
+        return redirect(url_for('home'))
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("DELETE FROM usuarios WHERE id = %s", (usuario_id,))
         conn.commit()
         conn.close()
-        registrar_log(f"Removeu o usuário ID: {usuario_id} do sistema")
-        flash("Sócio removido com sucesso!")
+        registrar_log(f"Removeu o usuÃ¡rio ID: {usuario_id} do sistema")
+        flash("SÃ³cio removido com sucesso!")
     except Exception as e:
-        print(f"Erro ao deletar usuário: {e}")
+        print(f"Erro ao deletar usuÃ¡rio: {e}")
     return redirect(url_for('admin_usuarios'))
 
 @app.route('/admin/logs')
 def admin_logs():
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
+    if not usuario_atual_e_admin():
+        flash("Acesso restrito ao administrador.")
+        return redirect(url_for('home'))
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
@@ -176,7 +197,7 @@ def admin_logs():
 
 @app.route('/listar')
 def listar_arquivos():
-    if 'usuario_logado' not in session: return jsonify({'erro': 'Não autorizado'}), 401
+    if 'usuario_logado' not in session: return jsonify({'erro': 'NÃ£o autorizado'}), 401
     bloco = request.args.get('bloco')
     pasta_pai_id = request.args.get('pasta_pai_id')
     
@@ -209,14 +230,14 @@ def listar_arquivos():
         return jsonify({'itens': []})
     
     finally:
-        if conn: conn.close() # Garantia absoluta de que a conexão fechará
+        if conn: conn.close() # Garantia absoluta de que a conexÃ£o fecharÃ¡
         
 @app.route('/obter-pai-id')
 def obter_pai_id():
     if 'usuario_logado' not in session: return jsonify({'pasta_pai_id': None}), 401
     bloco = request.args.get('bloco')
     caminho = request.args.get('caminho', '')
-    partes = caminho.split(' ➔ ')
+    partes = caminho.split(' âž” ')
     if len(partes) <= 1: return jsonify({'pasta_pai_id': None})
     ultima_pasta_nome = partes[-1]
     
@@ -255,7 +276,7 @@ def criar_pasta():
     except:
         return jsonify({'status': 'erro'})
 
-# 🚀 1. INSTALAÇÃO DO MOTOR FATIADOR COMPATÍVEL COM ALTA VELOCIDADE (Mini-fatias)
+# ðŸš€ 1. INSTALAÃ‡ÃƒO DO MOTOR FATIADOR COMPATÃVEL COM ALTA VELOCIDADE (Mini-fatias)
 @app.route('/upload-avancado', methods=['POST'])
 def upload_avancado():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
@@ -296,10 +317,10 @@ def upload_avancado():
     finally:
         if conn: conn.close()
             
-# 🟢 2. REMOÇÃO DE DUPLICIDADE: UNIFICAÇÃO DA ROTA INTELIGENTE DE VISUALIZAÇÃO E DOWNLOAD
+# ðŸŸ¢ 2. REMOÃ‡ÃƒO DE DUPLICIDADE: UNIFICAÃ‡ÃƒO DA ROTA INTELIGENTE DE VISUALIZAÃ‡ÃƒO E DOWNLOAD
 @app.route('/baixar_recurso/<int:arquivo_id>')
 def baixar_recurso_corporativo(arquivo_id):
-    if 'usuario_logado' not in session: return "Não autorizado", 401
+    if 'usuario_logado' not in session: return "NÃ£o autorizado", 401
     force_download = request.args.get('download', 'false') == 'true'
     try:
         conn = get_db_connection()
@@ -314,27 +335,25 @@ def baixar_recurso_corporativo(arquivo_id):
             
             if os.path.exists(arquivo_path):
                 registrar_log(f"Acessou o arquivo: {dados['nome_original']} (Download={force_download})")
-                # 🟢 CORREÇÃO CIRÚRGICA: caminho_absoluto com "o" no final
+                # ðŸŸ¢ CORREÃ‡ÃƒO CIRÃšRGICA: caminho_absoluto com "o" no final
                 return send_file(arquivo_path, download_name=dados['nome_original'], as_attachment=force_download)
             
     except Exception as e:
         print(f"ERRO DE FLUXO NO DOWNLOAD: {e}")
-    return "Este arquivo físico antigo foi removido pelo deploy temporário do servidor da Render. Por favor, exclua-o na lixeira e faça o upload novamente para registrar o link persistente rápido.", 404
+    return "Este arquivo fÃ­sico antigo foi removido pelo deploy temporÃ¡rio do servidor da Render. Por favor, exclua-o na lixeira e faÃ§a o upload novamente para registrar o link persistente rÃ¡pido.", 404
 
-# 🔒 3. ROTA DE SEGURANÇA PARA ALTERAÇÃO DE NOMES
+# ðŸ”’ 3. ROTA DE SEGURANÃ‡A PARA ALTERAÃ‡ÃƒO DE NOMES
 @app.route('/renomear', methods=['POST'])
 def renomear_item():
-    if 'usuario_logado' not in session: return jsonify({'status': 'erro', 'mensagem': 'Não autorizado'}), 401
+    if 'usuario_logado' not in session: return jsonify({'status': 'erro', 'mensagem': 'NÃ£o autorizado'}), 401
     
     id_item = request.form.get('id')
     novo_nome = request.form.get('novo_nome', '').strip()
     senha = request.form.get('senha', '').strip()
     
     if not id_item or not novo_nome or not senha:
-        return jsonify({'status': 'erro', 'mensagem': 'Preencha todos os campos obrigatórios!'}), 400
+        return jsonify({'status': 'erro', 'mensagem': 'Preencha todos os campos obrigatÃ³rios!'}), 400
         
-    senha_hash = criptografar_sha256(senha)
-    
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
@@ -342,16 +361,16 @@ def renomear_item():
             dados_u = cur.fetchone()
             user_senha = str(dados_u['senha']) if dados_u else ""
             
-            if user_senha != senha_hash:
+            if not senha_confere(user_senha, senha):
                 conn.close()
-                return jsonify({'status': 'erro', 'mensagem': 'Senha de validação incorreta!'}), 401
+                return jsonify({'status': 'erro', 'mensagem': 'Senha de validaÃ§Ã£o incorreta!'}), 401
             
             cur.execute("SELECT nome_original, tipo FROM arquivos_painel WHERE id = %s AND deletado = 0", (id_item,))
             item_antigo = cur.fetchone()
             
             if not item_antigo:
                 conn.close()
-                return jsonify({'status': 'erro', 'mensagem': 'Item não localizado no servidor!'}), 404
+                return jsonify({'status': 'erro', 'mensagem': 'Item nÃ£o localizado no servidor!'}), 404
                 
             cur.execute("UPDATE arquivos_painel SET nome_original = %s WHERE id = %s", (novo_nome, id_item))
             
@@ -377,15 +396,15 @@ def excluir_arquivo():
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
-            # 1. Validação rápida da senha
+            # 1. ValidaÃ§Ã£o rÃ¡pida da senha
             cur.execute("SELECT senha FROM usuarios WHERE usuario = %s", (session.get('usuario_logado'),))
             dados_u = cur.fetchone()
             user_senha = str(dados_u['senha']) if dados_u else ""
             
-            if user_senha == criptografar_sha256(senha):
+            if senha_confere(user_senha, senha):
                 lista_ids = [int(x.strip()) for x in str(ids_enviados).split(',') if x.strip().isdigit()]
                 
-                # 2. Exclusão direta
+                # 2. ExclusÃ£o direta
                 format_strings = ','.join(['%s'] * len(lista_ids))
                 cur.execute(f"""
                     UPDATE arquivos_painel 
@@ -397,10 +416,10 @@ def excluir_arquivo():
         
         return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
     except Exception as e:
-        print(f"ERRO NA EXCLUSÃO: {e}")
+        print(f"ERRO NA EXCLUSÃƒO: {e}")
         return jsonify({'status': 'erro', 'mensagem': 'Erro interno'}), 500
     finally:
-        if conn: conn.close() # Garantia que a conexão sempre fecha
+        if conn: conn.close() # Garantia que a conexÃ£o sempre fecha
         
 @app.route('/salvar-site', methods=['POST'])
 def salvar_site():
@@ -415,7 +434,7 @@ def salvar_site():
     else:
         bloco_final = str(bloco).strip()
 
-    # --- ROBÔ DE CAPTURA AUTOMÁTICA DE LOGO (FAVICON) ---
+    # --- ROBÃ” DE CAPTURA AUTOMÃTICA DE LOGO (FAVICON) ---
     nome_limpo = "".join(x for x in nome if x.isalnum())
     nome_arquivo_imagem = f"{nome_limpo}.jpeg"
     caminho_salvar_imagem = os.path.join(app.root_path, 'static', 'image', nome_arquivo_imagem)
@@ -431,7 +450,7 @@ def salvar_site():
                 url_icon = urljoin(url, url_icon)
             urllib.request.urlretrieve(url_icon, caminho_salvar_imagem)
     except Exception as e:
-        print(f"Robô não conseguiu extrair a logo do site: {e}")
+        print(f"RobÃ´ nÃ£o conseguiu extrair a logo do site: {e}")
 
     try:
         conn = get_db_connection()
@@ -479,9 +498,10 @@ def api_listar_eventos():
 
 @app.route('/adicionar-evento', methods=['POST'])
 def calendar_adicionar():
+    if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     titulo, data_ini = request.form.get('titulo'), request.form.get('dataReuniaoInput')
     data_fim = request.form.get('data_fim') or data_ini
-    if not data_ini: return {"status": "erro", "mensagem": "Data não enviada!"}, 400
+    if not data_ini: return {"status": "erro", "mensagem": "Data nÃ£o enviada!"}, 400
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
@@ -508,13 +528,13 @@ def excluir_evento():
             dados_u = cur.fetchone()
             user_senha = str(dados_u['senha']) if dados_u else ""
             
-            if user_senha == criptografar_sha256(senha):
+            if senha_confere(user_senha, senha):
                 if evento_id and evento_id != "" and evento_id != "undefined" and evento_id != "null":
                     cur.execute("DELETE FROM agenda_eventos WHERE id = %s", (int(evento_id),))
                     registrar_log(f"Apagou o compromisso da agenda ID: {evento_id}")
                 elif titulo:
                     cur.execute("DELETE FROM agenda_eventos WHERE titulo LIKE %s", (titulo,))
-                    registrar_log(f"Apagou o compromisso da agenda por título: {titulo}")
+                    registrar_log(f"Apagou o compromisso da agenda por tÃ­tulo: {titulo}")
         conn.commit()
         conn.close()
         return jsonify({'status': 'sucesso'})
@@ -542,3 +562,5 @@ def manifest(): return send_from_directory('static', 'manifest.json')
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
