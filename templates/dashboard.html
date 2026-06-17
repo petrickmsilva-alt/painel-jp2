@@ -303,6 +303,10 @@
       box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
     }
 
+    .site-hub-copy {
+      min-width: 0;
+    }
+
     .site-hub-intro strong {
       color: var(--jp2-ink);
       display: block;
@@ -334,6 +338,36 @@
     }
 
     .site-hub-metric i {
+      color: var(--jp2-blue);
+    }
+
+    .site-hub-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      grid-column: 1 / -1;
+    }
+
+    .site-filter-btn {
+      align-items: center;
+      background: #ffffff;
+      border: 1px solid #d9e2ef;
+      border-radius: 999px;
+      color: #344054;
+      cursor: pointer;
+      display: inline-flex;
+      font-size: 12px;
+      font-weight: 850;
+      gap: 6px;
+      min-height: 34px;
+      padding: 7px 12px;
+      transition: all .18s ease;
+    }
+
+    .site-filter-btn:hover,
+    .site-filter-btn.active {
+      background: #eaf2ff;
+      border-color: #b7cdf8;
       color: var(--jp2-blue);
     }
 
@@ -426,6 +460,21 @@
       font-weight: 850;
       gap: 5px;
       padding: 5px 8px;
+    }
+
+    .site-category-pill {
+      align-items: center;
+      background: #f8fafc;
+      border: 1px solid #e5eaf2;
+      border-radius: 999px;
+      color: #475467;
+      display: inline-flex;
+      font-size: 11px;
+      font-weight: 850;
+      gap: 5px;
+      margin-bottom: 7px;
+      padding: 5px 8px;
+      width: fit-content;
     }
 
     .explorer-card:hover {
@@ -807,6 +856,9 @@
       .workspace-panel-header { align-items: flex-start; flex-direction: column; }
       .toolbar-actions { width: 100%; }
       .toolbar-actions .form-select { margin-left: 0 !important; }
+      .site-hub-intro { align-items: flex-start; flex-direction: column; }
+      .site-hub-metric { white-space: normal; }
+      .site-filter-btn { flex: 1 1 auto; justify-content: center; }
     }
   </style>
 </head>
@@ -1105,6 +1157,7 @@
     }
     let estadoDoPainel = { bloco: 'instituto', categoria: 'raiz', pasta_pai_id: null, nivel_atual: 'raiz_bloco', string_caminho: 'INSTITUTO' };
     let instanciaCalendario = null;
+    let filtroSiteAtual = 'todos';
 
     const subpastasFixas = {
         sites_jp2: ['IBDTEC', 'Expo Feiras CO', 'Expo Centro Oeste', 'Expo Fashion Brasil', 'Capital Mix', 'Sabor Fest', 'JP2 Ticket', 'Brobond Wear', 'Atacado Brobond', 'Nutrallis']
@@ -1122,6 +1175,27 @@
         'Atacado Brobond': 'Canal comercial B2B e vendas no atacado.',
         'Nutrallis': 'Bem-estar, saude e linhas de produtos naturais.'
     };
+
+    const categoriasSitesJP2 = {
+        'IBDTEC': { chave: 'institucional', rotulo: 'Institucional', icone: 'bi-building-check' },
+        'Expo Feiras CO': { chave: 'eventos', rotulo: 'Eventos', icone: 'bi-calendar-event' },
+        'Expo Centro Oeste': { chave: 'eventos', rotulo: 'Eventos', icone: 'bi-calendar-event' },
+        'Expo Fashion Brasil': { chave: 'eventos', rotulo: 'Eventos', icone: 'bi-calendar-event' },
+        'Capital Mix': { chave: 'eventos', rotulo: 'Eventos', icone: 'bi-calendar-event' },
+        'Sabor Fest': { chave: 'eventos', rotulo: 'Eventos', icone: 'bi-calendar-event' },
+        'Brobond Wear': { chave: 'marcas', rotulo: 'Marcas', icone: 'bi-bag-check' },
+        'Atacado Brobond': { chave: 'marcas', rotulo: 'Marcas', icone: 'bi-bag-check' },
+        'Nutrallis': { chave: 'marcas', rotulo: 'Marcas', icone: 'bi-bag-check' },
+        'JP2 Ticket': { chave: 'operacao', rotulo: 'Operacao', icone: 'bi-gear-wide-connected' }
+    };
+
+    const filtrosSitesJP2 = [
+        { chave: 'todos', rotulo: 'Todos', icone: 'bi-grid' },
+        { chave: 'institucional', rotulo: 'Institucional', icone: 'bi-building-check' },
+        { chave: 'eventos', rotulo: 'Eventos', icone: 'bi-calendar-event' },
+        { chave: 'marcas', rotulo: 'Marcas', icone: 'bi-bag-check' },
+        { chave: 'operacao', rotulo: 'Operacao', icone: 'bi-gear-wide-connected' }
+    ];
 
     const linksDirecionamento = {
         'Expo Feiras CO': 'https://expofeirasco.com.br',
@@ -1172,7 +1246,19 @@
         estadoDoPainel.pasta_pai_id = null;
         estadoDoPainel.nivel_atual = 'raiz_bloco';
         estadoDoPainel.string_caminho = bloco.toUpperCase().replace('_', ' ');
+        if (bloco === 'sites_jp2') filtroSiteAtual = 'todos';
         sincronizarGrade();
+    }
+
+    function aplicarFiltroSitesJP2(categoria) {
+        filtroSiteAtual = categoria || 'todos';
+        document.querySelectorAll('.site-filter-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.categoria === filtroSiteAtual);
+        });
+        document.querySelectorAll('.explorer-site-card').forEach(card => {
+            const categoriaCard = card.dataset.categoria || 'operacao';
+            card.style.display = (filtroSiteAtual === 'todos' || categoriaCard === filtroSiteAtual) ? '' : 'none';
+        });
     }
 
 function sincronizarGrade() {
@@ -1213,7 +1299,7 @@ function sincronizarGrade() {
             let intro = document.createElement("div");
             intro.className = "site-hub-intro";
             intro.innerHTML = `
-                <div>
+                <div class="site-hub-copy">
                     <strong>Ecossistema digital JP2 Business</strong>
                     <span>Acesso rapido aos portais, marcas, eventos e operacoes conectadas ao grupo.</span>
                 </div>
@@ -1222,6 +1308,15 @@ function sincronizarGrade() {
                 </div>
             `;
             gridContainer.appendChild(intro);
+
+            let filtros = document.createElement("div");
+            filtros.className = "site-hub-filters";
+            filtros.innerHTML = filtrosSitesJP2.map(filtro => `
+                <button type="button" class="site-filter-btn ${filtro.chave === filtroSiteAtual ? 'active' : ''}" data-categoria="${filtro.chave}" onclick="aplicarFiltroSitesJP2('${filtro.chave}')">
+                    <i class="bi ${filtro.icone}"></i> ${filtro.rotulo}
+                </button>
+            `).join('');
+            gridContainer.appendChild(filtros);
             
             sortedFixos.forEach(cat => {
                 let card = document.createElement("div");
@@ -1229,6 +1324,8 @@ function sincronizarGrade() {
                 let urlDestino = linksDirecionamento[cat] || '#';
                 let nomeArquivo = mapeamentoLogos[cat] || 'default.png';
                 let descricaoSite = descricoesSitesJP2[cat] || 'Canal digital conectado ao ecossistema JP2 Business.';
+                let categoriaSite = categoriasSitesJP2[cat] || { chave: 'operacao', rotulo: 'Operacao', icone: 'bi-gear-wide-connected' };
+                card.dataset.categoria = categoriaSite.chave;
                 
                 card.onclick = function() { window.open(urlDestino, '_blank'); };
 // Removi o div item-author e adicionei a classe site-title-large
@@ -1243,6 +1340,7 @@ card.innerHTML = `
             <img src="/static/image/${nomeArquivo}">
         </div>
         <div>
+            <div class="site-category-pill"><i class="bi ${categoriaSite.icone}"></i> ${categoriaSite.rotulo}</div>
             <div class="item-label site-title-large">${cat}</div>
             <div class="site-card-desc">${descricaoSite}</div>
         </div>
@@ -1266,6 +1364,7 @@ itensRenderizados.push(cat.toLowerCase().trim());
                         
                         let urlRealDoSite = item.caminho || '#';
                         card.onclick = function() { window.open(urlRealDoSite, '_blank'); };
+                        card.dataset.categoria = 'operacao';
                         
                         let imagemDoCard = item.imagem_bg || '/static/image/ibd.jpeg';
                         card.innerHTML = `
@@ -1279,6 +1378,7 @@ itensRenderizados.push(cat.toLowerCase().trim());
             <img src="${imagemDoCard}">
         </div>
         <div>
+            <div class="site-category-pill"><i class="bi bi-gear-wide-connected"></i> Operacao</div>
             <div class="item-label site-title-large" title="${item.nome || ''}">${item.nome || ''}</div>
             <div class="site-card-desc">Site adicionado ao ecossistema digital do painel.</div>
         </div>
@@ -1292,6 +1392,7 @@ gridContainer.appendChild(card);
                     }
                 });
             }
+            aplicarFiltroSitesJP2(filtroSiteAtual);
             return;
         }
 
