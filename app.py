@@ -7,7 +7,7 @@ import urllib.request
 import csv
 import io
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
+from urllib.parse import quote_plus, urljoin, urlparse
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory, send_file
 from database import get_db_connection
@@ -118,6 +118,124 @@ def garantir_colunas_agenda():
                     cur.execute(f"ALTER TABLE agenda_eventos ADD COLUMN {coluna} {definicao}")
     finally:
         conn.close()
+
+def nome_base_imagem_site(nome):
+    return "".join(x for x in str(nome or "") if x.isalnum())
+
+def imagem_site_existente(nome):
+    nome_limpo = nome_base_imagem_site(nome)
+    if not nome_limpo:
+        return "/static/image/ibd.jpeg"
+
+    pasta_imagens = os.path.join(app.root_path, 'static', 'image')
+    for extensao in ["png", "jpg", "jpeg", "webp", "svg", "ico"]:
+        caminho = os.path.join(pasta_imagens, f"{nome_limpo}.{extensao}")
+        if os.path.exists(caminho):
+            return f"/static/image/{nome_limpo}.{extensao}"
+
+    return f"/static/image/{nome_limpo}.jpeg"
+
+def caminho_static_existe(caminho_publico):
+    if not caminho_publico or not caminho_publico.startswith("/static/"):
+        return False
+    caminho_relativo = caminho_publico.lstrip("/").replace("/", os.sep)
+    return os.path.exists(os.path.join(app.root_path, caminho_relativo))
+
+def extensao_por_tipo_conteudo(content_type, url_imagem):
+    content_type = str(content_type or "").split(";")[0].strip().lower()
+    mapa = {
+        "image/png": "png",
+        "image/jpeg": "jpg",
+        "image/jpg": "jpg",
+        "image/webp": "webp",
+        "image/svg+xml": "svg",
+        "image/x-icon": "ico",
+        "image/vnd.microsoft.icon": "ico",
+    }
+    if content_type in mapa:
+        return mapa[content_type]
+
+    caminho = urlparse(url_imagem).path.lower()
+    for extensao in ["png", "jpg", "jpeg", "webp", "svg", "ico"]:
+        if caminho.endswith(f".{extensao}"):
+            return "jpg" if extensao == "jpeg" else extensao
+    return None
+
+def capturar_logo_site(nome, url):
+    nome_limpo = nome_base_imagem_site(nome)
+    if not nome_limpo:
+        return None
+
+    pasta_imagens = os.path.join(app.root_path, 'static', 'image')
+    os.makedirs(pasta_imagens, exist_ok=True)
+    candidatos = []
+
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        html = urllib.request.urlopen(req, timeout=6).read()
+        soup = BeautifulSoup(html, 'html.parser')
+
+        for meta_seletor in [
+            {"property": "og:image"},
+            {"name": "twitter:image"},
+            {"property": "og:logo"},
+        ]:
+            meta = soup.find("meta", attrs=meta_seletor)
+            if meta and meta.get("content"):
+                candidatos.append((1000, urljoin(url, meta.get("content"))))
+
+        for link in soup.find_all("link"):
+            rel = " ".join(link.get("rel", [])) if isinstance(link.get("rel"), list) else str(link.get("rel", ""))
+            href = link.get("href")
+            if not href:
+                continue
+            rel_lower = rel.lower()
+            if "icon" not in rel_lower and "apple-touch-icon" not in rel_lower:
+                continue
+
+            prioridade = 500
+            tamanhos = re.findall(r"(\d+)x(\d+)", str(link.get("sizes", "")))
+            if tamanhos:
+                prioridade += max(int(largura) for largura, _ in tamanhos)
+            if "apple-touch-icon" in rel_lower:
+                prioridade += 80
+            candidatos.append((prioridade, urljoin(url, href)))
+    except Exception as e:
+        print(f"Nao foi possivel ler a pagina para capturar logo: {e}")
+
+    candidatos.append((100, urljoin(url, "/favicon.ico")))
+    candidatos.append((50, f"https://www.google.com/s2/favicons?sz=128&domain_url={quote_plus(url)}"))
+
+    vistos = set()
+    for _, url_imagem in sorted(candidatos, key=lambda item: item[0], reverse=True):
+        if not url_imagem or url_imagem in vistos:
+            continue
+        vistos.add(url_imagem)
+        try:
+            req_img = urllib.request.Request(
+                url_imagem,
+                headers={
+                    'User-Agent': 'Mozilla/5.0',
+                    'Accept': 'image/avif,image/webp,image/png,image/svg+xml,image/*,*/*;q=0.8'
+                }
+            )
+            with urllib.request.urlopen(req_img, timeout=6) as resposta:
+                content_type = resposta.headers.get("Content-Type", "")
+                extensao = extensao_por_tipo_conteudo(content_type, url_imagem)
+                if not extensao:
+                    continue
+                conteudo = resposta.read(2 * 1024 * 1024)
+                if len(conteudo) < 80:
+                    continue
+
+            caminho_salvar = os.path.join(pasta_imagens, f"{nome_limpo}.{extensao}")
+            with open(caminho_salvar, "wb") as arquivo_logo:
+                arquivo_logo.write(conteudo)
+            return f"/static/image/{nome_limpo}.{extensao}"
+        except Exception as e:
+            print(f"Falha ao baixar logo {url_imagem}: {e}")
+
+    return None
 
 @app.context_processor
 def contexto_global():
@@ -423,10 +541,15 @@ def listar_arquivos():
         
         itens_formatados = []
         for l in linhas:
-            nome_limpo = "".join(x for x in l.get('nome_original', '') if x.isalnum())
+            imagem_bg = imagem_site_existente(l.get('nome_original', ''))
+            if l.get('tipo') == 'link' and not caminho_static_existe(imagem_bg) and l.get('caminho_sistema'):
+                imagem_recapturada = capturar_logo_site(l.get('nome_original', ''), l.get('caminho_sistema'))
+                if imagem_recapturada:
+                    imagem_bg = imagem_recapturada
+
             itens_formatados.append({
                 'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
-                'caminho': l['caminho_sistema'], 'imagem_bg': f"/static/image/{nome_limpo}.jpeg",
+                'caminho': l['caminho_sistema'], 'imagem_bg': imagem_bg,
                 'autor': l['criado_por'] or 'Sistema', 'bloco': l['bloco'], 
                 'categoria': l['categoria'], 'pasta_pai_id': l['pasta_pai_id']
             })
@@ -673,23 +796,11 @@ def salvar_site():
     else:
         bloco_final = str(bloco).strip()
 
-    # --- ROBÃ” DE CAPTURA AUTOMÃTICA DE LOGO (FAVICON) ---
-    nome_limpo = "".join(x for x in nome if x.isalnum())
-    nome_arquivo_imagem = f"{nome_limpo}.jpeg"
-    caminho_salvar_imagem = os.path.join(app.root_path, 'static', 'image', nome_arquivo_imagem)
-    
-    try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        html = urllib.request.urlopen(req, timeout=5).read()
-        soup = BeautifulSoup(html, 'html.parser')
-        icon_link = soup.find('link', rel=re.compile(r'^(shortcut )?icon$', re.I))
-        if icon_link and icon_link.get('href'):
-            url_icon = icon_link.get('href')
-            if not url_icon.startswith('http'):
-                url_icon = urljoin(url, url_icon)
-            urllib.request.urlretrieve(url_icon, caminho_salvar_imagem)
-    except Exception as e:
-        print(f"RobÃ´ nÃ£o conseguiu extrair a logo do site: {e}")
+    logo_capturada = capturar_logo_site(nome, url)
+    if logo_capturada:
+        print(f"Logo capturada para {nome}: {logo_capturada}", flush=True)
+    else:
+        print(f"Nao foi possivel capturar logo para {nome}; card usara fallback.", flush=True)
 
     try:
         conn = get_db_connection()
