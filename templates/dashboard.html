@@ -1144,6 +1144,44 @@
         window.jp2ToastTimer = setTimeout(() => toast.classList.remove('show'), 3600);
     }
 
+    function solicitarSenhaExclusao(titulo, mensagem, textoBotao = 'Excluir') {
+        return new Promise(resolve => {
+            const overlay = document.createElement('div');
+            overlay.className = 'jp2-action-overlay';
+            overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.58); z-index:9999999; display:flex; align-items:center; justify-content:center; overflow:hidden;';
+            overlay.innerHTML = `
+                <div style="background:white; padding:30px; border-radius:12px; width:420px; max-width:90%; box-shadow:0 18px 40px rgba(15,23,42,0.22); font-family:'Segoe UI', sans-serif;">
+                    <h4 style="margin-bottom:16px; color:#dc2626; font-weight:700; border-bottom:1px solid #e2e8f0; padding-bottom:12px;">
+                        <i class="bi bi-trash3"></i> ${escaparHtml(titulo)}
+                    </h4>
+                    <p style="margin-bottom:20px; color:#475569; line-height:1.5;">${escaparHtml(mensagem)}</p>
+                    <div style="margin-bottom:20px;">
+                        <label style="font-size:12px; font-weight:700; color:#64748b; margin-bottom:6px; display:block;">CONFIRME A SENHA</label>
+                        <input type="password" class="jp2-modal-password" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box;">
+                    </div>
+                    <div style="display:flex; gap:10px; justify-content:flex-end;">
+                        <button type="button" class="jp2-cancel" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:8px; cursor:pointer;">Cancelar</button>
+                        <button type="button" class="jp2-confirm" style="padding:10px 20px; background:#dc2626; color:white; border:none; border-radius:8px; cursor:pointer;">${escaparHtml(textoBotao)}</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            const input = overlay.querySelector('.jp2-modal-password');
+            const fechar = valor => {
+                overlay.remove();
+                resolve(valor);
+            };
+            overlay.querySelector('.jp2-cancel').onclick = () => fechar(null);
+            overlay.querySelector('.jp2-confirm').onclick = () => fechar(input.value.trim());
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') fechar(input.value.trim());
+                if (e.key === 'Escape') fechar(null);
+            });
+            setTimeout(() => input.focus(), 100);
+        });
+    }
+
     function abrirModalRenomear(event, id, nomeAtual) {
         if (event) {
             event.preventDefault();
@@ -1178,7 +1216,7 @@
                 bootstrap.Modal.getInstance(document.getElementById('modalRenomearItem')).hide();
                 mostrarToast('Nome atualizado', 'O item foi renomeado com sucesso.');
                 invalidarCacheListagem();
-                sincronizarGrade();
+                renomearItemNaGrade(id, novoNome);
             } else {
                 mostrarToast('Nao foi possivel renomear', d.mensagem || 'Verifique a senha e tente novamente.', 'erro');
             }
@@ -1394,6 +1432,27 @@
         gridContainer.appendChild(card);
     }
 
+    function mostrarGradeVaziaSeNecessario() {
+        if (estadoDoPainel.bloco === 'sites_jp2') return;
+        const gridContainer = document.getElementById("wrapper-explorer-grid");
+        if (!gridContainer || gridContainer.querySelector('.explorer-card')) return;
+        gridContainer.innerHTML = '<div data-empty-grid="true" class="text-center w-100 py-4 text-muted"><i class="bi bi-folder-x fs-3"></i><br>Nenhum item ou subpasta aqui.</div>';
+    }
+
+    function removerItemDaGrade(id) {
+        const card = document.querySelector(`.explorer-card[data-item-id="${id}"]`);
+        if (card) card.remove();
+        mostrarGradeVaziaSeNecessario();
+    }
+
+    function renomearItemNaGrade(id, novoNome) {
+        const card = document.querySelector(`.explorer-card[data-item-id="${id}"]`);
+        if (!card) return;
+        const tipo = card.querySelector('.bi-folder-fill') ? 'pasta' : 'arquivo';
+        const novoCard = criarCardExplorer({ id, nome: novoNome, tipo });
+        card.replaceWith(novoCard);
+    }
+
 function sincronizarGrade() {
     let gridContainer = document.getElementById("wrapper-explorer-grid");
     let caminhoEl = document.getElementById('txtCaminhoWindows');
@@ -1494,6 +1553,7 @@ itensRenderizados.push(cat.toLowerCase().trim());
                     if (item.tipo === 'link' && !itensRenderizados.includes(nomeVerificacao)) {
                         let card = document.createElement("div");
                         card.className = "explorer-card explorer-site-card"; // <--- CLASSE APLICADA
+                        if (item.id) card.dataset.itemId = item.id;
                         
                         let urlRealDoSite = item.caminho || '#';
                         card.onclick = function() { window.open(urlRealDoSite, '_blank'); };
@@ -1574,38 +1634,38 @@ gridContainer.appendChild(card);
         }
     }
 
-    function dispararExclusaoEmLote() {
+    async function dispararExclusaoEmLote() {
         let selecionados = document.querySelectorAll('.chk-item-excluir:checked');
         if (selecionados.length === 0) return;
         
-        // Junta todos os IDs marcados separados por vÃ­rgula para enviar ao app.py
-        let ids = Array.from(selecionados).map(cb => cb.getAttribute('data-id')).join(',');
-        
-        let confirmacao = confirm(`Deseja realmente mover esses ${selecionados.length} itens para a lixeira?`);
-        if (confirmacao) {
-            let senha = prompt("Confirme sua senha de sÃ³cio para validar a operaÃ§Ã£o:");
-            if (!senha) return;
-            
-            let formData = new FormData();
-            formData.append('id', ids);
-            formData.append('senha', senha);
-            
-            fetch('/excluir', { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'sucesso') {
-                    invalidarCacheListagem();
-                    mostrarToast("Itens excluidos", "Os itens selecionados foram enviados para a lixeira.");
-                    sincronizarGrade();
-                } else {
-                    mostrarToast("Nao foi possivel excluir", data.mensagem || "Verifique a senha e tente novamente.", "erro");
-                }
-            })
-            .catch(err => {
-                console.error("Erro na exclusÃ£o em lote:", err);
-                mostrarToast("Erro ao excluir", "Nao foi possivel processar a exclusao.", "erro");
-            });
-        }
+        let idsArray = Array.from(selecionados).map(cb => cb.getAttribute('data-id')).filter(Boolean);
+        let senha = await solicitarSenhaExclusao(
+            'Confirmar exclusao em lote',
+            `Deseja realmente mover ${selecionados.length} itens para a lixeira? Esta acao nao pode ser desfeita.`,
+            'Excluir itens'
+        );
+        if (!senha) return;
+
+        let formData = new FormData();
+        formData.append('id', idsArray.join(','));
+        formData.append('senha', senha);
+
+        fetch('/excluir', { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'sucesso') {
+                invalidarCacheListagem();
+                idsArray.forEach(id => removerItemDaGrade(id));
+                gerenciarBotaoLote();
+                mostrarToast("Itens excluidos", "Os itens selecionados foram enviados para a lixeira.");
+            } else {
+                mostrarToast("Nao foi possivel excluir", data.mensagem || "Verifique a senha e tente novamente.", "erro");
+            }
+        })
+        .catch(err => {
+            console.error("Erro na exclusao em lote:", err);
+            mostrarToast("Erro ao excluir", "Nao foi possivel processar a exclusao.", "erro");
+        });
     }    
     function entrarSubpastaReal(id, nomePasta) {
         estadoDoPainel.pasta_pai_id = id;
@@ -1761,52 +1821,34 @@ gridContainer.appendChild(card);
         if (modalEl) new bootstrap.Modal(modalEl).show();
     }
 
-    function abrirModalExcluirDireto(event, id) {
+    async function abrirModalExcluirDireto(event, id) {
         if(event) { event.preventDefault(); event.stopPropagation(); }
-        let overlay = document.createElement('div');
-        overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:9999999; display:flex; align-items:center; justify-content:center; overflow:hidden;';
-        overlay.innerHTML = `
-            <div style="background:white; padding:30px; border-radius:12px; width:400px; max-width: 90%; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
-                <h4 style="margin-bottom:20px; color:#dc2626; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
-                    <i class="bi bi-trash"></i> Confirmar exclusao
-                </h4>
-                <p style="margin-bottom:20px; color:#475569;">Deseja realmente excluir este item?<br>Esta acao nao pode ser desfeita.</p>
-                <div style="margin-bottom:20px;">
-                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">CONFIRME A SENHA</label>
-                    <input type="password" id="senha_exclusao_temp" style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
-                </div>
-                <div style="display:flex; gap:10px; justify-content:flex-end;">
-                    <button id="btn_cancelar_excluir" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; cursor:pointer;">Cancelar</button>
-                    <button id="btn_confirmar_excluir" style="padding:10px 20px; background:#dc2626; color:white; border:none; border-radius:6px; cursor:pointer;">Excluir</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(overlay);
+        let senha = await solicitarSenhaExclusao(
+            'Confirmar exclusao',
+            'Deseja realmente excluir este item? Esta acao nao pode ser desfeita.'
+        );
+        if (!senha) return;
 
-        overlay.querySelector('#btn_cancelar_excluir').onclick = () => overlay.remove();
-        overlay.querySelector('#btn_confirmar_excluir').onclick = function() {
-            let senha = overlay.querySelector('#senha_exclusao_temp').value;
-            let formData = new FormData();
-            formData.append('id', id);
-            formData.append('senha', senha);
+        let formData = new FormData();
+        formData.append('id', id);
+        formData.append('senha', senha);
 
-            fetch('/excluir', { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(data => {
-                if(data.status === 'sucesso') {
-                    overlay.remove();
-                    mostrarToast("Item excluido", "O item foi enviado para a lixeira.");
-                    invalidarCacheListagem();
-                    sincronizarGrade();
-                } else {
-                    mostrarToast("Nao foi possivel excluir", data.mensagem || "Verifique a senha e tente novamente.", "erro");
-                }
-            })
-            .catch(err => {
-                console.error("Erro na exclusÃ£o:", err);
-                mostrarToast("Erro de conexao", "Nao foi possivel falar com o servidor.", "erro");
-            });
-        };
+        fetch('/excluir', { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'sucesso') {
+                mostrarToast("Item excluido", "O item foi enviado para a lixeira.");
+                invalidarCacheListagem();
+                removerItemDaGrade(id);
+                gerenciarBotaoLote();
+            } else {
+                mostrarToast("Nao foi possivel excluir", data.mensagem || "Verifique a senha e tente novamente.", "erro");
+            }
+        })
+        .catch(err => {
+            console.error("Erro na exclusao:", err);
+            mostrarToast("Erro de conexao", "Nao foi possivel falar com o servidor.", "erro");
+        });
     }
 
     function abrirModalUploadComContexto() {
