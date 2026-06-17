@@ -243,6 +243,43 @@
       margin-top: 20px;
     }
 
+    .skeleton-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+      gap: 20px;
+      width: 100%;
+    }
+
+    .skeleton-card {
+      min-height: 146px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #ffffff;
+      padding: 20px 12px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 13px;
+      box-shadow: 0 8px 22px rgba(15, 23, 42, .04);
+    }
+
+    .skeleton-pulse {
+      background: linear-gradient(90deg, #eef2f7 25%, #f8fafc 37%, #eef2f7 63%);
+      background-size: 400% 100%;
+      animation: skeletonPulse 1.15s ease-in-out infinite;
+      border-radius: 8px;
+    }
+
+    .skeleton-icon { width: 48px; height: 38px; }
+    .skeleton-line { width: 72%; height: 12px; }
+    .skeleton-line.short { width: 45%; }
+
+    @keyframes skeletonPulse {
+      0% { background-position: 100% 50%; }
+      100% { background-position: 0 50%; }
+    }
+
     /* PadrÃ£o MÃ©dio */
     .explorer-grid { grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); }
     
@@ -716,6 +753,67 @@
       border-color: var(--jp2-green) !important;
     }
 
+    .folder-search {
+      position: relative;
+      min-width: 210px;
+      max-width: 260px;
+      flex: 0 1 240px;
+    }
+
+    .folder-search i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #64748b;
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    .folder-search input {
+      min-height: 38px;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      padding: 8px 12px 8px 34px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--jp2-ink);
+      width: 100%;
+    }
+
+    .folder-search input:focus {
+      border-color: var(--jp2-blue);
+      box-shadow: 0 0 0 3px rgba(21, 94, 239, .12);
+      outline: none;
+    }
+
+    .status-performance-box {
+      border-top: 1px solid rgba(148, 163, 184, 0.35);
+      margin-top: 8px;
+      padding-top: 8px;
+    }
+
+    .status-route-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.62rem;
+      color: #cbd5e1;
+      margin-top: 4px;
+    }
+
+    .status-route-row span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .status-route-row strong {
+      color: #67e8f9;
+      white-space: nowrap;
+    }
+
     .explorer-grid {
       gap: 20px;
     }
@@ -888,6 +986,15 @@
                         <small style="font-size: 0.6rem;">PROXIMO EVENTO:</small>
                         <span id="dash-agenda" style="font-size: 0.6rem; font-weight: bold; color: #0dcaf0;">...</span>
                     </div>
+                    <div class="status-performance-box">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small style="font-size: 0.6rem;">PERFORMANCE:</small>
+                            <button type="button" class="btn btn-sm btn-outline-info py-0 px-1" style="font-size: 0.58rem;" onclick="carregarPerformanceStatus()">Atualizar</button>
+                        </div>
+                        <div id="status-performance-list">
+                            <div class="status-route-row"><span>Aguardando medicoes</span><strong>-- ms</strong></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -992,6 +1099,10 @@
                         <button class="btn btn-sm btn-outline-danger" id="btn-excluir-lote" onclick="dispararExclusaoEmLote()" style="display: none;">
                             <i class="bi bi-trash3-fill"></i> Excluir (<span id="contador-selecionados">0</span>)
                         </button>
+                        <div class="folder-search">
+                            <i class="bi bi-search"></i>
+                            <input type="search" id="inputBuscaPasta" placeholder="Buscar nesta pasta" oninput="filtrarItensDaGrade(this.value)">
+                        </div>
                         
                         <select id="selectView" class="form-select form-select-sm ms-auto" style="width: 158px;" onchange="alterarVisualizacao(this.value)">
                             <option value="pequeno">Icones Pequenos</option>
@@ -1142,6 +1253,31 @@
         toast.classList.add('show');
         clearTimeout(window.jp2ToastTimer);
         window.jp2ToastTimer = setTimeout(() => toast.classList.remove('show'), 3600);
+    }
+
+    function carregarPerformanceStatus() {
+        const destino = document.getElementById('status-performance-list');
+        if (!destino) return;
+        destino.innerHTML = '<div class="status-route-row"><span>Medindo rotas...</span><strong>...</strong></div>';
+
+        fetch('/api/performance-status')
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== 'sucesso' || !data.resumo || data.resumo.length === 0) {
+                destino.innerHTML = '<div class="status-route-row"><span>Sem amostras ainda</span><strong>-- ms</strong></div>';
+                return;
+            }
+
+            destino.innerHTML = data.resumo.slice(0, 4).map(item => `
+                <div class="status-route-row" title="${escaparHtml(item.rota)}">
+                    <span>${escaparHtml(item.rota)}</span>
+                    <strong>${item.media_ms} ms</strong>
+                </div>
+            `).join('');
+        })
+        .catch(() => {
+            destino.innerHTML = '<div class="status-route-row"><span>Status indisponivel</span><strong>erro</strong></div>';
+        });
     }
 
     function solicitarSenhaExclusao(titulo, mensagem, textoBotao = 'Excluir') {
@@ -1334,6 +1470,7 @@
         estadoDoPainel.nivel_atual = 'raiz_bloco';
         estadoDoPainel.string_caminho = bloco.toUpperCase().replace('_', ' ');
         if (bloco === 'sites_jp2') filtroSiteAtual = 'todos';
+        limparBuscaPasta();
         sincronizarGrade();
     }
 
@@ -1346,6 +1483,34 @@
             const categoriaCard = card.dataset.categoria || 'operacao';
             card.style.display = (filtroSiteAtual === 'todos' || categoriaCard === filtroSiteAtual) ? '' : 'none';
         });
+    }
+
+    function htmlSkeletonGrade(qtd = 8) {
+        return `
+            <div class="skeleton-grid">
+                ${Array.from({ length: qtd }).map(() => `
+                    <div class="skeleton-card">
+                        <div class="skeleton-pulse skeleton-icon"></div>
+                        <div class="skeleton-pulse skeleton-line"></div>
+                        <div class="skeleton-pulse skeleton-line short"></div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    function filtrarItensDaGrade(termo) {
+        const busca = String(termo || '').trim().toLowerCase();
+        document.querySelectorAll('#wrapper-explorer-grid .explorer-card').forEach(card => {
+            if (card.classList.contains('explorer-site-card')) return;
+            const nome = (card.querySelector('.item-label')?.textContent || '').toLowerCase();
+            card.style.display = (!busca || nome.includes(busca)) ? '' : 'none';
+        });
+    }
+
+    function limparBuscaPasta() {
+        const input = document.getElementById('inputBuscaPasta');
+        if (input) input.value = '';
     }
 
     function removerMensagemGradeVazia() {
@@ -1642,6 +1807,8 @@
             gridContainer.appendChild(criarCardExplorer(item));
         });
         preCarregarSubpastasVisiveis(data);
+        const inputBusca = document.getElementById('inputBuscaPasta');
+        if (inputBusca && inputBusca.value) filtrarItensDaGrade(inputBusca.value);
 
         let btnLote = document.getElementById('btn-excluir-lote');
         if(btnLote) btnLote.style.display = 'none';
@@ -1676,7 +1843,7 @@
         if (dadosEmCache) {
             renderizarDadosListagem(dadosEmCache);
         } else {
-            gridContainer.innerHTML = '<div class="text-center w-100 py-4"><div class="spinner-border text-primary"></div><br>Buscando na nuvem...</div>';
+            gridContainer.innerHTML = htmlSkeletonGrade(8);
         }
 
         let urlListar = `/listar?bloco=${estadoDoPainel.bloco}&categoria=${catBusca}&pasta_pai_id=${estadoDoPainel.pasta_pai_id || ''}&v=${versaoListagemPainel}`;
@@ -1769,6 +1936,7 @@
     function entrarSubpastaReal(id, nomePasta) {
         estadoDoPainel.pasta_pai_id = id;
         estadoDoPainel.nivel_atual = 'subpasta';
+        limparBuscaPasta();
         
         let partes = estadoDoPainel.string_caminho.split(' / ');
         if (partes[partes.length - 1] !== nomePasta) {
@@ -1781,6 +1949,7 @@
     function volverDiretorio() {
         let partes = estadoDoPainel.string_caminho.split(' / ');
         if (partes.length > 1) {
+            limparBuscaPasta();
             partes.pop();
             let novoCaminho = partes.join(' / ');
             estadoDoPainel.string_caminho = novoCaminho;
@@ -2209,6 +2378,7 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+        carregarPerformanceStatus();
         fetch('/api/resumo-dashboard')
         .then(res => res.json())
         .then(data => {
