@@ -1,5 +1,6 @@
 import os
 from io import BytesIO
+from urllib.parse import quote
 
 import boto3
 
@@ -54,3 +55,27 @@ def baixar_arquivo_r2(uri):
     r2_client().download_fileobj(bucket, chave, buffer)
     buffer.seek(0)
     return buffer
+
+
+def gerar_url_temporaria_r2(uri, nome_arquivo=None, force_download=False, expires_in=300):
+    prefix = "r2://"
+    if not uri.startswith(prefix):
+        raise ValueError("URI R2 invalida")
+
+    bucket_e_chave = uri[len(prefix):]
+    bucket, chave = bucket_e_chave.split("/", 1)
+    params = {
+        "Bucket": bucket,
+        "Key": chave,
+    }
+
+    if nome_arquivo:
+        modo = "attachment" if force_download else "inline"
+        nome_codificado = quote(nome_arquivo)
+        params["ResponseContentDisposition"] = f"{modo}; filename*=UTF-8''{nome_codificado}"
+
+    return r2_client().generate_presigned_url(
+        "get_object",
+        Params=params,
+        ExpiresIn=expires_in,
+    )
