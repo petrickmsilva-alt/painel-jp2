@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <title>Agenda Telefonica | JP2 Business</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --jp2-bg: #f4f7fb;
+            --jp2-ink: #101828;
+            --jp2-muted: #667085;
+            --jp2-line: #d9e2ef;
+            --jp2-blue: #155eef;
+            --jp2-green: #078c55;
+        }
+
+        body {
+            background: var(--jp2-bg);
+            color: var(--jp2-ink);
+            font-family: "Segoe UI", system-ui, sans-serif;
+            min-height: 100vh;
+        }
+
+        .page-shell {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 28px 18px 46px;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .page-kicker {
+            color: var(--jp2-muted);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .page-title {
+            font-size: 1.55rem;
+            font-weight: 850;
+            margin: 3px 0 0;
+        }
+
+        .panel {
+            background: #fff;
+            border: 1px solid var(--jp2-line);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, .06);
+        }
+
+        .toolbar-panel {
+            padding: 16px;
+            margin-bottom: 18px;
+        }
+
+        .form-control, .form-select {
+            border-color: #d5deeb;
+            min-height: 42px;
+        }
+
+        .btn {
+            border-radius: 7px;
+            font-weight: 700;
+        }
+
+        .contacts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .contact-card {
+            padding: 18px;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .contact-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .contact-name {
+            font-size: 18px;
+            font-weight: 850;
+            line-height: 1.15;
+            margin: 0;
+        }
+
+        .contact-meta {
+            color: var(--jp2-muted);
+            font-size: 13px;
+            margin-top: 3px;
+        }
+
+        .category-pill {
+            align-self: flex-start;
+            background: #eef4ff;
+            color: #155eef;
+            border: 1px solid #d7e4ff;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 5px 9px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .contact-lines {
+            display: grid;
+            gap: 8px;
+        }
+
+        .contact-line {
+            align-items: center;
+            color: #344054;
+            display: flex;
+            font-size: 13px;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .contact-line span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .contact-note {
+            background: #f8fafc;
+            border: 1px solid #e7edf5;
+            border-radius: 8px;
+            color: #475467;
+            font-size: 13px;
+            line-height: 1.45;
+            padding: 10px;
+            min-height: 42px;
+        }
+
+        .contact-footer {
+            align-items: center;
+            border-top: 1px solid #edf1f7;
+            display: flex;
+            justify-content: space-between;
+            margin-top: auto;
+            padding-top: 12px;
+            gap: 8px;
+        }
+
+        .contact-owner {
+            color: var(--jp2-muted);
+            font-size: 11px;
+        }
+
+        .empty-state {
+            padding: 46px 20px;
+            text-align: center;
+        }
+
+        .empty-state i {
+            color: #98a2b3;
+            font-size: 42px;
+        }
+
+        .modal-content {
+            border: 0;
+            border-radius: 10px;
+            box-shadow: 0 22px 60px rgba(15, 23, 42, .22);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #edf1f7;
+            padding: 20px 24px;
+        }
+
+        .modal-body {
+            padding: 22px 24px;
+        }
+
+        .modal-footer {
+            border-top: 0;
+            padding: 0 24px 24px;
+        }
+
+        @media (max-width: 720px) {
+            .page-header { align-items: flex-start; flex-direction: column; }
+            .contacts-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <main class="page-shell">
+        <header class="page-header">
+            <div>
+                <div class="page-kicker">Central de Relacionamento</div>
+                <h1 class="page-title">Agenda Telefonica</h1>
+                <div class="text-secondary">Contatos compartilhados entre socios, empresas, eventos e parceiros.</div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="/" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Voltar ao Painel
+                </a>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovoContato">
+                    <i class="bi bi-person-plus"></i> Novo Contato
+                </button>
+            </div>
+        </header>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info border-0 shadow-sm">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <section class="panel toolbar-panel">
+            <form method="GET" action="{{ url_for('pagina_contatos') }}" class="row g-3 align-items-end">
+                <div class="col-lg-6">
+                    <label class="form-label small fw-bold text-secondary">Buscar contato</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input class="form-control" type="search" name="q" value="{{ busca }}" placeholder="Nome, empresa, telefone, e-mail ou cargo">
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <label class="form-label small fw-bold text-secondary">Categoria</label>
+                    <select class="form-select" name="categoria">
+                        <option value="">Todas</option>
+                        {% for cat in categorias %}
+                            <option value="{{ cat }}" {% if categoria_atual == cat %}selected{% endif %}>{{ cat|capitalize }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-3 d-flex gap-2">
+                    <button class="btn btn-primary flex-fill" type="submit">Filtrar</button>
+                    <a class="btn btn-outline-secondary" href="{{ url_for('pagina_contatos') }}">Limpar</a>
+                </div>
+            </form>
+        </section>
+
+        {% if contatos %}
+            <section class="contacts-grid">
+                {% for contato in contatos %}
+                    <article class="panel contact-card">
+                        <div class="contact-top">
+                            <div>
+                                <h2 class="contact-name">{{ contato.nome }}</h2>
+                                <div class="contact-meta">
+                                    {{ contato.empresa or 'Sem empresa informada' }}
+                                    {% if contato.cargo %} - {{ contato.cargo }}{% endif %}
+                                </div>
+                            </div>
+                            <span class="category-pill">{{ contato.categoria }}</span>
+                        </div>
+
+                        <div class="contact-lines">
+                            <div class="contact-line">
+                                <i class="bi bi-telephone text-primary"></i>
+                                <span>{{ contato.telefone or 'Telefone nao informado' }}</span>
+                            </div>
+                            <div class="contact-line">
+                                <i class="bi bi-whatsapp text-success"></i>
+                                <span>{{ contato.whatsapp or 'WhatsApp nao informado' }}</span>
+                            </div>
+                            <div class="contact-line">
+                                <i class="bi bi-envelope text-danger"></i>
+                                <span>{{ contato.email or 'E-mail nao informado' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="contact-note">
+                            {{ contato.observacoes or 'Sem observacoes.' }}
+                        </div>
+
+                        <div class="contact-footer">
+                            <div class="contact-owner">
+                                Cadastrado por {{ contato.criado_por or 'Sistema' }}
+                            </div>
+                            <div class="d-flex gap-1">
+                                {% if contato.whatsapp_link %}
+                                    <a class="btn btn-sm btn-outline-success" href="https://wa.me/{{ contato.whatsapp_link }}" target="_blank" title="Abrir WhatsApp">
+                                        <i class="bi bi-whatsapp"></i>
+                                    </a>
+                                {% endif %}
+                                {% if contato.email %}
+                                    <a class="btn btn-sm btn-outline-danger" href="mailto:{{ contato.email }}" title="Enviar e-mail">
+                                        <i class="bi bi-envelope"></i>
+                                    </a>
+                                {% endif %}
+                                <button class="btn btn-sm btn-outline-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalEditarContato"
+                                        data-id="{{ contato.id }}"
+                                        data-nome="{{ contato.nome }}"
+                                        data-empresa="{{ contato.empresa or '' }}"
+                                        data-cargo="{{ contato.cargo or '' }}"
+                                        data-telefone="{{ contato.telefone or '' }}"
+                                        data-whatsapp="{{ contato.whatsapp or '' }}"
+                                        data-email="{{ contato.email or '' }}"
+                                        data-categoria="{{ contato.categoria }}"
+                                        data-observacoes="{{ contato.observacoes or '' }}"
+                                        onclick="prepararEdicaoContato(this)"
+                                        title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalExcluirContato"
+                                        data-id="{{ contato.id }}"
+                                        data-nome="{{ contato.nome }}"
+                                        onclick="prepararExclusaoContato(this)"
+                                        title="Excluir">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </section>
+        {% else %}
+            <section class="panel empty-state">
+                <i class="bi bi-person-rolodex"></i>
+                <h2 class="h5 fw-bold mt-3">Nenhum contato encontrado</h2>
+                <p class="text-secondary mb-3">Cadastre contatos importantes para que todos os socios encontrem rapidamente.</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovoContato">
+                    <i class="bi bi-person-plus"></i> Cadastrar primeiro contato
+                </button>
+            </section>
+        {% endif %}
+    </main>
+
+    <div class="modal fade" id="modalNovoContato" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <form class="modal-content" method="POST" action="{{ url_for('adicionar_contato') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-person-plus text-primary"></i> Novo Contato</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Nome</label>
+                            <input class="form-control" name="nome" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Empresa</label>
+                            <input class="form-control" name="empresa">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Cargo / Funcao</label>
+                            <input class="form-control" name="cargo">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Categoria</label>
+                            <select class="form-select" name="categoria">
+                                {% for cat in categorias %}
+                                    <option value="{{ cat }}">{{ cat|capitalize }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary">Telefone</label>
+                            <input class="form-control" name="telefone">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary">WhatsApp</label>
+                            <input class="form-control" name="whatsapp">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary">E-mail</label>
+                            <input class="form-control" type="email" name="email">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary">Observacoes</label>
+                            <textarea class="form-control" name="observacoes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar contato</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalEditarContato" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <form class="modal-content" method="POST" id="formEditarContato">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square text-primary"></i> Editar Contato</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Nome</label>
+                            <input class="form-control" name="nome" id="editNome" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Empresa</label>
+                            <input class="form-control" name="empresa" id="editEmpresa">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Cargo / Funcao</label>
+                            <input class="form-control" name="cargo" id="editCargo">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Categoria</label>
+                            <select class="form-select" name="categoria" id="editCategoria">
+                                {% for cat in categorias %}
+                                    <option value="{{ cat }}">{{ cat|capitalize }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary">Telefone</label>
+                            <input class="form-control" name="telefone" id="editTelefone">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary">WhatsApp</label>
+                            <input class="form-control" name="whatsapp" id="editWhatsapp">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary">E-mail</label>
+                            <input class="form-control" type="email" name="email" id="editEmail">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary">Observacoes</label>
+                            <textarea class="form-control" name="observacoes" id="editObservacoes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar alteracoes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalExcluirContato" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content" method="POST" id="formExcluirContato">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger"><i class="bi bi-trash3"></i> Excluir contato</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Deseja remover <strong id="nomeContatoExcluir">este contato</strong> da agenda telefonica?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function prepararEdicaoContato(botao) {
+            const id = botao.dataset.id;
+            document.getElementById('formEditarContato').action = `/contatos/editar/${id}`;
+            document.getElementById('editNome').value = botao.dataset.nome || '';
+            document.getElementById('editEmpresa').value = botao.dataset.empresa || '';
+            document.getElementById('editCargo').value = botao.dataset.cargo || '';
+            document.getElementById('editTelefone').value = botao.dataset.telefone || '';
+            document.getElementById('editWhatsapp').value = botao.dataset.whatsapp || '';
+            document.getElementById('editEmail').value = botao.dataset.email || '';
+            document.getElementById('editCategoria').value = botao.dataset.categoria || 'geral';
+            document.getElementById('editObservacoes').value = botao.dataset.observacoes || '';
+        }
+
+        function prepararExclusaoContato(botao) {
+            const id = botao.dataset.id;
+            document.getElementById('formExcluirContato').action = `/contatos/excluir/${id}`;
+            document.getElementById('nomeContatoExcluir').innerText = botao.dataset.nome || 'este contato';
+        }
+    </script>
+</body>
+</html>
