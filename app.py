@@ -9,7 +9,7 @@ import io
 import time
 from collections import deque
 from bs4 import BeautifulSoup
-from urllib.parse import quote, quote_plus, urljoin, urlparse
+from urllib.parse import quote_plus, urljoin, urlparse
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory, send_file, g
 from database import get_db_connection
@@ -525,7 +525,7 @@ def pagina_contatos():
                 FROM contatos_telefonicos
                 {where_sql}
                 ORDER BY nome ASC
-                LIMIT 400
+                LIMIT 120
             """, tuple(params))
             contatos = cur.fetchall()
     finally:
@@ -537,7 +537,6 @@ def pagina_contatos():
             numero = "55" + numero
         contato['whatsapp_link'] = numero
         contato['telefone_link'] = limpar_telefone(contato.get('telefone') or contato.get('whatsapp'))
-        contato['email_link'] = quote(str(contato.get('email') or ''))
 
     return render_template(
         'contatos.html',
@@ -545,6 +544,7 @@ def pagina_contatos():
         busca=busca,
         categoria_atual=categoria,
         categorias=categorias_validas,
+        limite_contatos=120,
         nome_socio=session.get('nome_exibicao', 'Socio')
     )
 
