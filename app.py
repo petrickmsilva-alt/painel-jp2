@@ -141,6 +141,19 @@ def caminho_static_existe(caminho_publico):
     caminho_relativo = caminho_publico.lstrip("/").replace("/", os.sep)
     return os.path.exists(os.path.join(app.root_path, caminho_relativo))
 
+def formatar_item_painel(linha):
+    return {
+        'id': linha['id'],
+        'nome': linha['nome_original'],
+        'tipo': linha['tipo'],
+        'caminho': linha.get('caminho_sistema'),
+        'imagem_bg': imagem_site_existente(linha.get('nome_original', '')) if linha.get('tipo') == 'link' else '',
+        'autor': linha.get('criado_por') or 'Sistema',
+        'bloco': linha.get('bloco'),
+        'categoria': linha.get('categoria'),
+        'pasta_pai_id': linha.get('pasta_pai_id')
+    }
+
 def extensao_por_tipo_conteudo(content_type, url_imagem):
     content_type = str(content_type or "").split(";")[0].strip().lower()
     mapa = {
@@ -551,14 +564,7 @@ def listar_arquivos():
         
         itens_formatados = []
         for l in linhas:
-            imagem_bg = imagem_site_existente(l.get('nome_original', '')) if l.get('tipo') == 'link' else ''
-
-            itens_formatados.append({
-                'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
-                'caminho': l['caminho_sistema'], 'imagem_bg': imagem_bg,
-                'autor': l['criado_por'] or 'Sistema', 'bloco': l['bloco'], 
-                'categoria': l['categoria'], 'pasta_pai_id': l['pasta_pai_id']
-            })
+            itens_formatados.append(formatar_item_painel(l))
         
         resp = make_response(jsonify({'itens': itens_formatados}))
         resp.headers['Cache-Control'] = 'private, max-age=30'
@@ -608,12 +614,27 @@ def criar_pasta():
                 INSERT INTO arquivos_painel (nome_original, bloco, categoria, tipo, pasta_pai_id, criado_por, deletado)
                 VALUES (%s, %s, %s, 'pasta', %s, %s, 0)
             """, (nome, bloco, cat, p_id, session.get('nome_exibicao', 'Sistema')))
+            novo_id = cur.lastrowid
         conn.commit()
         conn.close()
         registrar_log(f"Criou a pasta: {nome} no bloco {bloco}")
-        return jsonify({'status': 'sucesso'})
-    except:
-        return jsonify({'status': 'erro'})
+        return jsonify({
+            'status': 'sucesso',
+            'item': {
+                'id': novo_id,
+                'nome': nome,
+                'tipo': 'pasta',
+                'caminho': None,
+                'imagem_bg': '',
+                'autor': session.get('nome_exibicao', 'Sistema'),
+                'bloco': bloco,
+                'categoria': cat,
+                'pasta_pai_id': p_id
+            }
+        })
+    except Exception as e:
+        print(f"Erro ao criar pasta: {e}")
+        return jsonify({'status': 'erro', 'mensagem': 'Nao foi possivel criar a pasta.'}), 500
 
 # ðŸš€ 1. INSTALAÃ‡ÃƒO DO MOTOR FATIADOR COMPATÃVEL COM ALTA VELOCIDADE (Mini-fatias)
 @app.route('/upload-avancado', methods=['POST'])
@@ -661,11 +682,28 @@ def upload_avancado():
                     INSERT INTO arquivos_painel (nome_original, caminho_sistema, bloco, categoria, tipo, criado_por, pasta_pai_id, deletado)
                     VALUES (%s, %s, %s, %s, 'arquivo', %s, %s, 0)
                 """, (nome_original, caminho_sistema, bloco, cat, session.get('nome_exibicao', 'Sistema'), p_id))
+                novo_id = cur.lastrowid
 
             try:
                 os.remove(destino_completo)
             except OSError:
                 pass
+
+            return jsonify({
+                'status': 'sucesso',
+                'guid': guid_uuid,
+                'item': {
+                    'id': novo_id,
+                    'nome': nome_original,
+                    'tipo': 'arquivo',
+                    'caminho': caminho_sistema,
+                    'imagem_bg': '',
+                    'autor': session.get('nome_exibicao', 'Sistema'),
+                    'bloco': bloco,
+                    'categoria': cat,
+                    'pasta_pai_id': p_id
+                }
+            })
             
         return jsonify({'status': 'sucesso', 'guid': guid_uuid})
     except Exception as e:
