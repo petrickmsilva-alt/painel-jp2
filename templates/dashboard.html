@@ -1301,6 +1301,99 @@
         });
     }
 
+    function removerMensagemGradeVazia() {
+        document.querySelectorAll('[data-empty-grid="true"]').forEach(el => el.remove());
+    }
+
+    function escaparHtml(valor) {
+        return String(valor ?? '').replace(/[&<>"']/g, caractere => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[caractere]));
+    }
+
+    function escaparJsAspasSimples(valor) {
+        return String(valor ?? '')
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/[\r\n]+/g, ' ');
+    }
+
+    function criarCardExplorer(item) {
+        let card = document.createElement("div");
+        card.className = "explorer-card";
+        card.style.position = "relative";
+        if (item.id) card.dataset.itemId = item.id;
+
+        let iconHtml = item.tipo === 'pasta' ? '<i class="bi bi-folder-fill text-warning"></i>' : '<i class="bi bi-file-earmark-text-fill text-primary"></i>';
+        let labelAutor = item.tipo === 'pasta' ? 'Pasta de Arquivos' : 'Documento';
+        let botoesAcaoHtml = "";
+        let cliqueCorpoCard = "";
+        let checkboxHtml = "";
+
+        if (item.tipo === 'pasta' || item.tipo === 'arquivo') {
+            checkboxHtml = `
+                <input type="checkbox" class="chk-item-excluir" data-id="${item.id}"
+                       style="position: absolute; top: 10px; left: 10px; width: 18px; height: 18px; cursor: pointer; z-index: 20;"
+                       onclick="event.stopPropagation(); gerenciarBotaoLote();">
+            `;
+        }
+
+        const nomeSeguro = escaparJsAspasSimples(item.nome || '');
+        const nomeHtml = escaparHtml(item.nome || '');
+
+        if (item.tipo === 'pasta') {
+            cliqueCorpoCard = `entrarSubpastaReal(${item.id}, '${nomeSeguro}')`;
+            botoesAcaoHtml = `
+                <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="abrirModalRenomear(event, ${item.id}, '${nomeSeguro}')">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            `;
+        } else {
+            cliqueCorpoCard = "void(0)";
+            botoesAcaoHtml = `
+                <button class="btn btn-sm btn-light border py-0 px-1 text-success" title="Visualizar" onclick="event.stopPropagation(); window.open('/baixar_recurso/${item.id}?download=false', '_blank')">
+                    <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-light border py-0 px-1 text-dark" title="Baixar Arquivo" onclick="event.stopPropagation(); window.open('/baixar_recurso/${item.id}?download=true', '_blank')">
+                    <i class="bi bi-cloud-download"></i>
+                </button>
+                <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="abrirModalRenomear(event, ${item.id}, '${nomeSeguro}')">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-light border py-0 px-1 text-danger" title="Mover para Lixeira" onclick="abrirModalExcluirDireto(event, ${item.id})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            `;
+        }
+
+        card.innerHTML = `
+            ${checkboxHtml}
+            <div class="action-trigger">${botoesAcaoHtml}</div>
+            <div class="icon-wrapper" onclick="${cliqueCorpoCard}">${iconHtml}</div>
+            <div class="item-label" onclick="${cliqueCorpoCard}" title="${nomeHtml}">${nomeHtml}</div>
+            <div class="item-author text-muted d-none d-md-block">${labelAutor}</div>`;
+
+        return card;
+    }
+
+    function inserirItemNaGrade(item) {
+        if (!item || estadoDoPainel.bloco === 'sites_jp2') return;
+        const gridContainer = document.getElementById("wrapper-explorer-grid");
+        if (!gridContainer) return;
+        if (item.id && gridContainer.querySelector(`.explorer-card[data-item-id="${item.id}"]`)) return;
+        removerMensagemGradeVazia();
+        const card = criarCardExplorer(item);
+        if (item.id) card.dataset.itemId = item.id;
+        gridContainer.appendChild(card);
+    }
+
 function sincronizarGrade() {
     let gridContainer = document.getElementById("wrapper-explorer-grid");
     let caminhoEl = document.getElementById('txtCaminhoWindows');
@@ -1439,66 +1532,12 @@ gridContainer.appendChild(card);
 
         // 3. Renderiza pastas normais (continua o cÃ³digo original...)
         if (!data.itens || data.itens.length === 0) {
-            gridContainer.innerHTML = '<div class="text-center w-100 py-4 text-muted"><i class="bi bi-folder-x fs-3"></i><br>Nenhum item ou subpasta aqui.</div>';
+            gridContainer.innerHTML = '<div data-empty-grid="true" class="text-center w-100 py-4 text-muted"><i class="bi bi-folder-x fs-3"></i><br>Nenhum item ou subpasta aqui.</div>';
             return;
         }
         
         data.itens.forEach(item => {
-          let card = document.createElement("div");
-                card.className = "explorer-card";
-                card.style.position = "relative"; // Garante o alinhamento da caixinha
-                
-                let iconHtml = item.tipo === 'pasta' ? '<i class="bi bi-folder-fill text-warning"></i>' : '<i class="bi bi-file-earmark-text-fill text-primary"></i>';
-                let labelAutor = item.tipo === 'pasta' ? 'Pasta de Arquivos' : 'Documento';
-                
-                let botoesAcaoHtml = "";
-                let cliqueCorpoCard = "";
-                
-                // ðŸŸ¢ ADICIONADO: Desenha a caixinha Checkbox no topo esquerdo do card se for arquivo/pasta deletÃ¡vel
-                let checkboxHtml = "";
-                if (item.tipo === 'pasta' || item.tipo === 'arquivo') {
-                    checkboxHtml = `
-                        <input type="checkbox" class="chk-item-excluir" data-id="${item.id}" 
-                               style="position: absolute; top: 10px; left: 10px; width: 18px; height: 18px; cursor: pointer; z-index: 20;" 
-                               onclick="event.stopPropagation(); gerenciarBotaoLote();">
-                    `;
-                }
-        
-                if (item.tipo === 'pasta') {
-                    cliqueCorpoCard = `entrarSubpastaReal(${item.id}, '${item.nome}')`;
-                    botoesAcaoHtml = `
-                        <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="abrirModalRenomear(event, ${item.id}, '${item.nome.replace(/'/g, "\\'")}')">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    `;
-                } else {
-                    cliqueCorpoCard = "void(0)";
-                    botoesAcaoHtml = `
-                        <button class="btn btn-sm btn-light border py-0 px-1 text-success" title="Visualizar" onclick="event.stopPropagation(); window.open('/baixar_recurso/${item.id}?download=false', '_blank')">
-                            <i class="bi bi-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-light border py-0 px-1 text-dark" title="Baixar Arquivo" onclick="event.stopPropagation(); window.open('/baixar_recurso/${item.id}?download=true', '_blank')">
-                            <i class="bi bi-cloud-download"></i>
-                        </button>
-                        <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="abrirModalRenomear(event, ${item.id}, '${item.nome.replace(/'/g, "\\'")}')">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" title="Mover para Lixeira" onclick="abrirModalExcluirDireto(event, ${item.id})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    `;
-                }
-                
-                card.innerHTML = `
-                    ${checkboxHtml}
-                    <div class="action-trigger">${botoesAcaoHtml}</div>
-                    <div class="icon-wrapper" onclick="${cliqueCorpoCard}">${iconHtml}</div>
-                    <div class="item-label" onclick="${cliqueCorpoCard}" title="${item.nome}">${item.nome}</div>
-                    <div class="item-author text-muted d-none d-md-block">${labelAutor}</div>`;
-                gridContainer.appendChild(card);
+          gridContainer.appendChild(criarCardExplorer(item));
             });
             // Oculta o botÃ£o mestre ao recarregar a grade de arquivos limpa
             let btnLote = document.getElementById('btn-excluir-lote');
@@ -1659,11 +1698,11 @@ gridContainer.appendChild(card);
                 }
                 return response.json();
             })
-            .then(() => {
+            .then(data => {
                 overlay.remove();
                 mostrarToast("Pasta criada", "A nova pasta foi adicionada ao painel.");
                 invalidarCacheListagem();
-                sincronizarGrade();
+                if (data && data.item) inserirItemNaGrade(data.item);
             })
             .catch(err => {
                 console.error("Erro no servidor:", err);
@@ -1823,6 +1862,7 @@ gridContainer.appendChild(card);
         
         let arquivosParaSubir = Array.from(filesInput.files);
         let indiceArquivoAtual = 0;
+        let itensEnviados = [];
 
         // âš¡ MINI-FATIAS DE 1MB: Passam voando pela Render sem ativar o limite 413 ou estourar a memÃ³ria
         const CHUNK_SIZE = 1 * 1024 * 1024;
@@ -1843,7 +1883,7 @@ gridContainer.appendChild(card);
 
                 mostrarToast("Upload concluido", "Todos os arquivos foram enviados com sucesso.");
                 invalidarCacheListagem();
-                sincronizarGrade();
+                itensEnviados.forEach(item => inserirItemNaGrade(item));
                 return;
             }
 
@@ -1875,6 +1915,11 @@ gridContainer.appendChild(card);
                 xhr.open('POST', '/upload-avancado', true);
                 xhr.onload = function() {
                     if (xhr.status === 200) {
+                        let respostaUpload = {};
+                        try {
+                            respostaUpload = JSON.parse(xhr.responseText || '{}');
+                        } catch (e) {}
+                        if (respostaUpload.item) itensEnviados.push(respostaUpload.item);
                         chunkIndex++;
                         if (chunkIndex < totalChunks) {
                             enviarFatia(); // Despacha a prÃ³xima fatia leve imediatamente
