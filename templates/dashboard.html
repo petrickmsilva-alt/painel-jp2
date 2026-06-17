@@ -973,7 +973,7 @@
                             <strong id="txtCaminhoWindows"></strong>
                         </div>
                     </div>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="sincronizarGrade()">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="invalidarCacheListagem(); sincronizarGrade()">
                         <i class="bi bi-arrow-clockwise"></i> Sincronizar
                     </button>
                 </div>
@@ -1177,6 +1177,7 @@
             if (d.status === 'sucesso') {
                 bootstrap.Modal.getInstance(document.getElementById('modalRenomearItem')).hide();
                 mostrarToast('Nome atualizado', 'O item foi renomeado com sucesso.');
+                invalidarCacheListagem();
                 sincronizarGrade();
             } else {
                 mostrarToast('Nao foi possivel renomear', d.mensagem || 'Verifique a senha e tente novamente.', 'erro');
@@ -1187,6 +1188,11 @@
     let estadoDoPainel = { bloco: 'instituto', categoria: 'raiz', pasta_pai_id: null, nivel_atual: 'raiz_bloco', string_caminho: 'INSTITUTO' };
     let instanciaCalendario = null;
     let filtroSiteAtual = 'todos';
+    let versaoListagemPainel = 1;
+
+    function invalidarCacheListagem() {
+        versaoListagemPainel += 1;
+    }
 
     const subpastasFixas = {
         sites_jp2: ['IBDTEC', 'Expo Feiras CO', 'Expo Centro Oeste', 'Expo Fashion Brasil', 'Capital Mix', 'Sabor Fest', 'JP2 Ticket', 'Brobond Wear', 'Atacado Brobond', 'Nutrallis']
@@ -1319,7 +1325,7 @@ function sincronizarGrade() {
     if(btnVoltar) btnVoltar.style.setProperty('visibility', (estadoDoPainel.nivel_atual === 'raiz_bloco') ? 'hidden' : 'visible', 'important');
     
     const catBusca = (estadoDoPainel.pasta_pai_id === null || estadoDoPainel.pasta_pai_id === '') ? estadoDoPainel.bloco : 'raiz';
-    let urlListar = `/listar?bloco=${estadoDoPainel.bloco}&categoria=${catBusca}&pasta_pai_id=${estadoDoPainel.pasta_pai_id || ''}&t=${new Date().getTime()}`;
+    let urlListar = `/listar?bloco=${estadoDoPainel.bloco}&categoria=${catBusca}&pasta_pai_id=${estadoDoPainel.pasta_pai_id || ''}&v=${versaoListagemPainel}`;
     
     fetch(urlListar)
     .then(res => res.json())
@@ -1549,6 +1555,7 @@ gridContainer.appendChild(card);
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'sucesso') {
+                    invalidarCacheListagem();
                     mostrarToast("Itens excluidos", "Os itens selecionados foram enviados para a lixeira.");
                     sincronizarGrade();
                 } else {
@@ -1655,6 +1662,7 @@ gridContainer.appendChild(card);
             .then(() => {
                 overlay.remove();
                 mostrarToast("Pasta criada", "A nova pasta foi adicionada ao painel.");
+                invalidarCacheListagem();
                 setTimeout(() => { sincronizarGrade(); }, 300);
             })
             .catch(err => {
@@ -1697,6 +1705,7 @@ gridContainer.appendChild(card);
                 bootstrap.Modal.getInstance(document.getElementById('modalCadastroSite')).hide();
                 filtroSiteAtual = categoria;
                 mostrarToast("Site incluido", "O site foi adicionado ao hub JP2.");
+                invalidarCacheListagem();
                 sincronizarGrade();
             } else {
                 mostrarToast("Nao foi possivel salvar", data.mensagem || "Verifique os dados e tente novamente.", "erro");
@@ -1748,6 +1757,7 @@ gridContainer.appendChild(card);
                 if(data.status === 'sucesso') {
                     overlay.remove();
                     mostrarToast("Item excluido", "O item foi enviado para a lixeira.");
+                    invalidarCacheListagem();
                     sincronizarGrade();
                 } else {
                     mostrarToast("Nao foi possivel excluir", data.mensagem || "Verifique a senha e tente novamente.", "erro");
@@ -1832,6 +1842,7 @@ gridContainer.appendChild(card);
                 if(overlay) overlay.remove();
 
                 mostrarToast("Upload concluido", "Todos os arquivos foram enviados com sucesso.");
+                invalidarCacheListagem();
                 sincronizarGrade();
                 return;
             }
