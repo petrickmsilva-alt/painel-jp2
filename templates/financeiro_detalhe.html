@@ -1,0 +1,18 @@
+{% extends 'layout_base.html' %}
+{% block content %}
+<style>
+.panel{background:#fff;border:1px solid #d9e2ef;border-radius:10px;box-shadow:0 14px 36px rgba(15,23,42,.06);padding:18px}.title{font-size:30px;font-weight:850;color:#101828}.table th{background:#f8fafc;color:#667085;font-size:11px;text-transform:uppercase}.money{font-weight:850;color:#101828}
+</style>
+<div class="mb-3"><div class="text-secondary fw-bold small text-uppercase">Detalhe do emprestimo</div><h1 class="title">Evolucao mes a mes</h1><div class="text-secondary">Escolha um investimento para visualizar principal, juros, pagamentos e saldo devedor por periodo.</div></div>
+<section class="panel mb-3"><label class="form-label fw-bold small text-secondary">Investimento</label><select id="selectInvestimento" class="form-select"></select></section>
+<section class="panel"><div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th>Mes calculo</th><th>Valor inicial</th><th>Juros</th><th>Vlr juros</th><th>Valor + juros</th><th>Pgto realizado</th><th>Saldo devedor</th></tr></thead><tbody id="corpoDetalhe"></tbody></table></div></section>
+<script>
+let investimentos=[];
+function dinheiro(v){return (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
+function data(v){if(!v)return null; const d=new Date(String(v).split(' ')[0]+'T00:00:00'); return Number.isNaN(d.getTime())?null:d;}
+function mesesEntre(a,b){const out=[]; if(!a||!b)return out; let d=new Date(a.getFullYear(),a.getMonth(),1); const fim=new Date(b.getFullYear(),b.getMonth(),1); while(d<=fim){out.push(new Date(d)); d.setMonth(d.getMonth()+1);} return out;}
+function renderDetalhe(){const id=selectInvestimento.value; const item=investimentos.find(i=>String(i.id)===String(id)); const tb=corpoDetalhe; tb.innerHTML=''; if(!item)return; const inicio=data(item.data_inicio)||new Date(); const fim=data(item.data_pgto)||new Date(); const meses=mesesEntre(inicio,fim); let saldo=Number(item.valor_inicial)||0; const taxa=(Number(item.juros_mensais)||0)/100; const pagoTotal=Number(item.total_pago)||0; meses.forEach((m,idx)=>{const juros=saldo*taxa; const pagamento=idx===meses.length-1?pagoTotal:0; const total=saldo+juros; saldo=Math.max(0,total-pagamento); tb.innerHTML+=`<tr><td>${m.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</td><td class="money">${dinheiro(total-juros)}</td><td>${(taxa*100).toLocaleString('pt-BR')}%</td><td>${dinheiro(juros)}</td><td>${dinheiro(total)}</td><td>${dinheiro(pagamento)}</td><td class="money">${dinheiro(saldo)}</td></tr>`;});}
+fetch('/api/resumo-investimentos').then(r=>r.json()).then(data=>{investimentos=Array.isArray(data.dados)?data.dados:[]; selectInvestimento.innerHTML=investimentos.map(i=>`<option value="${i.id}">${i.importacao_id||i.id} - ${i.empresa_nome||'-'} - ${i.nome_investidor||'-'}</option>`).join(''); renderDetalhe();});
+selectInvestimento.addEventListener('change',renderDetalhe);
+</script>
+{% endblock %}
