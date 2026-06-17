@@ -317,7 +317,7 @@ def obter_ou_criar_empresa(cur, nome):
         "INSERT INTO empresas (nome, cnpj, ramo_atividade) VALUES (%s, %s, %s)",
         (nome, "", "Importado da planilha financeira"),
     )
-        return cur.lastrowid
+    return cur.lastrowid
 
 
 def registrar_auditoria(cur, investimento_id, acao, descricao):
