@@ -439,11 +439,11 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-secondary">Telefone</label>
-                            <input class="form-control" name="telefone">
+                            <input class="form-control telefone-br" name="telefone" inputmode="tel" maxlength="18" placeholder="+55 62 9688-0762">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-secondary">WhatsApp</label>
-                            <input class="form-control" name="whatsapp">
+                            <input class="form-control telefone-br" name="whatsapp" inputmode="tel" maxlength="18" placeholder="+55 62 9688-0762">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-secondary">E-mail</label>
@@ -494,11 +494,11 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-secondary">Telefone</label>
-                            <input class="form-control" name="telefone" id="editTelefone">
+                            <input class="form-control telefone-br" name="telefone" id="editTelefone" inputmode="tel" maxlength="18" placeholder="+55 62 9688-0762">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-secondary">WhatsApp</label>
-                            <input class="form-control" name="whatsapp" id="editWhatsapp">
+                            <input class="form-control telefone-br" name="whatsapp" id="editWhatsapp" inputmode="tel" maxlength="18" placeholder="+55 62 9688-0762">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-secondary">E-mail</label>
@@ -538,14 +538,44 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function formatarTelefoneBR(valor) {
+            let digitos = String(valor || '').replace(/\D/g, '');
+            if (digitos.startsWith('55') && digitos.length > 11) {
+                digitos = digitos.slice(2);
+            }
+            digitos = digitos.slice(0, 11);
+            if (digitos.length <= 2) {
+                return digitos ? `+55 ${digitos}` : '';
+            }
+
+            const ddd = digitos.slice(0, 2);
+            const numero = digitos.slice(2);
+            if (numero.length <= 4) {
+                return `+55 ${ddd} ${numero}`;
+            }
+            if (numero.length <= 8) {
+                return `+55 ${ddd} ${numero.slice(0, 4)}-${numero.slice(4)}`;
+            }
+            return `+55 ${ddd} ${numero.slice(0, 5)}-${numero.slice(5)}`;
+        }
+
+        document.querySelectorAll('.telefone-br').forEach((campo) => {
+            campo.addEventListener('input', () => {
+                campo.value = formatarTelefoneBR(campo.value);
+            });
+            campo.addEventListener('blur', () => {
+                campo.value = formatarTelefoneBR(campo.value);
+            });
+        });
+
         function prepararEdicaoContato(botao) {
             const id = botao.dataset.id;
             document.getElementById('formEditarContato').action = `/contatos/editar/${id}`;
             document.getElementById('editNome').value = botao.dataset.nome || '';
             document.getElementById('editEmpresa').value = botao.dataset.empresa || '';
             document.getElementById('editCargo').value = botao.dataset.cargo || '';
-            document.getElementById('editTelefone').value = botao.dataset.telefone || '';
-            document.getElementById('editWhatsapp').value = botao.dataset.whatsapp || '';
+            document.getElementById('editTelefone').value = formatarTelefoneBR(botao.dataset.telefone || '');
+            document.getElementById('editWhatsapp').value = formatarTelefoneBR(botao.dataset.whatsapp || '');
             document.getElementById('editEmail').value = botao.dataset.email || '';
             document.getElementById('editCategoria').value = botao.dataset.categoria || 'geral';
             document.getElementById('editObservacoes').value = botao.dataset.observacoes || '';

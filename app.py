@@ -226,6 +226,25 @@ def garantir_tabela_contatos():
 def limpar_telefone(valor):
     return re.sub(r"\D+", "", str(valor or ""))
 
+def formatar_telefone_br(valor):
+    digitos = limpar_telefone(valor)
+    if not digitos:
+        return ""
+
+    if digitos.startswith("55") and len(digitos) >= 12:
+        digitos = digitos[2:]
+
+    if len(digitos) < 10:
+        return str(valor or "").strip()
+
+    ddd = digitos[:2]
+    numero = digitos[2:11]
+    if len(numero) == 9:
+        return f"+55 {ddd} {numero[:5]}-{numero[5:]}"
+    if len(numero) == 8:
+        return f"+55 {ddd} {numero[:4]}-{numero[4:]}"
+    return f"+55 {ddd} {numero}"
+
 def criar_indice_se_necessario(cur, tabela, nome_indice, definicao_colunas):
     if not re.match(r"^[A-Za-z0-9_]+$", tabela) or not re.match(r"^[A-Za-z0-9_]+$", nome_indice):
         raise ValueError("Nome de tabela ou indice invalido")
@@ -532,6 +551,8 @@ def pagina_contatos():
         conn.close()
 
     for contato in contatos:
+        contato['telefone'] = formatar_telefone_br(contato.get('telefone')) or contato.get('telefone')
+        contato['whatsapp'] = formatar_telefone_br(contato.get('whatsapp')) or contato.get('whatsapp')
         numero = limpar_telefone(contato.get('whatsapp') or contato.get('telefone'))
         if numero and len(numero) in (10, 11):
             numero = "55" + numero
@@ -562,6 +583,8 @@ def adicionar_contato():
     categoria = request.form.get('categoria', 'geral')
     if categoria not in ['geral', 'cliente', 'fornecedor', 'parceiro', 'evento', 'institucional', 'pessoal']:
         categoria = 'geral'
+    telefone = formatar_telefone_br(request.form.get('telefone', ''))
+    whatsapp = formatar_telefone_br(request.form.get('whatsapp', ''))
 
     conn = get_db_connection()
     try:
@@ -574,8 +597,8 @@ def adicionar_contato():
                 nome,
                 request.form.get('empresa', '').strip(),
                 request.form.get('cargo', '').strip(),
-                request.form.get('telefone', '').strip(),
-                request.form.get('whatsapp', '').strip(),
+                telefone,
+                whatsapp,
                 request.form.get('email', '').strip(),
                 categoria,
                 request.form.get('observacoes', '').strip(),
@@ -603,6 +626,9 @@ def editar_contato(contato_id):
         flash("Informe o nome do contato.")
         return redirect(url_for('pagina_contatos'))
 
+    telefone = formatar_telefone_br(request.form.get('telefone', ''))
+    whatsapp = formatar_telefone_br(request.form.get('whatsapp', ''))
+
     garantir_tabela_contatos()
     conn = get_db_connection()
     try:
@@ -616,8 +642,8 @@ def editar_contato(contato_id):
                 nome,
                 request.form.get('empresa', '').strip(),
                 request.form.get('cargo', '').strip(),
-                request.form.get('telefone', '').strip(),
-                request.form.get('whatsapp', '').strip(),
+                telefone,
+                whatsapp,
                 request.form.get('email', '').strip(),
                 categoria,
                 request.form.get('observacoes', '').strip(),
