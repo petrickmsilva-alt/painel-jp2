@@ -9,7 +9,7 @@ import io
 import time
 from collections import deque
 from bs4 import BeautifulSoup
-from urllib.parse import quote_plus, urljoin, urlparse
+from urllib.parse import quote, quote_plus, urljoin, urlparse
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory, send_file, g
 from database import get_db_connection
@@ -27,6 +27,7 @@ app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 INDICES_PERFORMANCE_VERIFICADOS = False
 COLUNA_PERFIL_USUARIOS_VERIFICADA = False
 COLUNAS_AGENDA_VERIFICADAS = False
+TABELA_CONTATOS_VERIFICADA = False
 USUARIOS_ADMIN_CACHE = None
 RESUMO_DASHBOARD_CACHE = {"expira_em": None, "dados": None}
 PERFORMANCE_ROTAS = deque(maxlen=160)
@@ -192,6 +193,10 @@ def garantir_colunas_agenda():
         conn.close()
 
 def garantir_tabela_contatos():
+    global TABELA_CONTATOS_VERIFICADA
+    if TABELA_CONTATOS_VERIFICADA:
+        return
+
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
@@ -214,6 +219,7 @@ def garantir_tabela_contatos():
 
             criar_indice_se_necessario(cur, "contatos_telefonicos", "idx_contatos_busca", "nome(120), empresa(120), categoria(40)")
             criar_indice_se_necessario(cur, "contatos_telefonicos", "idx_contatos_categoria", "categoria(40), nome(120)")
+        TABELA_CONTATOS_VERIFICADA = True
     finally:
         conn.close()
 
@@ -530,6 +536,8 @@ def pagina_contatos():
         if numero and len(numero) in (10, 11):
             numero = "55" + numero
         contato['whatsapp_link'] = numero
+        contato['telefone_link'] = limpar_telefone(contato.get('telefone') or contato.get('whatsapp'))
+        contato['email_link'] = quote(str(contato.get('email') or ''))
 
     return render_template(
         'contatos.html',
