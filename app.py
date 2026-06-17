@@ -576,7 +576,7 @@ def obter_pai_id():
     if 'usuario_logado' not in session: return jsonify({'pasta_pai_id': None}), 401
     bloco = request.args.get('bloco')
     caminho = request.args.get('caminho', '')
-    partes = caminho.split(' âž” ')
+    partes = caminho.split(' / ')
     if len(partes) <= 1: return jsonify({'pasta_pai_id': None})
     ultima_pasta_nome = partes[-1]
     
