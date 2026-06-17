@@ -1227,9 +1227,11 @@
     let instanciaCalendario = null;
     let filtroSiteAtual = 'todos';
     let versaoListagemPainel = 1;
+    let cacheListagemPainel = new Map();
 
     function invalidarCacheListagem() {
         versaoListagemPainel += 1;
+        cacheListagemPainel.clear();
     }
 
     const subpastasFixas = {
@@ -1430,6 +1432,7 @@
         const card = criarCardExplorer(item);
         if (item.id) card.dataset.itemId = item.id;
         gridContainer.appendChild(card);
+        adicionarItemAoCacheAtual(item);
     }
 
     function mostrarGradeVaziaSeNecessario() {
@@ -1442,6 +1445,11 @@
     function removerItemDaGrade(id) {
         const card = document.querySelector(`.explorer-card[data-item-id="${id}"]`);
         if (card) card.remove();
+        cacheListagemPainel.forEach(dados => {
+            if (dados && Array.isArray(dados.itens)) {
+                dados.itens = dados.itens.filter(item => String(item.id) !== String(id));
+            }
+        });
         mostrarGradeVaziaSeNecessario();
     }
 
@@ -1451,40 +1459,72 @@
         const tipo = card.querySelector('.bi-folder-fill') ? 'pasta' : 'arquivo';
         const novoCard = criarCardExplorer({ id, nome: novoNome, tipo });
         card.replaceWith(novoCard);
+        cacheListagemPainel.forEach(dados => {
+            if (dados && Array.isArray(dados.itens)) {
+                dados.itens.forEach(item => {
+                    if (String(item.id) === String(id)) item.nome = novoNome;
+                });
+            }
+        });
     }
 
-function sincronizarGrade() {
-    let gridContainer = document.getElementById("wrapper-explorer-grid");
-    let caminhoEl = document.getElementById('txtCaminhoWindows');
-    let divArquivos = document.getElementById('controles-arquivos');
-    let divSites = document.getElementById('controles-sites');
-
-    if (!gridContainer || !caminhoEl) return;
-
-    caminhoEl.innerText = estadoDoPainel.string_caminho;
-    gridContainer.classList.toggle('sites-premium-grid', estadoDoPainel.bloco === 'sites_jp2' && estadoDoPainel.nivel_atual === 'raiz_bloco');
-    gridContainer.innerHTML = '<div class="text-center w-100 py-4"><div class="spinner-border text-primary"></div><br>Buscando na nuvem...</div>';
-    
-    if (estadoDoPainel.bloco === 'sites_jp2') {
-        if(divArquivos) divArquivos.classList.add('d-none');
-        if(divSites) divSites.classList.remove('d-none');
-    } else {
-        if(divArquivos) divArquivos.classList.remove('d-none');
-        if(divSites) divSites.classList.add('d-none');
+    function chaveListagemAtual() {
+        return chaveListagemPara(
+            estadoDoPainel.bloco,
+            estadoDoPainel.pasta_pai_id || 'raiz',
+            estadoDoPainel.nivel_atual,
+            versaoListagemPainel
+        );
     }
 
-    let btnVoltar = document.getElementById('btnVoltarExplorer');
-    if(btnVoltar) btnVoltar.style.setProperty('visibility', (estadoDoPainel.nivel_atual === 'raiz_bloco') ? 'hidden' : 'visible', 'important');
-    
-    const catBusca = (estadoDoPainel.pasta_pai_id === null || estadoDoPainel.pasta_pai_id === '') ? estadoDoPainel.bloco : 'raiz';
-    let urlListar = `/listar?bloco=${estadoDoPainel.bloco}&categoria=${catBusca}&pasta_pai_id=${estadoDoPainel.pasta_pai_id || ''}&v=${versaoListagemPainel}`;
-    
-    fetch(urlListar)
-    .then(res => res.json())
-    .then(data => {
+    function chaveListagemPara(bloco, pastaPaiId, nivelAtual, versao) {
+        return [
+            bloco,
+            pastaPaiId || 'raiz',
+            nivelAtual,
+            versao
+        ].join('|');
+    }
+
+    function adicionarItemAoCacheAtual(item) {
+        const chave = chaveListagemAtual();
+        const dados = cacheListagemPainel.get(chave) || { itens: [] };
+        if (!Array.isArray(dados.itens)) dados.itens = [];
+        if (!dados.itens.some(registro => String(registro.id) === String(item.id))) {
+            dados.itens.push(item);
+        }
+        cacheListagemPainel.set(chave, dados);
+    }
+
+    function preCarregarSubpastasVisiveis(data) {
+        if (estadoDoPainel.bloco === 'sites_jp2' || !data || !Array.isArray(data.itens)) return;
+
+        const blocoAtual = estadoDoPainel.bloco;
+        const versaoAtual = versaoListagemPainel;
+        const pastas = data.itens.filter(item => item.tipo === 'pasta' && item.id).slice(0, 10);
+
+        pastas.forEach(pasta => {
+            const chave = chaveListagemPara(blocoAtual, pasta.id, 'subpasta', versaoAtual);
+            if (cacheListagemPainel.has(chave)) return;
+
+            const url = `/listar?bloco=${blocoAtual}&categoria=raiz&pasta_pai_id=${pasta.id}&v=${versaoAtual}`;
+            fetch(url)
+                .then(res => res.json())
+                .then(dados => {
+                    if (versaoAtual === versaoListagemPainel) {
+                        cacheListagemPainel.set(chave, dados);
+                    }
+                })
+                .catch(() => {});
+        });
+    }
+
+    function renderizarDadosListagem(data) {
+        const gridContainer = document.getElementById("wrapper-explorer-grid");
+        if (!gridContainer) return;
+
         gridContainer.innerHTML = "";
-        
-        // 1. Renderiza a base fixa estruturada original (MODIFICADO COM explorer-site-card)
+
         if (estadoDoPainel.bloco === 'sites_jp2' && estadoDoPainel.nivel_atual === 'raiz_bloco') {
             let itensRenderizados = [];
             let sortedFixos = subpastasFixas['sites_jp2'];
@@ -1509,80 +1549,74 @@ function sincronizarGrade() {
                 </button>
             `).join('');
             gridContainer.appendChild(filtros);
-            
+
             sortedFixos.forEach(cat => {
                 let card = document.createElement("div");
-                card.className = "explorer-card explorer-site-card"; // <--- CLASSE APLICADA
+                card.className = "explorer-card explorer-site-card";
                 let urlDestino = linksDirecionamento[cat] || '#';
                 let nomeArquivo = mapeamentoLogos[cat] || 'default.png';
                 let descricaoSite = descricoesSitesJP2[cat] || 'Canal digital conectado ao ecossistema JP2 Business.';
                 let categoriaSite = categoriasSitesJP2[cat] || { chave: 'operacao', rotulo: 'Operacao', icone: 'bi-gear-wide-connected' };
                 card.dataset.categoria = categoriaSite.chave;
-                
                 card.onclick = function() { window.open(urlDestino, '_blank'); };
-// Removi o div item-author e adicionei a classe site-title-large
-card.innerHTML = `
-    <div class="action-trigger">
-        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="event.stopPropagation(); mostrarToast('Item protegido', 'Este item fixo do sistema nao pode ser excluido diretamente.', 'erro');">
-            <i class="bi bi-trash"></i>
-        </button>
-    </div>
-    <div class="site-card-top">
-        <div class="icon-wrapper">
-            <img src="/static/image/${nomeArquivo}">
-        </div>
-        <div>
-            <div class="site-category-pill"><i class="bi ${categoriaSite.icone}"></i> ${categoriaSite.rotulo}</div>
-            <div class="item-label site-title-large">${cat}</div>
-            <div class="site-card-desc">${descricaoSite}</div>
-        </div>
-    </div>
-    <div class="site-card-footer">
-        <span class="site-status-pill"><i class="bi bi-check-circle-fill"></i> Ativo</span>
-        <span>Abrir site <i class="bi bi-box-arrow-up-right"></i></span>
-    </div>
-`;
-gridContainer.appendChild(card);
-itensRenderizados.push(cat.toLowerCase().trim());
+                card.innerHTML = `
+                    <div class="action-trigger">
+                        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="event.stopPropagation(); mostrarToast('Item protegido', 'Este item fixo do sistema nao pode ser excluido diretamente.', 'erro');">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                    <div class="site-card-top">
+                        <div class="icon-wrapper"><img src="/static/image/${nomeArquivo}"></div>
+                        <div>
+                            <div class="site-category-pill"><i class="bi ${categoriaSite.icone}"></i> ${categoriaSite.rotulo}</div>
+                            <div class="item-label site-title-large">${cat}</div>
+                            <div class="site-card-desc">${descricaoSite}</div>
+                        </div>
+                    </div>
+                    <div class="site-card-footer">
+                        <span class="site-status-pill"><i class="bi bi-check-circle-fill"></i> Ativo</span>
+                        <span>Abrir site <i class="bi bi-box-arrow-up-right"></i></span>
+                    </div>
+                `;
+                gridContainer.appendChild(card);
+                itensRenderizados.push(cat.toLowerCase().trim());
             });
 
-            // 2. Renderiza de forma dinÃ¢mica os novos sites (MODIFICADO COM explorer-site-card)
             if (data.itens && data.itens.length > 0) {
                 data.itens.forEach(item => {
                     let nomeVerificacao = item.nome ? item.nome.toLowerCase().trim() : '';
                     if (item.tipo === 'link' && !itensRenderizados.includes(nomeVerificacao)) {
                         let card = document.createElement("div");
-                        card.className = "explorer-card explorer-site-card"; // <--- CLASSE APLICADA
+                        card.className = "explorer-card explorer-site-card";
                         if (item.id) card.dataset.itemId = item.id;
-                        
+
                         let urlRealDoSite = item.caminho || '#';
                         card.onclick = function() { window.open(urlRealDoSite, '_blank'); };
                         let categoriaDinamica = obterCategoriaSite(item.categoria || 'operacao');
                         card.dataset.categoria = categoriaDinamica.chave;
-                        
+
                         let imagemDoCard = item.imagem_bg || '/static/image/ibd.jpeg';
+                        let nomeHtml = escaparHtml(item.nome || '');
                         card.innerHTML = `
-    <div class="action-trigger">
-        <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})">
-            <i class="bi bi-trash"></i>
-        </button>
-    </div>
-    <div class="site-card-top">
-        <div class="icon-wrapper">
-            <img src="${imagemDoCard}">
-        </div>
-        <div>
-            <div class="site-category-pill"><i class="bi ${categoriaDinamica.icone}"></i> ${categoriaDinamica.rotulo}</div>
-            <div class="item-label site-title-large" title="${item.nome || ''}">${item.nome || ''}</div>
-            <div class="site-card-desc">Site adicionado ao ecossistema digital do painel.</div>
-        </div>
-    </div>
-    <div class="site-card-footer">
-        <span class="site-status-pill"><i class="bi bi-check-circle-fill"></i> Ativo</span>
-        <span>Abrir site <i class="bi bi-box-arrow-up-right"></i></span>
-    </div>
-`;
-gridContainer.appendChild(card);
+                            <div class="action-trigger">
+                                <button class="btn btn-sm btn-light border py-0 px-1 text-danger" onclick="abrirModalExcluirDireto(event, ${item.id})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                            <div class="site-card-top">
+                                <div class="icon-wrapper"><img src="${imagemDoCard}"></div>
+                                <div>
+                                    <div class="site-category-pill"><i class="bi ${categoriaDinamica.icone}"></i> ${categoriaDinamica.rotulo}</div>
+                                    <div class="item-label site-title-large" title="${nomeHtml}">${nomeHtml}</div>
+                                    <div class="site-card-desc">Site adicionado ao ecossistema digital do painel.</div>
+                                </div>
+                            </div>
+                            <div class="site-card-footer">
+                                <span class="site-status-pill"><i class="bi bi-check-circle-fill"></i> Ativo</span>
+                                <span>Abrir site <i class="bi bi-box-arrow-up-right"></i></span>
+                            </div>
+                        `;
+                        gridContainer.appendChild(card);
                     }
                 });
             }
@@ -1590,20 +1624,62 @@ gridContainer.appendChild(card);
             return;
         }
 
-        // 3. Renderiza pastas normais (continua o cÃ³digo original...)
         if (!data.itens || data.itens.length === 0) {
             gridContainer.innerHTML = '<div data-empty-grid="true" class="text-center w-100 py-4 text-muted"><i class="bi bi-folder-x fs-3"></i><br>Nenhum item ou subpasta aqui.</div>';
             return;
         }
-        
+
         data.itens.forEach(item => {
-          gridContainer.appendChild(criarCardExplorer(item));
-            });
-            // Oculta o botÃ£o mestre ao recarregar a grade de arquivos limpa
-            let btnLote = document.getElementById('btn-excluir-lote');
-            if(btnLote) btnLote.style.display = 'none';
-       })
-       .catch(err => console.error("Erro na listagem:", err));
+            gridContainer.appendChild(criarCardExplorer(item));
+        });
+        preCarregarSubpastasVisiveis(data);
+
+        let btnLote = document.getElementById('btn-excluir-lote');
+        if(btnLote) btnLote.style.display = 'none';
+    }
+
+    function sincronizarGrade() {
+        let gridContainer = document.getElementById("wrapper-explorer-grid");
+        let caminhoEl = document.getElementById('txtCaminhoWindows');
+        let divArquivos = document.getElementById('controles-arquivos');
+        let divSites = document.getElementById('controles-sites');
+
+        if (!gridContainer || !caminhoEl) return;
+
+        caminhoEl.innerText = estadoDoPainel.string_caminho;
+        gridContainer.classList.toggle('sites-premium-grid', estadoDoPainel.bloco === 'sites_jp2' && estadoDoPainel.nivel_atual === 'raiz_bloco');
+
+        if (estadoDoPainel.bloco === 'sites_jp2') {
+            if(divArquivos) divArquivos.classList.add('d-none');
+            if(divSites) divSites.classList.remove('d-none');
+        } else {
+            if(divArquivos) divArquivos.classList.remove('d-none');
+            if(divSites) divSites.classList.add('d-none');
+        }
+
+        let btnVoltar = document.getElementById('btnVoltarExplorer');
+        if(btnVoltar) btnVoltar.style.setProperty('visibility', (estadoDoPainel.nivel_atual === 'raiz_bloco') ? 'hidden' : 'visible', 'important');
+
+        const catBusca = (estadoDoPainel.pasta_pai_id === null || estadoDoPainel.pasta_pai_id === '') ? estadoDoPainel.bloco : 'raiz';
+        const chaveCache = chaveListagemAtual();
+        const dadosEmCache = cacheListagemPainel.get(chaveCache);
+
+        if (dadosEmCache) {
+            renderizarDadosListagem(dadosEmCache);
+        } else {
+            gridContainer.innerHTML = '<div class="text-center w-100 py-4"><div class="spinner-border text-primary"></div><br>Buscando na nuvem...</div>';
+        }
+
+        let urlListar = `/listar?bloco=${estadoDoPainel.bloco}&categoria=${catBusca}&pasta_pai_id=${estadoDoPainel.pasta_pai_id || ''}&v=${versaoListagemPainel}`;
+
+        fetch(urlListar)
+        .then(res => res.json())
+        .then(data => {
+            cacheListagemPainel.set(chaveCache, data);
+            if (chaveCache !== chaveListagemAtual()) return;
+            renderizarDadosListagem(data);
+        })
+        .catch(err => console.error("Erro na listagem:", err));
     }
 
     function alterarVisualizacao(modo) {
