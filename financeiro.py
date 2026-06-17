@@ -241,6 +241,10 @@ def dinheiro(valor):
 def normalizar_json(valor):
     if isinstance(valor, Decimal):
         return float(valor)
+    if isinstance(valor, list):
+        return [normalizar_json(item) for item in valor]
+    if isinstance(valor, dict):
+        return {chave: normalizar_json(item) for chave, item in valor.items()}
     if hasattr(valor, "isoformat"):
         return valor.isoformat()
     return valor
@@ -305,6 +309,100 @@ def juros_sobre_saldo(valor, taxa_percentual, data_inicio, data_fim):
     return principal * taxa * meses
 
 
+def data_iso_ou_none(valor):
+    if not valor:
+        return None
+    if hasattr(valor, "isoformat"):
+        valor = valor.isoformat()
+    try:
+        return datetime.strptime(str(valor)[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def chave_mes(data_ref):
+    return f"{data_ref.year:04d}-{data_ref.month:02d}"
+
+
+def adicionar_mes(data_ref):
+    ano = data_ref.year + (1 if data_ref.month == 12 else 0)
+    mes = 1 if data_ref.month == 12 else data_ref.month + 1
+    return data_ref.replace(year=ano, month=mes, day=1)
+
+
+def pagamentos_por_mes(pagamentos):
+    mapa = {}
+    for pagamento in pagamentos:
+        data_pagamento = data_iso_ou_none(pagamento.get("data_pagamento"))
+        if not data_pagamento:
+            continue
+        chave = chave_mes(data_pagamento)
+        mapa[chave] = mapa.get(chave, Decimal("0")) + decimal_ou_zero(pagamento.get("valor_pago"))
+    return mapa
+
+
+def calcular_motor_financeiro(item, pagamentos=None, data_referencia=None):
+    pagamentos = pagamentos or []
+    hoje = data_referencia or datetime.now().date()
+    principal = decimal_ou_zero(item.get("valor_inicial"))
+    taxa = decimal_ou_zero(item.get("juros_mensais")) / Decimal("100")
+    inicio = data_iso_ou_none(item.get("data_inicio")) or hoje
+    vencimento = data_iso_ou_none(item.get("data_pgto")) or hoje
+    fim_projecao = max(vencimento, hoje)
+    inicio_mes = inicio.replace(day=1)
+    fim_mes = fim_projecao.replace(day=1)
+    mapa_pagamentos = pagamentos_por_mes(pagamentos)
+
+    saldo = principal
+    cronograma = []
+    data_mes = inicio_mes
+    indice = 1
+    valor_ate_hoje = principal
+    saldo_ate_hoje = principal
+
+    while data_mes <= fim_mes:
+        saldo_inicial = saldo
+        juros = saldo * taxa if saldo > 0 else Decimal("0")
+        valor_com_juros = saldo + juros
+        pagamento = mapa_pagamentos.get(chave_mes(data_mes), Decimal("0"))
+        saldo = valor_com_juros - pagamento
+        if saldo < 0:
+            saldo = Decimal("0")
+
+        linha = {
+            "mes": chave_mes(data_mes),
+            "numero": indice,
+            "valor_inicial": saldo_inicial,
+            "taxa_juros": decimal_ou_zero(item.get("juros_mensais")),
+            "valor_juros": juros,
+            "valor_com_juros": valor_com_juros,
+            "pagamento_realizado": pagamento,
+            "saldo_devedor": saldo,
+        }
+        cronograma.append(linha)
+
+        if data_mes <= hoje.replace(day=1):
+            valor_ate_hoje = valor_com_juros
+            saldo_ate_hoje = saldo
+
+        data_mes = adicionar_mes(data_mes)
+        indice += 1
+
+    total_pago = sum((decimal_ou_zero(p.get("valor_pago")) for p in pagamentos), Decimal("0"))
+    valor_futuro = cronograma[-1]["valor_com_juros"] if cronograma else principal
+    saldo_futuro = cronograma[-1]["saldo_devedor"] if cronograma else principal
+
+    return {
+        "cronograma": cronograma,
+        "total_pago": total_pago,
+        "valor_juros_day_calculado": valor_ate_hoje - principal if valor_ate_hoje > principal else Decimal("0"),
+        "valor_divida_day_calculado": valor_ate_hoje,
+        "saldo_atual_calculado": saldo_ate_hoje,
+        "valor_futuro_calculado": valor_futuro,
+        "saldo_futuro_calculado": saldo_futuro,
+    }
+
+
 def listar_investimentos_com_pagamentos(cur):
     cur.execute(
         """
@@ -327,19 +425,45 @@ def listar_investimentos_com_pagamentos(cur):
         """
     )
     dados = cur.fetchall()
+    pagamentos_por_investimento = {}
+    ids = [item["id"] for item in dados]
+    if ids:
+        placeholders = ",".join(["%s"] * len(ids))
+        cur.execute(
+            f"""
+            SELECT investimento_id, data_pagamento, valor_pago, observacoes
+            FROM investimento_pagamentos
+            WHERE investimento_id IN ({placeholders})
+            ORDER BY data_pagamento ASC, id ASC
+            """,
+            ids,
+        )
+        for pagamento in cur.fetchall():
+            pagamentos_por_investimento.setdefault(pagamento["investimento_id"], []).append(pagamento)
+
     for item in dados:
+        pagamentos = pagamentos_por_investimento.get(item["id"], [])
+        motor = calcular_motor_financeiro(item, pagamentos)
         projetado = decimal_ou_zero(item.get("valor_divida_futuro"))
         importado_excel = item.get("importacao_origem") == ORIGEM_IMPORTACAO_EXCEL
-        if projetado <= 0 and not importado_excel:
-            projetado = decimal_ou_zero(item.get("valor_inicial")) + juros_sobre_saldo(
-                item.get("valor_inicial"),
-                item.get("juros_mensais"),
-                item.get("data_inicio"),
-                item.get("data_pgto"),
-            )
+        status_manual = texto_limpo(item.get("status_pagamento"))
+        status_em_aberto = status_manual in {"Em aberto", "Parcial", "Vencido", "Vencendo"}
+        if status_manual == "Quitado":
+            projetado = Decimal("0")
+        elif projetado <= 0 and (not importado_excel or status_em_aberto):
+            projetado = motor["valor_futuro_calculado"]
+        item["total_pago"] = motor["total_pago"]
+        if status_manual == "Quitado":
+            item["valor_juros_day_base"] = Decimal("0")
+            item["valor_divida_day_base"] = Decimal("0")
+            item["saldo_atual"] = Decimal("0")
+        else:
+            item["valor_juros_day_base"] = decimal_ou_zero(item.get("valor_juros_day")) if importado_excel and decimal_ou_zero(item.get("valor_juros_day")) > 0 and not status_em_aberto else motor["valor_juros_day_calculado"]
+            item["valor_divida_day_base"] = decimal_ou_zero(item.get("valor_divida_day")) if importado_excel and decimal_ou_zero(item.get("valor_divida_day")) > 0 and not status_em_aberto else motor["valor_divida_day_calculado"]
+            item["saldo_atual"] = motor["saldo_atual_calculado"]
         item["valor_projetado_base"] = projetado
         item["sem_projecao_futura"] = bool(importado_excel and projetado <= 0)
-        item["saldo_projetado"] = projetado - decimal_ou_zero(item.get("total_pago"))
+        item["saldo_projetado"] = Decimal("0") if status_manual == "Quitado" else projetado - motor["total_pago"]
         if item["saldo_projetado"] < 0:
             item["saldo_projetado"] = Decimal("0")
     return dados
@@ -453,6 +577,62 @@ def resumo_investimentos():
             dados = listar_investimentos_com_pagamentos(cur)
         conn.close()
         return jsonify({"status": "sucesso", "dados": normalizar_lista_json(dados)})
+    except Exception as e:
+        return jsonify({"status": "erro", "msg": str(e)}), 500
+
+
+@bp_financeiro.route("/api/detalhe-investimento/<int:id>", methods=["GET"])
+def detalhe_investimento(id):
+    if "usuario_logado" not in session:
+        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+
+    try:
+        garantir_schema_financeiro()
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT i.id, i.empresa_id, e.nome AS empresa_nome, i.nome_investidor,
+                       i.valor_inicial, i.juros_mensais, i.data_inicio, i.captador,
+                       i.tipo_recurso, i.finalidade, i.data_pgto, i.observacoes,
+                       i.status_pagamento, i.valor_juros_day, i.valor_divida_day, i.pgto_day,
+                       i.valor_divida_futuro, i.importacao_origem, i.importacao_id
+                FROM investimentos i
+                LEFT JOIN empresas e ON e.id = i.empresa_id
+                WHERE i.id = %s
+                LIMIT 1
+                """,
+                (id,),
+            )
+            investimento = cur.fetchone()
+            if not investimento:
+                conn.close()
+                return jsonify({"status": "erro", "msg": "Investimento nao encontrado."}), 404
+            cur.execute(
+                """
+                SELECT data_pagamento, valor_pago, observacoes
+                FROM investimento_pagamentos
+                WHERE investimento_id = %s
+                ORDER BY data_pagamento ASC, id ASC
+                """,
+                (id,),
+            )
+            pagamentos = cur.fetchall()
+        conn.close()
+
+        motor = calcular_motor_financeiro(investimento, pagamentos)
+        investimento["total_pago"] = motor["total_pago"]
+        investimento["valor_juros_day_base"] = motor["valor_juros_day_calculado"]
+        investimento["valor_divida_day_base"] = motor["valor_divida_day_calculado"]
+        investimento["valor_futuro_calculado"] = motor["valor_futuro_calculado"]
+        investimento["saldo_atual"] = motor["saldo_atual_calculado"]
+        investimento["saldo_projetado"] = motor["saldo_futuro_calculado"]
+        return jsonify({
+            "status": "sucesso",
+            "investimento": normalizar_json(investimento),
+            "pagamentos": normalizar_json(pagamentos),
+            "cronograma": normalizar_json(motor["cronograma"]),
+        })
     except Exception as e:
         return jsonify({"status": "erro", "msg": str(e)}), 500
 
