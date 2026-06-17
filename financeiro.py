@@ -43,6 +43,32 @@ def garantir_schema_financeiro():
             )
             if not coluna_existe(cur, "investimento_pagamentos", "criado_por"):
                 cur.execute("ALTER TABLE investimento_pagamentos ADD COLUMN criado_por VARCHAR(120) NULL")
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS investimento_auditoria (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    investimento_id INT NULL,
+                    acao VARCHAR(80) NOT NULL,
+                    descricao TEXT NULL,
+                    usuario VARCHAR(120) NULL,
+                    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS investimento_anexos (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    investimento_id INT NOT NULL,
+                    titulo VARCHAR(180) NOT NULL,
+                    tipo VARCHAR(80) NULL,
+                    url TEXT NOT NULL,
+                    observacoes TEXT NULL,
+                    criado_por VARCHAR(120) NULL,
+                    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                """
+            )
             colunas = {
                 "empresa_id": "INT NULL AFTER id",
                 "tipo_recurso": "VARCHAR(80) NULL",
@@ -291,7 +317,17 @@ def obter_ou_criar_empresa(cur, nome):
         "INSERT INTO empresas (nome, cnpj, ramo_atividade) VALUES (%s, %s, %s)",
         (nome, "", "Importado da planilha financeira"),
     )
-    return cur.lastrowid
+        return cur.lastrowid
+
+
+def registrar_auditoria(cur, investimento_id, acao, descricao):
+    cur.execute(
+        """
+        INSERT INTO investimento_auditoria (investimento_id, acao, descricao, usuario)
+        VALUES (%s, %s, %s, %s)
+        """,
+        (investimento_id, acao, descricao, session.get("nome_exibicao") or session.get("usuario_logado") or "Sistema"),
+    )
 
 
 def juros_sobre_saldo(valor, taxa_percentual, data_inicio, data_fim):
@@ -509,6 +545,14 @@ def pagina_pagamentos_financeiro():
     return render_template("financeiro_pagamentos.html")
 
 
+@bp_financeiro.route("/financeiro/auditoria")
+def pagina_auditoria_financeira():
+    if "usuario_logado" not in session:
+        return redirect(url_for("tela_login"))
+    garantir_schema_financeiro()
+    return render_template("financeiro_auditoria.html")
+
+
 @bp_financeiro.route("/api/empresas", methods=["GET"])
 def listar_empresas():
     if "usuario_logado" not in session:
@@ -621,12 +665,20 @@ def detalhe_investimento(id):
         conn.close()
 
         motor = calcular_motor_financeiro(investimento, pagamentos)
+        status_manual = texto_limpo(investimento.get("status_pagamento"))
         investimento["total_pago"] = motor["total_pago"]
-        investimento["valor_juros_day_base"] = motor["valor_juros_day_calculado"]
-        investimento["valor_divida_day_base"] = motor["valor_divida_day_calculado"]
-        investimento["valor_futuro_calculado"] = motor["valor_futuro_calculado"]
-        investimento["saldo_atual"] = motor["saldo_atual_calculado"]
-        investimento["saldo_projetado"] = motor["saldo_futuro_calculado"]
+        if status_manual == "Quitado":
+            investimento["valor_juros_day_base"] = Decimal("0")
+            investimento["valor_divida_day_base"] = Decimal("0")
+            investimento["valor_futuro_calculado"] = Decimal("0")
+            investimento["saldo_atual"] = Decimal("0")
+            investimento["saldo_projetado"] = Decimal("0")
+        else:
+            investimento["valor_juros_day_base"] = motor["valor_juros_day_calculado"]
+            investimento["valor_divida_day_base"] = motor["valor_divida_day_calculado"]
+            investimento["valor_futuro_calculado"] = motor["valor_futuro_calculado"]
+            investimento["saldo_atual"] = motor["saldo_atual_calculado"]
+            investimento["saldo_projetado"] = motor["saldo_futuro_calculado"]
         return jsonify({
             "status": "sucesso",
             "investimento": normalizar_json(investimento),
@@ -667,6 +719,8 @@ def adicionar_investimento():
                     request.form.get("status_pagamento", "").strip() or None,
                 ),
             )
+            investimento_id = cur.lastrowid
+            registrar_auditoria(cur, investimento_id, "Cadastro", "Investimento cadastrado manualmente.")
         conn.commit()
         conn.close()
         return jsonify({"status": "sucesso"})
@@ -711,6 +765,7 @@ def editar_investimento(id):
                     id,
                 ),
             )
+            registrar_auditoria(cur, id, "Edicao", "Dados do investimento foram alterados.")
         conn.commit()
         conn.close()
         return jsonify({"status": "sucesso"})
@@ -740,6 +795,7 @@ def atualizar_status_investimento(id):
                 conn.rollback()
                 conn.close()
                 return jsonify({"status": "erro", "msg": "Investimento nao encontrado."}), 404
+            registrar_auditoria(cur, id, "Status", f"Status alterado para {status_pagamento or 'Automatico'}.")
         conn.commit()
         conn.close()
         return jsonify({"status": "sucesso"})
@@ -841,6 +897,7 @@ def importar_investimentos_excel():
                         item["importacao_id"],
                     ),
                 )
+                registrar_auditoria(cur, cur.lastrowid, "Importacao", "Investimento importado da planilha Excel.")
                 inseridos += 1
         conn.commit()
         conn.close()
@@ -880,6 +937,7 @@ def lancar_pagamento_investimento(id):
                     """,
                     (id, data_pagamento, valor, request.form.get("observacoes", "").strip(), session.get("nome_exibicao", "Sistema")),
                 )
+                registrar_auditoria(cur, id, "Pagamento", f"Pagamento lancado no valor de {dinheiro(valor)}.")
         if not existe:
             conn.close()
             return jsonify({"status": "erro", "msg": "Investimento nao encontrado."}), 404
@@ -911,7 +969,104 @@ def pagamentos_investimentos():
             )
             dados = cur.fetchall()
         conn.close()
-        return jsonify({"status": "sucesso", "dados": dados})
+        return jsonify({"status": "sucesso", "dados": normalizar_lista_json(dados)})
+    except Exception as e:
+        return jsonify({"status": "erro", "msg": str(e)}), 500
+
+
+@bp_financeiro.route("/api/auditoria-investimentos", methods=["GET"])
+def auditoria_investimentos():
+    if "usuario_logado" not in session:
+        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+    try:
+        garantir_schema_financeiro()
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT a.id, a.investimento_id, a.acao, a.descricao, a.usuario, a.criado_em,
+                       e.nome AS empresa_nome, i.nome_investidor, i.importacao_id
+                FROM investimento_auditoria a
+                LEFT JOIN investimentos i ON i.id = a.investimento_id
+                LEFT JOIN empresas e ON e.id = i.empresa_id
+                ORDER BY a.criado_em DESC, a.id DESC
+                LIMIT 500
+                """
+            )
+            dados = cur.fetchall()
+        conn.close()
+        return jsonify({"status": "sucesso", "dados": normalizar_lista_json(dados)})
+    except Exception as e:
+        return jsonify({"status": "erro", "msg": str(e)}), 500
+
+
+@bp_financeiro.route("/api/anexos-investimento/<int:id>", methods=["GET", "POST"])
+def anexos_investimento(id):
+    if "usuario_logado" not in session:
+        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+    try:
+        garantir_schema_financeiro()
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            if request.method == "POST":
+                titulo = request.form.get("titulo", "").strip()
+                url = request.form.get("url", "").strip()
+                if not titulo or not url:
+                    conn.close()
+                    return jsonify({"status": "erro", "msg": "Informe titulo e link do anexo."}), 400
+                cur.execute("SELECT id FROM investimentos WHERE id = %s", (id,))
+                if not cur.fetchone():
+                    conn.close()
+                    return jsonify({"status": "erro", "msg": "Investimento nao encontrado."}), 404
+                cur.execute(
+                    """
+                    INSERT INTO investimento_anexos
+                    (investimento_id, titulo, tipo, url, observacoes, criado_por)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        id,
+                        titulo,
+                        request.form.get("tipo", "").strip(),
+                        url,
+                        request.form.get("observacoes", "").strip(),
+                        session.get("nome_exibicao", "Sistema"),
+                    ),
+                )
+                registrar_auditoria(cur, id, "Anexo", f"Anexo cadastrado: {titulo}.")
+                conn.commit()
+            cur.execute(
+                """
+                SELECT id, investimento_id, titulo, tipo, url, observacoes, criado_por, criado_em
+                FROM investimento_anexos
+                WHERE investimento_id = %s
+                ORDER BY criado_em DESC, id DESC
+                """,
+                (id,),
+            )
+            dados = cur.fetchall()
+        conn.close()
+        return jsonify({"status": "sucesso", "dados": normalizar_lista_json(dados)})
+    except Exception as e:
+        return jsonify({"status": "erro", "msg": str(e)}), 500
+
+
+@bp_financeiro.route("/api/excluir-anexo-investimento/<int:id>", methods=["DELETE"])
+def excluir_anexo_investimento(id):
+    if "usuario_logado" not in session:
+        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+    try:
+        garantir_schema_financeiro()
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute("SELECT investimento_id, titulo FROM investimento_anexos WHERE id = %s", (id,))
+            anexo = cur.fetchone()
+            cur.execute("DELETE FROM investimento_anexos WHERE id = %s", (id,))
+            if anexo:
+                registrar_auditoria(cur, anexo["investimento_id"], "Exclusao de anexo", f"Anexo excluido: {anexo['titulo']}.")
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "sucesso"})
     except Exception as e:
         return jsonify({"status": "erro", "msg": str(e)}), 500
 
@@ -923,7 +1078,11 @@ def excluir_pagamento_investimento(id):
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
+            cur.execute("SELECT investimento_id, valor_pago FROM investimento_pagamentos WHERE id = %s", (id,))
+            pagamento = cur.fetchone()
             cur.execute("DELETE FROM investimento_pagamentos WHERE id = %s", (id,))
+            if pagamento:
+                registrar_auditoria(cur, pagamento["investimento_id"], "Exclusao de pagamento", f"Pagamento de {dinheiro(pagamento['valor_pago'])} excluido.")
         conn.commit()
         conn.close()
         return jsonify({"status": "sucesso"})
@@ -944,6 +1103,7 @@ def limpar_investimentos():
         garantir_schema_financeiro()
         conn = get_db_connection()
         with conn.cursor() as cur:
+            registrar_auditoria(cur, None, "Limpeza", "Todos os lancamentos financeiros foram removidos.")
             cur.execute("DELETE FROM investimento_pagamentos")
             cur.execute("DELETE FROM investimentos")
         conn.commit()
@@ -961,6 +1121,7 @@ def excluir_investimento(id):
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
+            registrar_auditoria(cur, id, "Exclusao", "Investimento excluido.")
             cur.execute("DELETE FROM investimento_pagamentos WHERE investimento_id = %s", (id,))
             cur.execute("DELETE FROM investimentos WHERE id = %s", (id,))
         conn.commit()

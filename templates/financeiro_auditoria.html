@@ -1,0 +1,19 @@
+{% extends 'layout_base.html' %}
+{% block content %}
+<style>
+.head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:18px}.kicker{color:#667085;font-size:12px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}.title{font-size:30px;font-weight:850;color:#101828;margin:3px 0 4px}.subtitle{color:#667085;font-size:14px}.panel{background:#fff;border:1px solid #d9e2ef;border-radius:10px;box-shadow:0 14px 36px rgba(15,23,42,.06);overflow:hidden}.table th{background:#f8fafc;color:#667085;font-size:11px;font-weight:850;text-transform:uppercase;white-space:nowrap}.pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:850;background:#eef4ff;color:#155eef}.muted{color:#667085;font-size:12px}@media print{#sidebar,.actions{display:none!important}.content{padding:0}.panel{box-shadow:none}}
+</style>
+<header class="head">
+ <div><div class="kicker">Auditoria financeira</div><h1 class="title">Historico de movimentacoes</h1><div class="subtitle">Rastreamento de cadastros, edicoes, pagamentos, anexos, status e exclusoes.</div></div>
+ <div class="actions"><button class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button></div>
+</header>
+<section class="panel">
+ <div class="table-responsive p-3"><table class="table table-hover align-middle" id="tabelaAuditoria"><thead><tr><th>Data/Hora</th><th>Acao</th><th>Investimento</th><th>Descricao</th><th>Usuario</th></tr></thead><tbody id="corpoAuditoria"></tbody></table></div>
+</section>
+<script>
+let tabela=null;
+function dataBR(v){if(!v)return '-'; const d=new Date(v); return Number.isNaN(d.getTime())?String(v):d.toLocaleString('pt-BR');}
+function carregarAuditoria(){fetch('/api/auditoria-investimentos').then(r=>r.json()).then(data=>{const lista=Array.isArray(data.dados)?data.dados:[]; const tb=corpoAuditoria; tb.innerHTML=''; if(tabela){tabela.destroy(); tabela=null;} lista.forEach(a=>{tb.innerHTML+=`<tr><td>${dataBR(a.criado_em)}</td><td><span class="pill">${a.acao||'-'}</span></td><td><strong>${a.importacao_id||a.investimento_id||'-'}</strong><div class="muted">${a.empresa_nome||''} ${a.nome_investidor||''}</div></td><td>${a.descricao||'-'}</td><td>${a.usuario||'-'}</td></tr>`;}); if(lista.length){tabela=$('#tabelaAuditoria').DataTable({pageLength:25,order:[[0,'desc']],language:{sSearch:'Pesquisar:',sLengthMenu:'Exibir _MENU_',sInfo:'Mostrando _START_ ate _END_ de _TOTAL_',oPaginate:{sNext:'Proximo',sPrevious:'Anterior'}}});}});}
+document.addEventListener('DOMContentLoaded',carregarAuditoria);
+</script>
+{% endblock %}
