@@ -1228,10 +1228,17 @@
     let filtroSiteAtual = 'todos';
     let versaoListagemPainel = 1;
     let cacheListagemPainel = new Map();
+    let controladorListagemPainel = null;
+    let preloadsListagemEmAndamento = new Set();
 
     function invalidarCacheListagem() {
         versaoListagemPainel += 1;
         cacheListagemPainel.clear();
+        preloadsListagemEmAndamento.clear();
+        if (controladorListagemPainel) {
+            controladorListagemPainel.abort();
+            controladorListagemPainel = null;
+        }
     }
 
     const subpastasFixas = {
@@ -1505,9 +1512,10 @@
 
         pastas.forEach(pasta => {
             const chave = chaveListagemPara(blocoAtual, pasta.id, 'subpasta', versaoAtual);
-            if (cacheListagemPainel.has(chave)) return;
+            if (cacheListagemPainel.has(chave) || preloadsListagemEmAndamento.has(chave)) return;
 
             const url = `/listar?bloco=${blocoAtual}&categoria=raiz&pasta_pai_id=${pasta.id}&v=${versaoAtual}`;
+            preloadsListagemEmAndamento.add(chave);
             fetch(url)
                 .then(res => res.json())
                 .then(dados => {
@@ -1515,7 +1523,8 @@
                         cacheListagemPainel.set(chave, dados);
                     }
                 })
-                .catch(() => {});
+                .catch(() => {})
+                .finally(() => preloadsListagemEmAndamento.delete(chave));
         });
     }
 
@@ -1672,14 +1681,28 @@
 
         let urlListar = `/listar?bloco=${estadoDoPainel.bloco}&categoria=${catBusca}&pasta_pai_id=${estadoDoPainel.pasta_pai_id || ''}&v=${versaoListagemPainel}`;
 
-        fetch(urlListar)
+        if (controladorListagemPainel) {
+            controladorListagemPainel.abort();
+        }
+        controladorListagemPainel = new AbortController();
+        const controladorAtual = controladorListagemPainel;
+
+        fetch(urlListar, { signal: controladorAtual.signal })
         .then(res => res.json())
         .then(data => {
+            if (controladorAtual.signal.aborted) return;
             cacheListagemPainel.set(chaveCache, data);
             if (chaveCache !== chaveListagemAtual()) return;
             renderizarDadosListagem(data);
         })
-        .catch(err => console.error("Erro na listagem:", err));
+        .catch(err => {
+            if (err.name !== 'AbortError') console.error("Erro na listagem:", err);
+        })
+        .finally(() => {
+            if (controladorListagemPainel === controladorAtual) {
+                controladorListagemPainel = null;
+            }
+        });
     }
 
     function alterarVisualizacao(modo) {
