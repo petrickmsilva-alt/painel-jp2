@@ -328,13 +328,16 @@ def listar_investimentos_com_pagamentos(cur):
     dados = cur.fetchall()
     for item in dados:
         projetado = decimal_ou_zero(item.get("valor_divida_futuro"))
-        if projetado <= 0:
+        importado_excel = item.get("importacao_origem") == ORIGEM_IMPORTACAO_EXCEL
+        if projetado <= 0 and not importado_excel:
             projetado = decimal_ou_zero(item.get("valor_inicial")) + juros_sobre_saldo(
                 item.get("valor_inicial"),
                 item.get("juros_mensais"),
                 item.get("data_inicio"),
                 item.get("data_pgto"),
             )
+        item["valor_projetado_base"] = projetado
+        item["sem_projecao_futura"] = bool(importado_excel and projetado <= 0)
         item["saldo_projetado"] = projetado - decimal_ou_zero(item.get("total_pago"))
         if item["saldo_projetado"] < 0:
             item["saldo_projetado"] = Decimal("0")
