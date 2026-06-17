@@ -1,0 +1,144 @@
+{% extends 'layout_base.html' %}
+
+{% block content %}
+<style>
+    .page-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:18px}
+    .kicker{color:#667085;font-size:12px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
+    .title{font-size:30px;font-weight:850;margin:3px 0 4px;color:#101828}
+    .subtitle{color:#667085;font-size:14px;max-width:780px}
+    .panel{background:#fff;border:1px solid #d9e2ef;border-radius:10px;box-shadow:0 14px 36px rgba(15,23,42,.06);overflow:hidden}
+    .toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:16px 18px;border-bottom:1px solid #edf1f7}
+    .table thead th{background:#f8fafc;color:#667085;font-size:11px;font-weight:850;text-transform:uppercase;white-space:nowrap}
+    .table td{font-size:13px;vertical-align:middle}
+    .money{font-weight:850;color:#101828;white-space:nowrap}
+    .muted{color:#667085;font-size:12px}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:850;background:#eef4ff;color:#155eef}
+    .modal-content{border:0;border-radius:10px;box-shadow:0 22px 60px rgba(15,23,42,.22)}
+</style>
+
+<header class="page-head">
+    <div>
+        <div class="kicker">Relacao de emprestimos</div>
+        <h1 class="title">Carteira consolidada</h1>
+        <div class="subtitle">Visualizacao completa dos recursos cadastrados, valores, prazos, pagamentos parciais e saldo projetado.</div>
+    </div>
+    <button class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+</header>
+
+<section class="panel">
+    <div class="toolbar">
+        <div>
+            <strong>Emprestimos registrados</strong>
+            <div class="muted">Dados vindos do cadastro manual e da planilha importada.</div>
+        </div>
+    </div>
+    <div class="table-responsive p-3">
+        <table class="table table-hover align-middle" id="tabelaRelacao">
+            <thead>
+                <tr>
+                    <th>ID</th><th>Empresa</th><th>Credor</th><th>Captador</th><th>Tipo</th><th>Finalidade</th>
+                    <th>Valor</th><th>Juros</th><th>Data recurso</th><th>Data pgto</th><th>Pago</th><th>Saldo</th><th>Acoes</th>
+                </tr>
+            </thead>
+            <tbody id="corpoRelacao"></tbody>
+        </table>
+    </div>
+</section>
+
+<div class="modal fade" id="modalPagamento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" id="formPagamento">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-cash-coin text-success"></i> Lancar pagamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="pagamentoInvestimentoId">
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-secondary">Investimento</label>
+                    <div id="pagamentoTitulo" class="fw-bold"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-secondary">Data do pagamento</label>
+                    <input type="date" class="form-control" id="dataPagamento" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-secondary">Valor pago</label>
+                    <input type="text" class="form-control" id="valorPagamento" oninput="formatarMoeda(this)" required>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label fw-bold small text-secondary">Observacoes</label>
+                    <textarea class="form-control" id="obsPagamento" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-success">Salvar pagamento</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let tabelaRelacao=null;
+function dinheiro(v){return (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
+function dataBR(v){if(!v)return '-'; const p=String(v).split(' ')[0].split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:'-';}
+function numeroBR(v){return Number(String(v||'0').replace(/\./g,'').replace(',','.'))||0;}
+function formatarMoeda(i){let v=i.value.replace(/\D/g,''); v=(Number(v)/100).toFixed(2).replace('.',','); i.value=v.replace(/(\d)(\d{3})(\d{3}),/g,'$1.$2.$3,').replace(/(\d)(\d{3}),/g,'$1.$2,');}
+
+function abrirPagamento(item){
+    document.getElementById('pagamentoInvestimentoId').value=item.id;
+    document.getElementById('pagamentoTitulo').innerText=`${item.empresa_nome || '-'} - ${item.nome_investidor || '-'}`;
+    document.getElementById('dataPagamento').value=new Date().toISOString().slice(0,10);
+    document.getElementById('valorPagamento').value='';
+    document.getElementById('obsPagamento').value='';
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalPagamento')).show();
+}
+
+function carregarRelacao(){
+    fetch('/api/resumo-investimentos').then(r=>r.json()).then(data=>{
+        const tbody=document.getElementById('corpoRelacao');
+        tbody.innerHTML='';
+        if(tabelaRelacao){tabelaRelacao.destroy(); tabelaRelacao=null;}
+        const lista=Array.isArray(data.dados)?data.dados:[];
+        lista.forEach(item=>{
+            const json=encodeURIComponent(JSON.stringify(item));
+            tbody.innerHTML+=`<tr>
+                <td>${item.importacao_id || item.id}</td>
+                <td><div class="money">${item.empresa_nome || '-'}</div><div class="muted">${item.observacoes || ''}</div></td>
+                <td>${item.nome_investidor || '-'}</td>
+                <td>${item.captador || '-'}</td>
+                <td><span class="pill">${item.tipo_recurso || '-'}</span></td>
+                <td>${item.finalidade || '-'}</td>
+                <td class="money">${dinheiro(item.valor_inicial)}</td>
+                <td>${Number(item.juros_mensais || 0).toLocaleString('pt-BR')}%</td>
+                <td>${dataBR(item.data_inicio)}</td>
+                <td>${dataBR(item.data_pgto)}</td>
+                <td class="money">${dinheiro(item.total_pago)}</td>
+                <td class="money">${dinheiro(item.saldo_projetado || item.valor_divida_futuro || item.valor_inicial)}</td>
+                <td class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-success" onclick="abrirPagamento(JSON.parse(decodeURIComponent('${json}')))"><i class="bi bi-cash"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="excluirInvestimento(${item.id})"><i class="bi bi-trash"></i></button>
+                </td>
+            </tr>`;
+        });
+        if(lista.length){tabelaRelacao=$('#tabelaRelacao').DataTable({pageLength:25,language:{sSearch:'Pesquisar:',sLengthMenu:'Exibir _MENU_',sInfo:'Mostrando _START_ ate _END_ de _TOTAL_',oPaginate:{sNext:'Proximo',sPrevious:'Anterior'}}});}
+    });
+}
+function excluirInvestimento(id){if(!confirm('Excluir este lancamento?'))return; fetch('/api/excluir-investimento/'+id,{method:'DELETE'}).then(()=>carregarRelacao());}
+document.getElementById('formPagamento').addEventListener('submit',e=>{
+    e.preventDefault();
+    const id=document.getElementById('pagamentoInvestimentoId').value;
+    const fd=new FormData();
+    fd.append('data_pagamento',document.getElementById('dataPagamento').value);
+    fd.append('valor_pago',numeroBR(document.getElementById('valorPagamento').value));
+    fd.append('observacoes',document.getElementById('obsPagamento').value);
+    fetch('/api/lancar-pagamento-investimento/'+id,{method:'POST',body:fd}).then(r=>r.json()).then(data=>{
+        if(data.status!=='sucesso')return alert(data.msg||'Erro ao salvar pagamento.');
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalPagamento')).hide();
+        carregarRelacao();
+    });
+});
+document.addEventListener('DOMContentLoaded',carregarRelacao);
+</script>
+{% endblock %}

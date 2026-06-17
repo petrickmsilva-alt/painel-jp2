@@ -28,6 +28,18 @@ def garantir_schema_financeiro():
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS investimento_pagamentos (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    investimento_id INT NOT NULL,
+                    data_pagamento DATE NOT NULL,
+                    valor_pago DECIMAL(15,2) NOT NULL DEFAULT 0,
+                    observacoes TEXT NULL,
+                    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                """
+            )
             colunas = {
                 "empresa_id": "INT NULL AFTER id",
                 "tipo_recurso": "VARCHAR(80) NULL",
@@ -262,12 +274,88 @@ def obter_ou_criar_empresa(cur, nome):
     return cur.lastrowid
 
 
+def juros_sobre_saldo(valor, taxa_percentual, data_inicio, data_fim):
+    principal = decimal_ou_zero(valor)
+    taxa = decimal_ou_zero(taxa_percentual) / Decimal("100")
+    if not data_inicio or not data_fim or principal <= 0 or taxa <= 0:
+        return Decimal("0")
+    try:
+        inicio = datetime.strptime(str(data_inicio)[:10], "%Y-%m-%d").date()
+        fim = datetime.strptime(str(data_fim)[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return Decimal("0")
+    dias = max(0, (fim - inicio).days)
+    meses = Decimal(dias) / Decimal("30")
+    return principal * taxa * meses
+
+
+def listar_investimentos_com_pagamentos(cur):
+    cur.execute(
+        """
+        SELECT i.id, i.empresa_id, e.nome AS empresa_nome, i.nome_investidor,
+               i.valor_inicial, i.juros_mensais, i.data_inicio, i.captador,
+               i.tipo_recurso, i.finalidade, i.data_pgto, i.observacoes,
+               i.valor_juros_day, i.valor_divida_day, i.pgto_day,
+               i.valor_divida_futuro, i.importacao_origem, i.importacao_id,
+               COALESCE(SUM(p.valor_pago), 0) AS total_pago,
+               MAX(p.data_pagamento) AS ultima_data_pagamento
+        FROM investimentos i
+        LEFT JOIN empresas e ON e.id = i.empresa_id
+        LEFT JOIN investimento_pagamentos p ON p.investimento_id = i.id
+        GROUP BY i.id, i.empresa_id, e.nome, i.nome_investidor, i.valor_inicial,
+                 i.juros_mensais, i.data_inicio, i.captador, i.tipo_recurso,
+                 i.finalidade, i.data_pgto, i.observacoes, i.valor_juros_day,
+                 i.valor_divida_day, i.pgto_day, i.valor_divida_futuro,
+                 i.importacao_origem, i.importacao_id
+        ORDER BY COALESCE(i.data_pgto, i.data_inicio) ASC, i.id DESC
+        """
+    )
+    dados = cur.fetchall()
+    for item in dados:
+        projetado = decimal_ou_zero(item.get("valor_divida_futuro"))
+        if projetado <= 0:
+            projetado = decimal_ou_zero(item.get("valor_inicial")) + juros_sobre_saldo(
+                item.get("valor_inicial"),
+                item.get("juros_mensais"),
+                item.get("data_inicio"),
+                item.get("data_pgto"),
+            )
+        item["saldo_projetado"] = projetado - decimal_ou_zero(item.get("total_pago"))
+        if item["saldo_projetado"] < 0:
+            item["saldo_projetado"] = Decimal("0")
+    return dados
+
+
 @bp_financeiro.route("/financeiro")
 def pagina_financeiro():
     if "usuario_logado" not in session:
         return redirect(url_for("tela_login"))
     garantir_schema_financeiro()
     return render_template("financeiro.html")
+
+
+@bp_financeiro.route("/financeiro/relacao")
+def pagina_relacao_emprestimos():
+    if "usuario_logado" not in session:
+        return redirect(url_for("tela_login"))
+    garantir_schema_financeiro()
+    return render_template("financeiro_relacao.html")
+
+
+@bp_financeiro.route("/financeiro/detalhe")
+def pagina_detalhe_emprestimo():
+    if "usuario_logado" not in session:
+        return redirect(url_for("tela_login"))
+    garantir_schema_financeiro()
+    return render_template("financeiro_detalhe.html")
+
+
+@bp_financeiro.route("/financeiro/resumo")
+def pagina_resumo_financeiro():
+    if "usuario_logado" not in session:
+        return redirect(url_for("tela_login"))
+    garantir_schema_financeiro()
+    return render_template("financeiro_resumo.html")
 
 
 @bp_financeiro.route("/api/empresas", methods=["GET"])
@@ -335,19 +423,7 @@ def resumo_investimentos():
         garantir_schema_financeiro()
         conn = get_db_connection()
         with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT i.id, i.empresa_id, e.nome AS empresa_nome, i.nome_investidor,
-                       i.valor_inicial, i.juros_mensais, i.data_inicio, i.captador,
-                       i.tipo_recurso, i.finalidade, i.data_pgto, i.observacoes,
-                       i.valor_juros_day, i.valor_divida_day, i.pgto_day,
-                       i.valor_divida_futuro, i.importacao_origem, i.importacao_id
-                FROM investimentos i
-                LEFT JOIN empresas e ON e.id = i.empresa_id
-                ORDER BY COALESCE(i.data_pgto, i.data_inicio) ASC, i.id DESC
-                """
-            )
-            dados = cur.fetchall()
+            dados = listar_investimentos_com_pagamentos(cur)
         conn.close()
         return jsonify({"status": "sucesso", "dados": dados})
     except Exception as e:
@@ -498,6 +574,63 @@ def importar_investimentos_excel():
         return jsonify({"status": "erro", "msg": str(e)}), 500
 
 
+@bp_financeiro.route("/api/lancar-pagamento-investimento/<int:id>", methods=["POST"])
+def lancar_pagamento_investimento(id):
+    if "usuario_logado" not in session:
+        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+
+    valor = decimal_ou_zero(request.form.get("valor_pago"))
+    data_pagamento = request.form.get("data_pagamento") or datetime.now().date().isoformat()
+    if valor <= 0:
+        return jsonify({"status": "erro", "msg": "Informe um valor de pagamento maior que zero."}), 400
+
+    try:
+        garantir_schema_financeiro()
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute("SELECT id FROM investimentos WHERE id = %s", (id,))
+            existe = cur.fetchone()
+            if existe:
+                cur.execute(
+                    """
+                    INSERT INTO investimento_pagamentos
+                    (investimento_id, data_pagamento, valor_pago, observacoes)
+                    VALUES (%s, %s, %s, %s)
+                    """,
+                    (id, data_pagamento, valor, request.form.get("observacoes", "").strip()),
+                )
+        if not existe:
+            conn.close()
+            return jsonify({"status": "erro", "msg": "Investimento nao encontrado."}), 404
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "sucesso"})
+    except Exception as e:
+        return jsonify({"status": "erro", "msg": str(e)}), 500
+
+
+@bp_financeiro.route("/api/limpar-investimentos", methods=["DELETE"])
+def limpar_investimentos():
+    if "usuario_logado" not in session:
+        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+
+    confirmar = request.args.get("confirmar") == "SIM"
+    if not confirmar:
+        return jsonify({"status": "erro", "msg": "Confirmacao obrigatoria."}), 400
+
+    try:
+        garantir_schema_financeiro()
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM investimento_pagamentos")
+            cur.execute("DELETE FROM investimentos")
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "sucesso"})
+    except Exception as e:
+        return jsonify({"status": "erro", "msg": str(e)}), 500
+
+
 @bp_financeiro.route("/api/excluir-investimento/<int:id>", methods=["DELETE"])
 def excluir_investimento(id):
     if "usuario_logado" not in session:
@@ -506,6 +639,7 @@ def excluir_investimento(id):
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
+            cur.execute("DELETE FROM investimento_pagamentos WHERE investimento_id = %s", (id,))
             cur.execute("DELETE FROM investimentos WHERE id = %s", (id,))
         conn.commit()
         conn.close()
