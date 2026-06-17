@@ -254,9 +254,9 @@
     }
 
     function limparInvestimentos() {
-        const texto = prompt('Para limpar todos os lancamentos financeiros, digite LIMPAR');
-        if (texto !== 'LIMPAR') return;
-        fetch('/api/limpar-investimentos?confirmar=SIM', { method:'DELETE' }).then(res => res.json()).then(data => {
+        const texto = prompt('Para limpar todos os lancamentos financeiros, digite LIMPAR FINANCEIRO');
+        if (texto !== 'LIMPAR FINANCEIRO') return;
+        fetch('/api/limpar-investimentos?confirmar=SIM&frase=' + encodeURIComponent(texto), { method:'DELETE' }).then(res => res.json()).then(data => {
             if (data.status !== 'sucesso') return alert(data.msg || 'Erro ao limpar.');
             alert('Lancamentos financeiros removidos. Empresas e demais dados foram mantidos.');
         });
