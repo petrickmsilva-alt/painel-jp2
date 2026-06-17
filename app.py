@@ -787,6 +787,9 @@ def excluir_arquivo():
 def salvar_site():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
     nome, url, bloco = request.form.get('nome'), request.form.get('url'), request.form.get('bloco')
+    categoria_site = request.form.get('categoria_site', 'operacao')
+    if categoria_site not in ['institucional', 'eventos', 'marcas', 'operacao']:
+        categoria_site = 'operacao'
     
     if not url.startswith('http://') and not url.startswith('https://'):
         url = 'https://' + url
@@ -807,14 +810,15 @@ def salvar_site():
         with conn.cursor() as cur:
             cur.execute("""
                 INSERT INTO arquivos_painel (nome_original, bloco, tipo, categoria, caminho_sistema, criado_por, deletado)
-                VALUES (%s, %s, 'link', 'sites_jp2', %s, %s, 0)
-            """, (nome, bloco_final, url, session.get('nome_exibicao', 'Sistema')))
+                VALUES (%s, %s, 'link', %s, %s, %s, 0)
+            """, (nome, bloco_final, categoria_site, url, session.get('nome_exibicao', 'Sistema')))
         conn.commit()
         conn.close()
-        registrar_log(f"Incluiu o site institucional: {nome} ({url})")
+        registrar_log(f"Incluiu o site {nome} ({url}) na categoria {categoria_site}")
         return jsonify({'status': 'sucesso'})
-    except:
-        return jsonify({'status': 'erro'})
+    except Exception as e:
+        print(f"Erro ao salvar site: {e}")
+        return jsonify({'status': 'erro', 'mensagem': 'Nao foi possivel salvar o site.'}), 500
         
 @app.route('/api/listar-eventos')
 def api_listar_eventos():

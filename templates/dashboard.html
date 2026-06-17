@@ -1039,6 +1039,35 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalCadastroSite" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="jp2-modal-header">
+                <h5 class="jp2-modal-title"><i class="bi bi-globe2 text-primary"></i> Incluir site</h5>
+            </div>
+            <div class="jp2-modal-body">
+                <label class="jp2-modal-label" for="siteNomeInput">Nome do site</label>
+                <input type="text" id="siteNomeInput" class="form-control mb-3" placeholder="Ex: Portal do parceiro">
+
+                <label class="jp2-modal-label" for="siteUrlInput">URL do site</label>
+                <input type="url" id="siteUrlInput" class="form-control mb-3" placeholder="https://exemplo.com.br">
+
+                <label class="jp2-modal-label" for="siteCategoriaInput">Categoria no hub</label>
+                <select id="siteCategoriaInput" class="form-select">
+                    <option value="eventos">Eventos</option>
+                    <option value="marcas">Marcas</option>
+                    <option value="institucional">Institucional</option>
+                    <option value="operacao">Operacao</option>
+                </select>
+            </div>
+            <div class="jp2-modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarSiteFormulario()">Salvar site</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="eventoModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -1196,6 +1225,11 @@
         { chave: 'marcas', rotulo: 'Marcas', icone: 'bi-bag-check' },
         { chave: 'operacao', rotulo: 'Operacao', icone: 'bi-gear-wide-connected' }
     ];
+
+    function obterCategoriaSite(categoria) {
+        return filtrosSitesJP2.find(item => item.chave === categoria && item.chave !== 'todos')
+            || filtrosSitesJP2.find(item => item.chave === 'operacao');
+    }
 
     const linksDirecionamento = {
         'Expo Feiras CO': 'https://expofeirasco.com.br',
@@ -1364,7 +1398,8 @@ itensRenderizados.push(cat.toLowerCase().trim());
                         
                         let urlRealDoSite = item.caminho || '#';
                         card.onclick = function() { window.open(urlRealDoSite, '_blank'); };
-                        card.dataset.categoria = 'operacao';
+                        let categoriaDinamica = obterCategoriaSite(item.categoria || 'operacao');
+                        card.dataset.categoria = categoriaDinamica.chave;
                         
                         let imagemDoCard = item.imagem_bg || '/static/image/ibd.jpeg';
                         card.innerHTML = `
@@ -1378,7 +1413,7 @@ itensRenderizados.push(cat.toLowerCase().trim());
             <img src="${imagemDoCard}">
         </div>
         <div>
-            <div class="site-category-pill"><i class="bi bi-gear-wide-connected"></i> Operacao</div>
+            <div class="site-category-pill"><i class="bi ${categoriaDinamica.icone}"></i> ${categoriaDinamica.rotulo}</div>
             <div class="item-label site-title-large" title="${item.nome || ''}">${item.nome || ''}</div>
             <div class="site-card-desc">Site adicionado ao ecossistema digital do painel.</div>
         </div>
@@ -1630,61 +1665,47 @@ gridContainer.appendChild(card);
     }
 
     function abrirModalCadastroSite() {
-        let overlay = document.createElement('div');
-        overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:9999999; display:flex; align-items:center; justify-content:center; overflow:hidden;';
-        overlay.innerHTML = `
-            <div style="background:white; padding:30px; border-radius:12px; width:450px; max-width: 90%; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
-                <h4 style="margin-bottom:20px; color:#1e293b; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
-                    <i class="bi bi-globe"></i> Incluir Site
-                </h4>
-                <div style="margin-bottom:15px;">
-                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">NOME DO SITE</label>
-                    <input type="text" id="site_nome_temp" placeholder="Ex: Meu Portal" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
-                </div>
-                <div style="margin-bottom:20px;">
-                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">URL DO SITE</label>
-                    <input type="url" id="site_url_temp" placeholder="https://exemplo.com.br" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:6px; box-sizing:border-box;">
-                </div>
-                <div style="display:flex; gap:10px; justify-content:flex-end;">
-                    <button id="btn_cancelar_site" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; cursor:pointer;">Cancelar</button>
-                    <button id="btn_salvar_site" style="padding:10px 20px; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer;">Salvar Site</button>
-                </div>
-            </div>
-        `;
+        const modalEl = document.getElementById('modalCadastroSite');
+        if (!modalEl) return;
+        document.getElementById('siteNomeInput').value = '';
+        document.getElementById('siteUrlInput').value = '';
+        document.getElementById('siteCategoriaInput').value = filtroSiteAtual !== 'todos' ? filtroSiteAtual : 'eventos';
+        new bootstrap.Modal(modalEl).show();
+        setTimeout(() => document.getElementById('siteNomeInput').focus(), 180);
+    }
 
-        document.body.appendChild(overlay);
-        overlay.querySelector('#btn_cancelar_site').onclick = () => overlay.remove();
+    function salvarSiteFormulario() {
+        const nome = document.getElementById('siteNomeInput').value.trim();
+        const url = document.getElementById('siteUrlInput').value.trim();
+        const categoria = document.getElementById('siteCategoriaInput').value;
 
-        overlay.querySelector('#btn_salvar_site').onclick = function() {
-            let nome = overlay.querySelector('#site_nome_temp').value;
-            let url = overlay.querySelector('#site_url_temp').value;
+        if (!nome || !url) {
+            mostrarToast("Dados incompletos", "Informe o nome e a URL do site.", "erro");
+            return;
+        }
 
-            if(!nome || !url) return alert("Preencha todos os campos!");
-           
-            let formData = new FormData();
-            formData.append('nome', nome);
-            formData.append('url', url);
-            formData.append('bloco', estadoDoPainel.bloco); 
+        const formData = new FormData();
+        formData.append('nome', nome);
+        formData.append('url', url);
+        formData.append('bloco', estadoDoPainel.bloco);
+        formData.append('categoria_site', categoria);
 
-            fetch('/salvar-site', { method: 'POST', body: formData })
-            .then(res => {
-                if (!res.ok) return res.text().then(text => { throw new Error(text); });
-                return res.json();
-            })
-            .then(data => {
-                if(data.status === 'sucesso') {
-                    alert("Site incluÃ­do com sucesso!");
-                    overlay.remove();
-                    sincronizarGrade();
-                } else {
-                    alert("Erro: " + data.mensagem);
-                }
-            })
-            .catch(err => {
-                console.error("Erro ao salvar site:", err);
-                alert("Erro ao salvar site.");
-            });
-        };
+        fetch('/salvar-site', { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'sucesso') {
+                bootstrap.Modal.getInstance(document.getElementById('modalCadastroSite')).hide();
+                filtroSiteAtual = categoria;
+                mostrarToast("Site incluido", "O site foi adicionado ao hub JP2.");
+                sincronizarGrade();
+            } else {
+                mostrarToast("Nao foi possivel salvar", data.mensagem || "Verifique os dados e tente novamente.", "erro");
+            }
+        })
+        .catch(err => {
+            console.error("Erro ao salvar site:", err);
+            mostrarToast("Erro ao salvar", "Nao foi possivel falar com o servidor.", "erro");
+        });
     }
 
     function abrirModalUploadLogo() {
