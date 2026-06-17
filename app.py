@@ -6,10 +6,12 @@ import traceback
 import urllib.request
 import csv
 import io
+import time
+from collections import deque
 from bs4 import BeautifulSoup
 from urllib.parse import quote_plus, urljoin, urlparse
 from datetime import datetime, timedelta
-from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory, send_file
+from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory, send_file, g
 from database import get_db_connection
 from storage import enviar_arquivo_r2, gerar_url_temporaria_r2, r2_configurado
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -27,6 +29,15 @@ COLUNA_PERFIL_USUARIOS_VERIFICADA = False
 COLUNAS_AGENDA_VERIFICADAS = False
 USUARIOS_ADMIN_CACHE = None
 RESUMO_DASHBOARD_CACHE = {"expira_em": None, "dados": None}
+PERFORMANCE_ROTAS = deque(maxlen=160)
+ROTAS_MONITORADAS = (
+    "/listar",
+    "/upload-avancado",
+    "/baixar_recurso",
+    "/api/resumo-dashboard",
+    "/api/listar-eventos",
+    "/salvar-site",
+)
 
 # Registro do mÃ³dulo financeiro
 from financeiro import bp_financeiro
@@ -89,6 +100,28 @@ def data_iso_ou_none(valor):
         return datetime.strptime(str(valor)[:10], "%Y-%m-%d").date()
     except ValueError:
         return None
+
+def rota_monitorada(caminho):
+    return any(caminho.startswith(prefixo) for prefixo in ROTAS_MONITORADAS)
+
+def resumo_performance_rotas():
+    agrupado = {}
+    for item in PERFORMANCE_ROTAS:
+        rota = item["rota"]
+        dados = agrupado.setdefault(rota, {"rota": rota, "qtd": 0, "total_ms": 0, "max_ms": 0})
+        dados["qtd"] += 1
+        dados["total_ms"] += item["ms"]
+        dados["max_ms"] = max(dados["max_ms"], item["ms"])
+
+    resumo = []
+    for dados in agrupado.values():
+        resumo.append({
+            "rota": dados["rota"],
+            "qtd": dados["qtd"],
+            "media_ms": round(dados["total_ms"] / max(dados["qtd"], 1), 1),
+            "max_ms": round(dados["max_ms"], 1),
+        })
+    return sorted(resumo, key=lambda item: item["media_ms"], reverse=True)
 
 def garantir_coluna_perfil_usuarios():
     global COLUNA_PERFIL_USUARIOS_VERIFICADA
@@ -205,6 +238,31 @@ def preparar_performance_banco():
         garantir_indices_performance()
     except Exception as e:
         print(f"AVISO: nao foi possivel verificar/criar indices de performance: {e}", flush=True)
+
+@app.before_request
+def iniciar_medicao_performance():
+    g.inicio_request = time.perf_counter()
+
+@app.after_request
+def finalizar_medicao_performance(response):
+    inicio = getattr(g, "inicio_request", None)
+    if inicio is None:
+        return response
+
+    duracao_ms = round((time.perf_counter() - inicio) * 1000, 1)
+    response.headers["X-Response-Time-ms"] = str(duracao_ms)
+
+    caminho = request.path
+    if rota_monitorada(caminho) or duracao_ms >= 1000:
+        PERFORMANCE_ROTAS.append({
+            "horario": datetime.now().strftime("%H:%M:%S"),
+            "metodo": request.method,
+            "rota": caminho,
+            "status": response.status_code,
+            "ms": duracao_ms,
+        })
+
+    return response
 
 def nome_base_imagem_site(nome):
     return "".join(x for x in str(nome or "") if x.isalnum())
@@ -1111,6 +1169,19 @@ def resumo_dashboard():
         resp.headers['Cache-Control'] = 'private, max-age=30'
         return resp
     except: return jsonify({'error': 'erro'}), 500
+
+@app.route('/api/performance-status')
+def performance_status():
+    if 'usuario_logado' not in session:
+        return jsonify({'status': 'erro'}), 401
+
+    recentes = list(PERFORMANCE_ROTAS)[-12:]
+    return jsonify({
+        'status': 'sucesso',
+        'total_amostras': len(PERFORMANCE_ROTAS),
+        'resumo': resumo_performance_rotas()[:6],
+        'recentes': recentes[::-1]
+    })
 
 @app.route('/manifest.json')
 def manifest(): return send_from_directory('static', 'manifest.json')    
