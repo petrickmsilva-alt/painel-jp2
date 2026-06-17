@@ -11,7 +11,7 @@ from urllib.parse import quote_plus, urljoin, urlparse
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory, send_file
 from database import get_db_connection
-from storage import baixar_arquivo_r2, enviar_arquivo_r2, r2_configurado
+from storage import enviar_arquivo_r2, gerar_url_temporaria_r2, r2_configurado
 from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
@@ -534,18 +534,24 @@ def listar_arquivos():
         conn = get_db_connection()
         with conn.cursor() as cur:
             if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
-                cur.execute("SELECT * FROM arquivos_painel WHERE bloco = %s AND pasta_pai_id = %s AND deletado = 0", (bloco, int(pasta_pai_id)))
+                cur.execute("""
+                    SELECT id, nome_original, tipo, caminho_sistema, criado_por, bloco, categoria, pasta_pai_id
+                    FROM arquivos_painel
+                    WHERE bloco = %s AND pasta_pai_id = %s AND deletado = 0
+                    ORDER BY tipo DESC, nome_original ASC
+                """, (bloco, int(pasta_pai_id)))
             else:
-                cur.execute("SELECT * FROM arquivos_painel WHERE bloco = %s AND pasta_pai_id IS NULL AND deletado = 0", (bloco,))
+                cur.execute("""
+                    SELECT id, nome_original, tipo, caminho_sistema, criado_por, bloco, categoria, pasta_pai_id
+                    FROM arquivos_painel
+                    WHERE bloco = %s AND pasta_pai_id IS NULL AND deletado = 0
+                    ORDER BY tipo DESC, nome_original ASC
+                """, (bloco,))
             linhas = cur.fetchall()
         
         itens_formatados = []
         for l in linhas:
-            imagem_bg = imagem_site_existente(l.get('nome_original', ''))
-            if l.get('tipo') == 'link' and not caminho_static_existe(imagem_bg) and l.get('caminho_sistema'):
-                imagem_recapturada = capturar_logo_site(l.get('nome_original', ''), l.get('caminho_sistema'))
-                if imagem_recapturada:
-                    imagem_bg = imagem_recapturada
+            imagem_bg = imagem_site_existente(l.get('nome_original', '')) if l.get('tipo') == 'link' else ''
 
             itens_formatados.append({
                 'id': l['id'], 'nome': l['nome_original'], 'tipo': l['tipo'], 
@@ -555,7 +561,7 @@ def listar_arquivos():
             })
         
         resp = make_response(jsonify({'itens': itens_formatados}))
-        resp.headers['Cache-Control'] = 'public, max-age=300'
+        resp.headers['Cache-Control'] = 'private, max-age=30'
         return resp
 
     except Exception as e:
@@ -685,12 +691,13 @@ def baixar_recurso_corporativo(arquivo_id):
             caminho_sistema = dados.get('caminho_sistema') or ''
             if caminho_sistema.startswith('r2://'):
                 registrar_log(f"Acessou o arquivo: {dados['nome_original']} (Download={force_download})")
-                arquivo_memoria = baixar_arquivo_r2(caminho_sistema)
-                return send_file(
-                    arquivo_memoria,
-                    download_name=dados['nome_original'],
-                    as_attachment=force_download
+                url_temporaria = gerar_url_temporaria_r2(
+                    caminho_sistema,
+                    dados['nome_original'],
+                    force_download=force_download,
+                    expires_in=300
                 )
+                return redirect(url_temporaria)
 
             nome_arquivo_fisico = dados['caminho_sistema'].split('/')[-1]
             arquivo_path = os.path.join(UPLOAD_FOLDER, nome_arquivo_fisico)
