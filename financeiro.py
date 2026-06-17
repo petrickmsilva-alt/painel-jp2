@@ -1,9 +1,18 @@
+import re
+import unicodedata
+import zipfile
+from datetime import datetime, timedelta
+from decimal import Decimal, InvalidOperation
+from xml.etree import ElementTree as ET
+
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
 from database import get_db_connection
 
 bp_financeiro = Blueprint("financeiro", __name__)
 
 FINANCEIRO_SCHEMA_VERIFICADO = False
+ORIGEM_IMPORTACAO_EXCEL = "excel_junho_2026"
+ABA_IMPORTACAO_EXCEL = "RELACAO DE EMPRESTIMOS (2)"
 
 
 def coluna_existe(cur, tabela, coluna):
@@ -19,14 +28,238 @@ def garantir_schema_financeiro():
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            if not coluna_existe(cur, "investimentos", "empresa_id"):
-                cur.execute("ALTER TABLE investimentos ADD COLUMN empresa_id INT NULL AFTER id")
-            if not coluna_existe(cur, "investimentos", "tipo_recurso"):
-                cur.execute("ALTER TABLE investimentos ADD COLUMN tipo_recurso VARCHAR(80) NULL")
+            colunas = {
+                "empresa_id": "INT NULL AFTER id",
+                "tipo_recurso": "VARCHAR(80) NULL",
+                "observacoes": "TEXT NULL",
+                "valor_juros_day": "DECIMAL(15,2) NULL",
+                "valor_divida_day": "DECIMAL(15,2) NULL",
+                "pgto_day": "DECIMAL(15,2) NULL",
+                "valor_divida_futuro": "DECIMAL(15,2) NULL",
+                "importacao_origem": "VARCHAR(80) NULL",
+                "importacao_id": "VARCHAR(80) NULL",
+            }
+            for coluna, definicao in colunas.items():
+                if not coluna_existe(cur, "investimentos", coluna):
+                    cur.execute(f"ALTER TABLE investimentos ADD COLUMN {coluna} {definicao}")
         conn.commit()
         FINANCEIRO_SCHEMA_VERIFICADO = True
     finally:
         conn.close()
+
+
+def decimal_ou_zero(valor):
+    texto = str(valor or "").strip()
+    if not texto:
+        return Decimal("0")
+    texto = texto.replace("R$", "").replace(" ", "")
+    if "," in texto:
+        texto = texto.replace(".", "").replace(",", ".")
+    try:
+        return Decimal(texto)
+    except InvalidOperation:
+        return Decimal("0")
+
+
+def percentual_excel(valor):
+    numero = decimal_ou_zero(valor)
+    if numero > 0 and numero < 1:
+        numero = numero * Decimal("100")
+    return numero
+
+
+def data_excel(valor):
+    texto = str(valor or "").strip()
+    if not texto:
+        return None
+    try:
+        serial = float(texto)
+        if serial < 30000:
+            return None
+        return (datetime(1899, 12, 30) + timedelta(days=serial)).date().isoformat()
+    except ValueError:
+        pass
+    for formato in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
+        try:
+            return datetime.strptime(texto[:10], formato).date().isoformat()
+        except ValueError:
+            continue
+    return None
+
+
+def texto_limpo(valor):
+    return str(valor or "").strip()
+
+
+def local_name(tag):
+    return tag.split("}", 1)[-1]
+
+
+def normalizar_busca(texto):
+    sem_acento = unicodedata.normalize("NFKD", str(texto or "")).encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"\s+", " ", sem_acento).strip().upper()
+
+
+def coluna_para_indice(referencia):
+    letras = re.match(r"^[A-Z]+", referencia or "")
+    if not letras:
+        return 0
+    indice = 0
+    for letra in letras.group(0):
+        indice = indice * 26 + ord(letra) - ord("A") + 1
+    return indice
+
+
+def carregar_shared_strings(zf):
+    try:
+        stream = zf.open("xl/sharedStrings.xml")
+    except KeyError:
+        return []
+
+    strings = []
+    with stream:
+        for _, elem in ET.iterparse(stream, events=("end",)):
+            if local_name(elem.tag) == "si":
+                partes = []
+                for texto in elem.iter():
+                    if local_name(texto.tag) == "t" and texto.text:
+                        partes.append(texto.text)
+                strings.append("".join(partes))
+                elem.clear()
+    return strings
+
+
+def caminho_aba(zf, nome_aba):
+    workbook = ET.fromstring(zf.read("xl/workbook.xml"))
+    rels = ET.fromstring(zf.read("xl/_rels/workbook.xml.rels"))
+    rel_map = {rel.attrib["Id"]: rel.attrib["Target"] for rel in rels}
+    rel_ns = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id"
+
+    alvo = normalizar_busca(nome_aba)
+    for sheet in workbook.iter():
+        if local_name(sheet.tag) == "sheet" and normalizar_busca(sheet.attrib.get("name")) == alvo:
+            target = rel_map[sheet.attrib[rel_ns]].lstrip("/")
+            return target if target.startswith("xl/") else f"xl/{target}"
+    raise ValueError(f"Aba '{nome_aba}' nao encontrada na planilha.")
+
+
+def valor_celula(cell, shared_strings):
+    tipo = cell.attrib.get("t")
+    valor = ""
+    for filho in cell:
+        if local_name(filho.tag) in ("v", "t"):
+            valor = filho.text or ""
+            break
+        if local_name(filho.tag) == "is":
+            textos = [t.text or "" for t in filho.iter() if local_name(t.tag) == "t"]
+            valor = "".join(textos)
+            break
+    if tipo == "s" and valor:
+        indice = int(valor)
+        return shared_strings[indice] if indice < len(shared_strings) else ""
+    return valor
+
+
+def extrair_registros_excel(arquivo):
+    arquivo.seek(0)
+    registros = []
+    with zipfile.ZipFile(arquivo) as zf:
+        shared_strings = carregar_shared_strings(zf)
+        sheet_path = caminho_aba(zf, ABA_IMPORTACAO_EXCEL)
+        empty_after_data = 0
+        past_data = False
+
+        with zf.open(sheet_path) as stream:
+            for _, elem in ET.iterparse(stream, events=("end",)):
+                if local_name(elem.tag) != "row":
+                    continue
+
+                row_num = int(elem.attrib.get("r", "0"))
+                if row_num < 6:
+                    elem.clear()
+                    continue
+
+                cells = {}
+                for cell in elem:
+                    if local_name(cell.tag) != "c":
+                        continue
+                    cells[coluna_para_indice(cell.attrib.get("r"))] = texto_limpo(valor_celula(cell, shared_strings))
+
+                valor = decimal_ou_zero(cells.get(7))
+                empresa = texto_limpo(cells.get(2))
+                importacao_id = texto_limpo(cells.get(1))
+                if importacao_id and empresa and valor > 0:
+                    past_data = True
+                    empty_after_data = 0
+                    registros.append({
+                        "importacao_id": importacao_id,
+                        "empresa": empresa,
+                        "credor": texto_limpo(cells.get(3)),
+                        "captador": texto_limpo(cells.get(4)),
+                        "tipo_recurso": texto_limpo(cells.get(5)),
+                        "finalidade": texto_limpo(cells.get(6)),
+                        "valor": valor,
+                        "juros": percentual_excel(cells.get(8)),
+                        "data_recurso": data_excel(cells.get(9)),
+                        "data_pgto": data_excel(cells.get(10)),
+                        "observacoes": texto_limpo(cells.get(11)),
+                        "valor_juros_day": decimal_ou_zero(cells.get(12)),
+                        "valor_divida_day": decimal_ou_zero(cells.get(13)),
+                        "pgto_day": decimal_ou_zero(cells.get(14)),
+                        "valor_divida_futuro": decimal_ou_zero(cells.get(15)),
+                    })
+                elif past_data:
+                    empty_after_data += 1
+                    if empty_after_data > 200:
+                        break
+
+                elem.clear()
+    return registros
+
+
+def dinheiro(valor):
+    numero = decimal_ou_zero(valor)
+    return f"R$ {numero:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def resumo_registros(registros):
+    empresas = {}
+    tipos = {}
+    finalidades = {}
+    total = Decimal("0")
+    total_day = Decimal("0")
+    total_futuro = Decimal("0")
+    for item in registros:
+        total += item["valor"]
+        total_day += item["valor_divida_day"]
+        total_futuro += item["valor_divida_futuro"]
+        for mapa, chave in ((empresas, item["empresa"]), (tipos, item["tipo_recurso"]), (finalidades, item["finalidade"])):
+            if chave:
+                mapa[chave] = mapa.get(chave, 0) + 1
+    return {
+        "qtd": len(registros),
+        "total_valor": str(total),
+        "total_valor_formatado": dinheiro(total),
+        "total_day": str(total_day),
+        "total_day_formatado": dinheiro(total_day),
+        "total_futuro": str(total_futuro),
+        "total_futuro_formatado": dinheiro(total_futuro),
+        "empresas": empresas,
+        "tipos": tipos,
+        "finalidades": finalidades,
+    }
+
+
+def obter_ou_criar_empresa(cur, nome):
+    cur.execute("SELECT id FROM empresas WHERE UPPER(nome) = UPPER(%s) LIMIT 1", (nome,))
+    empresa = cur.fetchone()
+    if empresa:
+        return empresa["id"]
+    cur.execute(
+        "INSERT INTO empresas (nome, cnpj, ramo_atividade) VALUES (%s, %s, %s)",
+        (nome, "", "Importado da planilha financeira"),
+    )
+    return cur.lastrowid
 
 
 @bp_financeiro.route("/financeiro")
@@ -70,11 +303,7 @@ def adicionar_empresa():
         with conn.cursor() as cur:
             cur.execute(
                 "INSERT INTO empresas (nome, cnpj, ramo_atividade) VALUES (%s, %s, %s)",
-                (
-                    nome,
-                    request.form.get("cnpj", "").strip(),
-                    request.form.get("ramo_atividade", "").strip(),
-                ),
+                (nome, request.form.get("cnpj", "").strip(), request.form.get("ramo_atividade", "").strip()),
             )
         conn.commit()
         return jsonify({"status": "sucesso"})
@@ -110,7 +339,9 @@ def resumo_investimentos():
                 """
                 SELECT i.id, i.empresa_id, e.nome AS empresa_nome, i.nome_investidor,
                        i.valor_inicial, i.juros_mensais, i.data_inicio, i.captador,
-                       i.tipo_recurso, i.finalidade, i.data_pgto
+                       i.tipo_recurso, i.finalidade, i.data_pgto, i.observacoes,
+                       i.valor_juros_day, i.valor_divida_day, i.pgto_day,
+                       i.valor_divida_futuro, i.importacao_origem, i.importacao_id
                 FROM investimentos i
                 LEFT JOIN empresas e ON e.id = i.empresa_id
                 ORDER BY COALESCE(i.data_pgto, i.data_inicio) ASC, i.id DESC
@@ -136,8 +367,8 @@ def adicionar_investimento():
                 """
                 INSERT INTO investimentos
                 (empresa_id, nome_investidor, valor_inicial, juros_mensais, data_inicio,
-                 captador, tipo_recurso, finalidade, data_pgto)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 captador, tipo_recurso, finalidade, data_pgto, observacoes)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     request.form.get("empresa_id") or None,
@@ -149,11 +380,120 @@ def adicionar_investimento():
                     request.form.get("tipo_recurso", "").strip(),
                     request.form.get("finalidade", "").strip(),
                     request.form.get("data_pgto") or None,
+                    request.form.get("observacoes", "").strip(),
                 ),
             )
         conn.commit()
         conn.close()
         return jsonify({"status": "sucesso"})
+    except Exception as e:
+        return jsonify({"status": "erro", "msg": str(e)}), 500
+
+
+@bp_financeiro.route("/api/preview-importacao-investimentos", methods=["POST"])
+def preview_importacao_investimentos():
+    if "usuario_logado" not in session:
+        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+    arquivo = request.files.get("arquivo")
+    if not arquivo:
+        return jsonify({"status": "erro", "msg": "Envie uma planilha Excel."}), 400
+
+    try:
+        registros = extrair_registros_excel(arquivo.stream)
+        resumo = resumo_registros(registros)
+        resumo["amostra"] = [
+            {
+                "id": item["importacao_id"],
+                "empresa": item["empresa"],
+                "credor": item["credor"],
+                "captador": item["captador"],
+                "tipo_recurso": item["tipo_recurso"],
+                "finalidade": item["finalidade"],
+                "valor": dinheiro(item["valor"]),
+                "juros": str(item["juros"]),
+                "data_recurso": item["data_recurso"] or "",
+                "data_pgto": item["data_pgto"] or "",
+            }
+            for item in registros[:12]
+        ]
+        return jsonify({"status": "sucesso", "resumo": resumo})
+    except Exception as e:
+        return jsonify({"status": "erro", "msg": str(e)}), 500
+
+
+@bp_financeiro.route("/api/importar-investimentos-excel", methods=["POST"])
+def importar_investimentos_excel():
+    if "usuario_logado" not in session:
+        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+    arquivo = request.files.get("arquivo")
+    if not arquivo:
+        return jsonify({"status": "erro", "msg": "Envie uma planilha Excel."}), 400
+
+    try:
+        garantir_schema_financeiro()
+        registros = extrair_registros_excel(arquivo.stream)
+        conn = get_db_connection()
+        inseridos = 0
+        duplicados = 0
+        empresas_criadas = set()
+        with conn.cursor() as cur:
+            for item in registros:
+                cur.execute(
+                    """
+                    SELECT id FROM investimentos
+                    WHERE importacao_origem = %s AND importacao_id = %s
+                    LIMIT 1
+                    """,
+                    (ORIGEM_IMPORTACAO_EXCEL, item["importacao_id"]),
+                )
+                if cur.fetchone():
+                    duplicados += 1
+                    continue
+
+                cur.execute("SELECT id FROM empresas WHERE UPPER(nome) = UPPER(%s) LIMIT 1", (item["empresa"],))
+                empresa_existente = cur.fetchone()
+                empresa_id = obter_ou_criar_empresa(cur, item["empresa"])
+                if not empresa_existente:
+                    empresas_criadas.add(item["empresa"])
+
+                cur.execute(
+                    """
+                    INSERT INTO investimentos
+                    (empresa_id, nome_investidor, valor_inicial, juros_mensais, data_inicio,
+                     captador, tipo_recurso, finalidade, data_pgto, observacoes,
+                     valor_juros_day, valor_divida_day, pgto_day, valor_divida_futuro,
+                     importacao_origem, importacao_id)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        empresa_id,
+                        item["credor"],
+                        item["valor"],
+                        item["juros"],
+                        item["data_recurso"],
+                        item["captador"],
+                        item["tipo_recurso"],
+                        item["finalidade"],
+                        item["data_pgto"],
+                        item["observacoes"],
+                        item["valor_juros_day"],
+                        item["valor_divida_day"],
+                        item["pgto_day"],
+                        item["valor_divida_futuro"],
+                        ORIGEM_IMPORTACAO_EXCEL,
+                        item["importacao_id"],
+                    ),
+                )
+                inseridos += 1
+        conn.commit()
+        conn.close()
+        return jsonify({
+            "status": "sucesso",
+            "inseridos": inseridos,
+            "duplicados": duplicados,
+            "empresas_criadas": sorted(empresas_criadas),
+            "resumo": resumo_registros(registros),
+        })
     except Exception as e:
         return jsonify({"status": "erro", "msg": str(e)}), 500
 
