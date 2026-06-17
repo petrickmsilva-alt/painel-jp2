@@ -23,6 +23,10 @@ if not SECRET_KEY:
 app.secret_key = SECRET_KEY
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 INDICES_PERFORMANCE_VERIFICADOS = False
+COLUNA_PERFIL_USUARIOS_VERIFICADA = False
+COLUNAS_AGENDA_VERIFICADAS = False
+USUARIOS_ADMIN_CACHE = None
+RESUMO_DASHBOARD_CACHE = {"expira_em": None, "dados": None}
 
 # Registro do mÃ³dulo financeiro
 from financeiro import bp_financeiro
@@ -66,10 +70,31 @@ def senha_precisa_atualizar(hash_salvo):
     return not str(hash_salvo or "").startswith(("pbkdf2:", "scrypt:"))
 
 def usuarios_admin():
+    global USUARIOS_ADMIN_CACHE
+    if USUARIOS_ADMIN_CACHE is not None:
+        return USUARIOS_ADMIN_CACHE
+
     usuarios = os.environ.get("ADMIN_USERS", "petrick")
-    return {u.strip().lower() for u in usuarios.split(",") if u.strip()}
+    USUARIOS_ADMIN_CACHE = {u.strip().lower() for u in usuarios.split(",") if u.strip()}
+    return USUARIOS_ADMIN_CACHE
+
+def invalidar_cache_resumo_dashboard():
+    RESUMO_DASHBOARD_CACHE["expira_em"] = None
+    RESUMO_DASHBOARD_CACHE["dados"] = None
+
+def data_iso_ou_none(valor):
+    if not valor:
+        return None
+    try:
+        return datetime.strptime(str(valor)[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return None
 
 def garantir_coluna_perfil_usuarios():
+    global COLUNA_PERFIL_USUARIOS_VERIFICADA
+    if COLUNA_PERFIL_USUARIOS_VERIFICADA:
+        return
+
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
@@ -78,6 +103,7 @@ def garantir_coluna_perfil_usuarios():
                 cur.execute("ALTER TABLE usuarios ADD COLUMN perfil VARCHAR(20) NOT NULL DEFAULT 'socio'")
                 for usuario in usuarios_admin():
                     cur.execute("UPDATE usuarios SET perfil = 'admin' WHERE usuario = %s", (usuario,))
+        COLUNA_PERFIL_USUARIOS_VERIFICADA = True
     finally:
         conn.close()
 
@@ -97,13 +123,24 @@ def obter_perfil_usuario(usuario):
 
 def usuario_atual_e_admin():
     usuario = session.get("usuario_logado", "").lower()
-    return usuario in usuarios_admin() or session.get("perfil_usuario") == "admin" or obter_perfil_usuario(usuario) == "admin"
+    if usuario in usuarios_admin():
+        return True
+
+    perfil_sessao = session.get("perfil_usuario")
+    if perfil_sessao:
+        return perfil_sessao == "admin"
+
+    return obter_perfil_usuario(usuario) == "admin"
 
 def acesso_negado():
     registrar_log("Tentou acessar uma area restrita de administrador")
     return render_template("acesso_negado.html"), 403
 
 def garantir_colunas_agenda():
+    global COLUNAS_AGENDA_VERIFICADAS
+    if COLUNAS_AGENDA_VERIFICADAS:
+        return
+
     colunas = {
         "tipo_evento": "VARCHAR(20) NOT NULL DEFAULT 'reuniao'",
         "local_evento": "VARCHAR(255) NULL",
@@ -117,6 +154,7 @@ def garantir_colunas_agenda():
                 cur.execute("SHOW COLUMNS FROM agenda_eventos LIKE %s", (coluna,))
                 if not cur.fetchone():
                     cur.execute(f"ALTER TABLE agenda_eventos ADD COLUMN {coluna} {definicao}")
+        COLUNAS_AGENDA_VERIFICADAS = True
     finally:
         conn.close()
 
@@ -336,7 +374,7 @@ def tela_login():
 
                     session['usuario_logado'] = user['usuario']
                     session['nome_exibicao'] = user.get('nome_exibicao', user['usuario'])
-                    session['perfil_usuario'] = user.get('perfil', obter_perfil_usuario(user['usuario']) or 'socio')
+                    session['perfil_usuario'] = user.get('perfil') or obter_perfil_usuario(user['usuario']) or 'socio'
                     registrar_log("Realizou login no sistema")
                     return redirect(url_for('home'))
 
@@ -390,6 +428,7 @@ def admin_usuarios():
                 """, (novo_user, senha_cripto, nome_exib, perfil))
             conn.commit()
             conn.close()
+            invalidar_cache_resumo_dashboard()
             registrar_log(f"Cadastrou um novo usuÃ¡rio no painel: {novo_user}")
         except Exception as e:
             print(f"Erro cadastro: {e}")
@@ -419,6 +458,7 @@ def excluir_usuario(usuario_id):
             cur.execute("DELETE FROM usuarios WHERE id = %s", (usuario_id,))
         conn.commit()
         conn.close()
+        invalidar_cache_resumo_dashboard()
         registrar_log(f"Removeu o usuÃ¡rio ID: {usuario_id} do sistema")
         flash("SÃ³cio removido com sucesso!")
     except Exception as e:
@@ -738,6 +778,7 @@ def upload_avancado():
             except OSError:
                 pass
 
+            invalidar_cache_resumo_dashboard()
             return jsonify({
                 'status': 'sucesso',
                 'guid': guid_uuid,
@@ -868,6 +909,7 @@ def excluir_arquivo():
                     WHERE id IN ({format_strings}) AND deletado = 0
                 """, tuple(lista_ids))
                 
+                invalidar_cache_resumo_dashboard()
                 return jsonify({'status': 'sucesso'})
         
         return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
@@ -918,9 +960,26 @@ def salvar_site():
 def api_listar_eventos():
     try:
         garantir_colunas_agenda()
+        data_inicio = data_iso_ou_none(request.args.get('start'))
+        data_fim = data_iso_ou_none(request.args.get('end'))
         conn = get_db_connection()
         with conn.cursor() as cur:
-            cur.execute("SELECT id, titulo, data_evento, data_fim, tipo_evento, local_evento, horario FROM agenda_eventos")
+            if data_inicio and data_fim:
+                cur.execute("""
+                    SELECT id, titulo, data_evento, data_fim, tipo_evento, local_evento, horario
+                    FROM agenda_eventos
+                    WHERE data_evento <= %s
+                      AND COALESCE(data_fim, data_evento) >= %s
+                    ORDER BY data_evento ASC
+                """, (data_fim, data_inicio))
+            else:
+                cur.execute("""
+                    SELECT id, titulo, data_evento, data_fim, tipo_evento, local_evento, horario
+                    FROM agenda_eventos
+                    WHERE data_evento >= %s
+                    ORDER BY data_evento ASC
+                    LIMIT 500
+                """, ((datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d'),))
             eventos = cur.fetchall()
         conn.close()
         
@@ -951,7 +1010,7 @@ def api_listar_eventos():
                     })
             except: continue
         resp = make_response(jsonify(lista_diaria))
-        resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        resp.headers['Cache-Control'] = 'private, max-age=20'
         return resp
     except: return jsonify([])
 
@@ -980,6 +1039,7 @@ def calendar_adicionar():
             """, (titulo, data_ini, data_fim, tipo, local, horario, session.get('nome_exibicao', 'Sistema')))
         conn.commit()
         conn.close()
+        invalidar_cache_resumo_dashboard()
         registrar_log(f"Adicionou um compromisso na agenda: {titulo}")
         return {"status": "sucesso"}, 200
     except Exception as e: return {"status": "erro", "mensagem": str(e)}, 500
@@ -1014,6 +1074,7 @@ def excluir_evento():
                 return jsonify({'status': 'erro', 'mensagem': 'Compromisso nao identificado.'}), 400
         conn.commit()
         conn.close()
+        invalidar_cache_resumo_dashboard()
         return jsonify({'status': 'sucesso'})
     except Exception as e:
         print(f"Erro ao excluir compromisso: {e}")
@@ -1022,6 +1083,12 @@ def excluir_evento():
 @app.route('/api/resumo-dashboard')
 def resumo_dashboard():
     try:
+        agora = datetime.now()
+        if RESUMO_DASHBOARD_CACHE["dados"] and RESUMO_DASHBOARD_CACHE["expira_em"] and RESUMO_DASHBOARD_CACHE["expira_em"] > agora:
+            resp = make_response(jsonify(RESUMO_DASHBOARD_CACHE["dados"]))
+            resp.headers['Cache-Control'] = 'private, max-age=30'
+            return resp
+
         conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("SELECT COUNT(id) as total FROM arquivos_painel WHERE tipo = 'arquivo' AND deletado = 0")
@@ -1033,7 +1100,16 @@ def resumo_dashboard():
             dados_ev = cur.fetchone()
             proximo_evento = dados_ev['titulo'] if dados_ev else "Nenhum"
         conn.close()
-        return jsonify({'total_arquivos': total_arquivos, 'total_socios': total_socios, 'proximo_evento': proximo_evento})
+        dados_resumo = {
+            'total_arquivos': total_arquivos,
+            'total_socios': total_socios,
+            'proximo_evento': proximo_evento
+        }
+        RESUMO_DASHBOARD_CACHE["dados"] = dados_resumo
+        RESUMO_DASHBOARD_CACHE["expira_em"] = agora + timedelta(seconds=30)
+        resp = make_response(jsonify(dados_resumo))
+        resp.headers['Cache-Control'] = 'private, max-age=30'
+        return resp
     except: return jsonify({'error': 'erro'}), 500
 
 @app.route('/manifest.json')
