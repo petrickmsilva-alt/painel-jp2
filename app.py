@@ -22,6 +22,7 @@ if not SECRET_KEY:
     raise RuntimeError("Defina a variavel FLASK_SECRET_KEY antes de iniciar o painel.")
 app.secret_key = SECRET_KEY
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
+INDICES_PERFORMANCE_VERIFICADOS = False
 
 # Registro do mÃ³dulo financeiro
 from financeiro import bp_financeiro
@@ -118,6 +119,54 @@ def garantir_colunas_agenda():
                     cur.execute(f"ALTER TABLE agenda_eventos ADD COLUMN {coluna} {definicao}")
     finally:
         conn.close()
+
+def criar_indice_se_necessario(cur, tabela, nome_indice, definicao_colunas):
+    if not re.match(r"^[A-Za-z0-9_]+$", tabela) or not re.match(r"^[A-Za-z0-9_]+$", nome_indice):
+        raise ValueError("Nome de tabela ou indice invalido")
+
+    cur.execute("""
+        SELECT COUNT(1) AS total
+        FROM INFORMATION_SCHEMA.STATISTICS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = %s
+          AND INDEX_NAME = %s
+    """, (tabela, nome_indice))
+    dados = cur.fetchone() or {}
+    if int(dados.get("total", 0)) == 0:
+        cur.execute(f"CREATE INDEX `{nome_indice}` ON `{tabela}` ({definicao_colunas})")
+
+def garantir_indices_performance():
+    indices = [
+        ("arquivos_painel", "idx_arquivos_listagem", "bloco(50), pasta_pai_id, deletado, tipo(20), nome_original(191)"),
+        ("arquivos_painel", "idx_arquivos_pasta_nome", "bloco(50), nome_original(191), tipo(20), deletado"),
+        ("arquivos_painel", "idx_arquivos_resumo", "tipo(20), deletado"),
+        ("logs_auditoria", "idx_logs_data_registro", "data_registro"),
+        ("agenda_eventos", "idx_agenda_data_evento", "data_evento"),
+        ("usuarios", "idx_usuarios_usuario", "usuario(80)"),
+    ]
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            for tabela, nome_indice, definicao_colunas in indices:
+                try:
+                    criar_indice_se_necessario(cur, tabela, nome_indice, definicao_colunas)
+                except Exception as e:
+                    print(f"AVISO: indice {nome_indice} nao foi aplicado: {e}", flush=True)
+    finally:
+        conn.close()
+
+@app.before_request
+def preparar_performance_banco():
+    global INDICES_PERFORMANCE_VERIFICADOS
+    if INDICES_PERFORMANCE_VERIFICADOS or request.endpoint == "static":
+        return
+
+    INDICES_PERFORMANCE_VERIFICADOS = True
+    try:
+        garantir_indices_performance()
+    except Exception as e:
+        print(f"AVISO: nao foi possivel verificar/criar indices de performance: {e}", flush=True)
 
 def nome_base_imagem_site(nome):
     return "".join(x for x in str(nome or "") if x.isalnum())
