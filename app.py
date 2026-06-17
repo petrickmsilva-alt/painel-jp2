@@ -191,6 +191,35 @@ def garantir_colunas_agenda():
     finally:
         conn.close()
 
+def garantir_tabela_contatos():
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS contatos_telefonicos (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    nome VARCHAR(160) NOT NULL,
+                    empresa VARCHAR(160) NULL,
+                    cargo VARCHAR(120) NULL,
+                    telefone VARCHAR(40) NULL,
+                    whatsapp VARCHAR(40) NULL,
+                    email VARCHAR(160) NULL,
+                    categoria VARCHAR(40) NOT NULL DEFAULT 'geral',
+                    observacoes TEXT NULL,
+                    criado_por VARCHAR(120) NULL,
+                    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+            """)
+
+            criar_indice_se_necessario(cur, "contatos_telefonicos", "idx_contatos_busca", "nome(120), empresa(120), categoria(40)")
+            criar_indice_se_necessario(cur, "contatos_telefonicos", "idx_contatos_categoria", "categoria(40), nome(120)")
+    finally:
+        conn.close()
+
+def limpar_telefone(valor):
+    return re.sub(r"\D+", "", str(valor or ""))
+
 def criar_indice_se_necessario(cur, tabela, nome_indice, definicao_colunas):
     if not re.match(r"^[A-Za-z0-9_]+$", tabela) or not re.match(r"^[A-Za-z0-9_]+$", nome_indice):
         raise ValueError("Nome de tabela ou indice invalido")
@@ -460,6 +489,157 @@ def logout():
 def pagina_agenda():
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
     return render_template('agenda.html', nome_socio=session.get('nome_exibicao', 'Socio'))
+
+@app.route('/contatos')
+def pagina_contatos():
+    if 'usuario_logado' not in session:
+        return redirect(url_for('tela_login'))
+
+    garantir_tabela_contatos()
+    busca = request.args.get('q', '').strip()
+    categoria = request.args.get('categoria', '').strip()
+    categorias_validas = ['geral', 'cliente', 'fornecedor', 'parceiro', 'evento', 'institucional', 'pessoal']
+
+    filtros = []
+    params = []
+    if busca:
+        termo = f"%{busca}%"
+        filtros.append("(nome LIKE %s OR empresa LIKE %s OR cargo LIKE %s OR telefone LIKE %s OR whatsapp LIKE %s OR email LIKE %s)")
+        params.extend([termo, termo, termo, termo, termo, termo])
+    if categoria in categorias_validas:
+        filtros.append("categoria = %s")
+        params.append(categoria)
+
+    where_sql = f"WHERE {' AND '.join(filtros)}" if filtros else ""
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"""
+                SELECT id, nome, empresa, cargo, telefone, whatsapp, email, categoria, observacoes, criado_por, criado_em, atualizado_em
+                FROM contatos_telefonicos
+                {where_sql}
+                ORDER BY nome ASC
+                LIMIT 400
+            """, tuple(params))
+            contatos = cur.fetchall()
+    finally:
+        conn.close()
+
+    for contato in contatos:
+        numero = limpar_telefone(contato.get('whatsapp') or contato.get('telefone'))
+        if numero and len(numero) in (10, 11):
+            numero = "55" + numero
+        contato['whatsapp_link'] = numero
+
+    return render_template(
+        'contatos.html',
+        contatos=contatos,
+        busca=busca,
+        categoria_atual=categoria,
+        categorias=categorias_validas,
+        nome_socio=session.get('nome_exibicao', 'Socio')
+    )
+
+@app.route('/contatos/adicionar', methods=['POST'])
+def adicionar_contato():
+    if 'usuario_logado' not in session:
+        return redirect(url_for('tela_login'))
+
+    garantir_tabela_contatos()
+    nome = request.form.get('nome', '').strip()
+    if not nome:
+        flash("Informe o nome do contato.")
+        return redirect(url_for('pagina_contatos'))
+
+    categoria = request.form.get('categoria', 'geral')
+    if categoria not in ['geral', 'cliente', 'fornecedor', 'parceiro', 'evento', 'institucional', 'pessoal']:
+        categoria = 'geral'
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO contatos_telefonicos
+                (nome, empresa, cargo, telefone, whatsapp, email, categoria, observacoes, criado_por)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                nome,
+                request.form.get('empresa', '').strip(),
+                request.form.get('cargo', '').strip(),
+                request.form.get('telefone', '').strip(),
+                request.form.get('whatsapp', '').strip(),
+                request.form.get('email', '').strip(),
+                categoria,
+                request.form.get('observacoes', '').strip(),
+                session.get('nome_exibicao', 'Sistema')
+            ))
+        conn.commit()
+        registrar_log(f"Cadastrou contato telefonico: {nome}")
+        flash("Contato cadastrado com sucesso.")
+    finally:
+        conn.close()
+
+    return redirect(url_for('pagina_contatos'))
+
+@app.route('/contatos/editar/<int:contato_id>', methods=['POST'])
+def editar_contato(contato_id):
+    if 'usuario_logado' not in session:
+        return redirect(url_for('tela_login'))
+
+    categoria = request.form.get('categoria', 'geral')
+    if categoria not in ['geral', 'cliente', 'fornecedor', 'parceiro', 'evento', 'institucional', 'pessoal']:
+        categoria = 'geral'
+
+    nome = request.form.get('nome', '').strip()
+    if not nome:
+        flash("Informe o nome do contato.")
+        return redirect(url_for('pagina_contatos'))
+
+    garantir_tabela_contatos()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE contatos_telefonicos
+                SET nome = %s, empresa = %s, cargo = %s, telefone = %s, whatsapp = %s,
+                    email = %s, categoria = %s, observacoes = %s
+                WHERE id = %s
+            """, (
+                nome,
+                request.form.get('empresa', '').strip(),
+                request.form.get('cargo', '').strip(),
+                request.form.get('telefone', '').strip(),
+                request.form.get('whatsapp', '').strip(),
+                request.form.get('email', '').strip(),
+                categoria,
+                request.form.get('observacoes', '').strip(),
+                contato_id
+            ))
+        conn.commit()
+        registrar_log(f"Atualizou contato telefonico ID: {contato_id}")
+        flash("Contato atualizado com sucesso.")
+    finally:
+        conn.close()
+
+    return redirect(url_for('pagina_contatos'))
+
+@app.route('/contatos/excluir/<int:contato_id>', methods=['POST'])
+def excluir_contato(contato_id):
+    if 'usuario_logado' not in session:
+        return redirect(url_for('tela_login'))
+
+    garantir_tabela_contatos()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM contatos_telefonicos WHERE id = %s", (contato_id,))
+        conn.commit()
+        registrar_log(f"Removeu contato telefonico ID: {contato_id}")
+        flash("Contato removido com sucesso.")
+    finally:
+        conn.close()
+
+    return redirect(url_for('pagina_contatos'))
 
 @app.route('/admin/usuarios', methods=['GET', 'POST'])
 def admin_usuarios():
