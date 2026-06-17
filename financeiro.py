@@ -36,10 +36,13 @@ def garantir_schema_financeiro():
                     data_pagamento DATE NOT NULL,
                     valor_pago DECIMAL(15,2) NOT NULL DEFAULT 0,
                     observacoes TEXT NULL,
+                    criado_por VARCHAR(120) NULL,
                     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
                 """
             )
+            if not coluna_existe(cur, "investimento_pagamentos", "criado_por"):
+                cur.execute("ALTER TABLE investimento_pagamentos ADD COLUMN criado_por VARCHAR(120) NULL")
             colunas = {
                 "empresa_id": "INT NULL AFTER id",
                 "tipo_recurso": "VARCHAR(80) NULL",
@@ -234,6 +237,18 @@ def dinheiro(valor):
     return f"R$ {numero:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+def normalizar_json(valor):
+    if isinstance(valor, Decimal):
+        return float(valor)
+    if hasattr(valor, "isoformat"):
+        return valor.isoformat()
+    return valor
+
+
+def normalizar_lista_json(lista):
+    return [{chave: normalizar_json(valor) for chave, valor in item.items()} for item in lista]
+
+
 def resumo_registros(registros):
     empresas = {}
     tipos = {}
@@ -358,6 +373,14 @@ def pagina_resumo_financeiro():
     return render_template("financeiro_resumo.html")
 
 
+@bp_financeiro.route("/financeiro/pagamentos")
+def pagina_pagamentos_financeiro():
+    if "usuario_logado" not in session:
+        return redirect(url_for("tela_login"))
+    garantir_schema_financeiro()
+    return render_template("financeiro_pagamentos.html")
+
+
 @bp_financeiro.route("/api/empresas", methods=["GET"])
 def listar_empresas():
     if "usuario_logado" not in session:
@@ -369,7 +392,7 @@ def listar_empresas():
         with conn.cursor() as cur:
             cur.execute("SELECT id, nome, cnpj, ramo_atividade FROM empresas ORDER BY nome ASC")
             dados = cur.fetchall()
-        return jsonify({"status": "sucesso", "dados": dados})
+        return jsonify({"status": "sucesso", "dados": normalizar_lista_json(dados)})
     except Exception as e:
         return jsonify({"status": "erro", "mensagem": str(e)}), 500
     finally:
@@ -425,7 +448,7 @@ def resumo_investimentos():
         with conn.cursor() as cur:
             dados = listar_investimentos_com_pagamentos(cur)
         conn.close()
-        return jsonify({"status": "sucesso", "dados": dados})
+        return jsonify({"status": "sucesso", "dados": normalizar_lista_json(dados)})
     except Exception as e:
         return jsonify({"status": "erro", "msg": str(e)}), 500
 
@@ -457,6 +480,45 @@ def adicionar_investimento():
                     request.form.get("finalidade", "").strip(),
                     request.form.get("data_pgto") or None,
                     request.form.get("observacoes", "").strip(),
+                ),
+            )
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "sucesso"})
+    except Exception as e:
+        return jsonify({"status": "erro", "msg": str(e)}), 500
+
+
+@bp_financeiro.route("/api/editar-investimento/<int:id>", methods=["POST"])
+def editar_investimento(id):
+    if "usuario_logado" not in session:
+        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+
+    try:
+        garantir_schema_financeiro()
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE investimentos
+                SET empresa_id = %s, nome_investidor = %s, valor_inicial = %s,
+                    juros_mensais = %s, data_inicio = %s, captador = %s,
+                    tipo_recurso = %s, finalidade = %s, data_pgto = %s,
+                    observacoes = %s
+                WHERE id = %s
+                """,
+                (
+                    request.form.get("empresa_id") or None,
+                    request.form.get("quem", "").strip(),
+                    request.form.get("valor") or 0,
+                    request.form.get("juros") or 0,
+                    request.form.get("data_recurso") or None,
+                    request.form.get("captador", "").strip(),
+                    request.form.get("tipo_recurso", "").strip(),
+                    request.form.get("finalidade", "").strip(),
+                    request.form.get("data_pgto") or None,
+                    request.form.get("observacoes", "").strip(),
+                    id,
                 ),
             )
         conn.commit()
@@ -594,14 +656,55 @@ def lancar_pagamento_investimento(id):
                 cur.execute(
                     """
                     INSERT INTO investimento_pagamentos
-                    (investimento_id, data_pagamento, valor_pago, observacoes)
-                    VALUES (%s, %s, %s, %s)
+                    (investimento_id, data_pagamento, valor_pago, observacoes, criado_por)
+                    VALUES (%s, %s, %s, %s, %s)
                     """,
-                    (id, data_pagamento, valor, request.form.get("observacoes", "").strip()),
+                    (id, data_pagamento, valor, request.form.get("observacoes", "").strip(), session.get("nome_exibicao", "Sistema")),
                 )
         if not existe:
             conn.close()
             return jsonify({"status": "erro", "msg": "Investimento nao encontrado."}), 404
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "sucesso"})
+    except Exception as e:
+        return jsonify({"status": "erro", "msg": str(e)}), 500
+
+
+@bp_financeiro.route("/api/pagamentos-investimentos", methods=["GET"])
+def pagamentos_investimentos():
+    if "usuario_logado" not in session:
+        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+    try:
+        garantir_schema_financeiro()
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT p.id, p.investimento_id, p.data_pagamento, p.valor_pago,
+                       p.observacoes, p.criado_por, p.criado_em,
+                       e.nome AS empresa_nome, i.nome_investidor, i.importacao_id
+                FROM investimento_pagamentos p
+                INNER JOIN investimentos i ON i.id = p.investimento_id
+                LEFT JOIN empresas e ON e.id = i.empresa_id
+                ORDER BY p.data_pagamento DESC, p.id DESC
+                """
+            )
+            dados = cur.fetchall()
+        conn.close()
+        return jsonify({"status": "sucesso", "dados": dados})
+    except Exception as e:
+        return jsonify({"status": "erro", "msg": str(e)}), 500
+
+
+@bp_financeiro.route("/api/excluir-pagamento-investimento/<int:id>", methods=["DELETE"])
+def excluir_pagamento_investimento(id):
+    if "usuario_logado" not in session:
+        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM investimento_pagamentos WHERE id = %s", (id,))
         conn.commit()
         conn.close()
         return jsonify({"status": "sucesso"})
@@ -614,7 +717,7 @@ def limpar_investimentos():
     if "usuario_logado" not in session:
         return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
 
-    confirmar = request.args.get("confirmar") == "SIM"
+    confirmar = request.args.get("confirmar") == "SIM" and request.args.get("frase") == "LIMPAR FINANCEIRO"
     if not confirmar:
         return jsonify({"status": "erro", "msg": "Confirmacao obrigatoria."}), 400
 
