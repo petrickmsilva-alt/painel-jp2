@@ -175,6 +175,25 @@
             font-size: 42px;
         }
 
+        .copy-toast {
+            background: #101828;
+            border-radius: 8px;
+            bottom: 22px;
+            box-shadow: 0 18px 42px rgba(15, 23, 42, .22);
+            color: #fff;
+            display: none;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 12px 14px;
+            position: fixed;
+            right: 22px;
+            z-index: 2000;
+        }
+
+        .copy-toast.show {
+            display: block;
+        }
+
         .modal-content {
             border: 0;
             border-radius: 10px;
@@ -291,6 +310,11 @@
                                 Cadastrado por {{ contato.criado_por or 'Sistema' }}
                             </div>
                             <div class="d-flex gap-1">
+                                {% if contato.telefone_link %}
+                                    <a class="btn btn-sm btn-outline-primary" href="tel:{{ contato.telefone_link }}" title="Ligar">
+                                        <i class="bi bi-telephone-outbound"></i>
+                                    </a>
+                                {% endif %}
                                 {% if contato.whatsapp_link %}
                                     <a class="btn btn-sm btn-outline-success" href="https://wa.me/{{ contato.whatsapp_link }}" target="_blank" title="Abrir WhatsApp">
                                         <i class="bi bi-whatsapp"></i>
@@ -300,6 +324,12 @@
                                     <a class="btn btn-sm btn-outline-danger" href="mailto:{{ contato.email }}" title="Enviar e-mail">
                                         <i class="bi bi-envelope"></i>
                                     </a>
+                                    <a class="btn btn-sm btn-outline-danger" href="https://mail.google.com/mail/?view=cm&fs=1&to={{ contato.email_link }}" target="_blank" title="Abrir no Gmail">
+                                        <i class="bi bi-google"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-email="{{ contato.email }}" onclick="copiarEmailContato(this.dataset.email)" title="Copiar e-mail">
+                                        <i class="bi bi-copy"></i>
+                                    </button>
                                 {% endif %}
                                 <button class="btn btn-sm btn-outline-primary"
                                         data-bs-toggle="modal"
@@ -342,6 +372,8 @@
             </section>
         {% endif %}
     </main>
+
+    <div class="copy-toast" id="copyToastContato">E-mail copiado.</div>
 
     <div class="modal fade" id="modalNovoContato" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -490,6 +522,21 @@
             const id = botao.dataset.id;
             document.getElementById('formExcluirContato').action = `/contatos/excluir/${id}`;
             document.getElementById('nomeContatoExcluir').innerText = botao.dataset.nome || 'este contato';
+        }
+
+        function mostrarToastContato(texto) {
+            const toast = document.getElementById('copyToastContato');
+            toast.innerText = texto;
+            toast.classList.add('show');
+            clearTimeout(window.toastContatoTimer);
+            window.toastContatoTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+        }
+
+        function copiarEmailContato(email) {
+            if (!email) return;
+            navigator.clipboard.writeText(email)
+                .then(() => mostrarToastContato('E-mail copiado.'))
+                .catch(() => mostrarToastContato('Nao foi possivel copiar.'));
         }
     </script>
 </body>
