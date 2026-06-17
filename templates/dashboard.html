@@ -1572,19 +1572,19 @@ gridContainer.appendChild(card);
         estadoDoPainel.pasta_pai_id = id;
         estadoDoPainel.nivel_atual = 'subpasta';
         
-        let partes = estadoDoPainel.string_caminho.split(' âž” ');
+        let partes = estadoDoPainel.string_caminho.split(' / ');
         if (partes[partes.length - 1] !== nomePasta) {
-            estadoDoPainel.string_caminho += ` âž” ${nomePasta}`;
+            estadoDoPainel.string_caminho += ` / ${nomePasta}`;
         }
         
         sincronizarGrade();
     }
 
     function volverDiretorio() {
-        let partes = estadoDoPainel.string_caminho.split(' âž” ');
+        let partes = estadoDoPainel.string_caminho.split(' / ');
         if (partes.length > 1) {
             partes.pop();
-            let novoCaminho = partes.join(' âž” ');
+            let novoCaminho = partes.join(' / ');
             estadoDoPainel.string_caminho = novoCaminho;
             
             if (partes.length === 1) {
@@ -1663,7 +1663,7 @@ gridContainer.appendChild(card);
                 overlay.remove();
                 mostrarToast("Pasta criada", "A nova pasta foi adicionada ao painel.");
                 invalidarCacheListagem();
-                setTimeout(() => { sincronizarGrade(); }, 300);
+                sincronizarGrade();
             })
             .catch(err => {
                 console.error("Erro no servidor:", err);
@@ -2013,7 +2013,7 @@ gridContainer.appendChild(card);
 
     function abrirConfiguradorComContexto() {
         let caminhoAtual = estadoDoPainel.string_caminho;
-        let ultimaPasta = caminhoAtual.split(' âž” ').pop(); 
+        let ultimaPasta = caminhoAtual.split(' / ').pop(); 
         abrirConfiguradorAgenda();
         if (ultimaPasta !== 'INSTITUTO' && ultimaPasta !== 'JP2 BUSINESS' && ultimaPasta !== 'SITES JP2') {
             document.getElementById('tituloEvento').value = "Reuniao: " + ultimaPasta;
