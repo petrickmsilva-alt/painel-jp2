@@ -47,6 +47,7 @@ def garantir_schema_financeiro():
                 "empresa_id": "INT NULL AFTER id",
                 "tipo_recurso": "VARCHAR(80) NULL",
                 "observacoes": "TEXT NULL",
+                "status_pagamento": "VARCHAR(40) NULL",
                 "valor_juros_day": "DECIMAL(15,2) NULL",
                 "valor_divida_day": "DECIMAL(15,2) NULL",
                 "pgto_day": "DECIMAL(15,2) NULL",
@@ -310,7 +311,7 @@ def listar_investimentos_com_pagamentos(cur):
         SELECT i.id, i.empresa_id, e.nome AS empresa_nome, i.nome_investidor,
                i.valor_inicial, i.juros_mensais, i.data_inicio, i.captador,
                i.tipo_recurso, i.finalidade, i.data_pgto, i.observacoes,
-               i.valor_juros_day, i.valor_divida_day, i.pgto_day,
+               i.status_pagamento, i.valor_juros_day, i.valor_divida_day, i.pgto_day,
                i.valor_divida_futuro, i.importacao_origem, i.importacao_id,
                COALESCE(SUM(p.valor_pago), 0) AS total_pago,
                MAX(p.data_pagamento) AS ultima_data_pagamento
@@ -319,7 +320,7 @@ def listar_investimentos_com_pagamentos(cur):
         LEFT JOIN investimento_pagamentos p ON p.investimento_id = i.id
         GROUP BY i.id, i.empresa_id, e.nome, i.nome_investidor, i.valor_inicial,
                  i.juros_mensais, i.data_inicio, i.captador, i.tipo_recurso,
-                 i.finalidade, i.data_pgto, i.observacoes, i.valor_juros_day,
+                 i.finalidade, i.data_pgto, i.observacoes, i.status_pagamento, i.valor_juros_day,
                  i.valor_divida_day, i.pgto_day, i.valor_divida_futuro,
                  i.importacao_origem, i.importacao_id
         ORDER BY COALESCE(i.data_pgto, i.data_inicio) ASC, i.id DESC
@@ -469,8 +470,8 @@ def adicionar_investimento():
                 """
                 INSERT INTO investimentos
                 (empresa_id, nome_investidor, valor_inicial, juros_mensais, data_inicio,
-                 captador, tipo_recurso, finalidade, data_pgto, observacoes)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 captador, tipo_recurso, finalidade, data_pgto, observacoes, status_pagamento)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     request.form.get("empresa_id") or None,
@@ -483,6 +484,7 @@ def adicionar_investimento():
                     request.form.get("finalidade", "").strip(),
                     request.form.get("data_pgto") or None,
                     request.form.get("observacoes", "").strip(),
+                    request.form.get("status_pagamento", "").strip() or None,
                 ),
             )
         conn.commit()
@@ -500,6 +502,8 @@ def editar_investimento(id):
     try:
         garantir_schema_financeiro()
         conn = get_db_connection()
+        status_enviado = "status_pagamento" in request.form
+        status_pagamento = request.form.get("status_pagamento", "").strip() or None
         with conn.cursor() as cur:
             cur.execute(
                 """
@@ -507,7 +511,8 @@ def editar_investimento(id):
                 SET empresa_id = %s, nome_investidor = %s, valor_inicial = %s,
                     juros_mensais = %s, data_inicio = %s, captador = %s,
                     tipo_recurso = %s, finalidade = %s, data_pgto = %s,
-                    observacoes = %s
+                    observacoes = %s,
+                    status_pagamento = CASE WHEN %s = 1 THEN %s ELSE status_pagamento END
                 WHERE id = %s
                 """,
                 (
@@ -521,9 +526,40 @@ def editar_investimento(id):
                     request.form.get("finalidade", "").strip(),
                     request.form.get("data_pgto") or None,
                     request.form.get("observacoes", "").strip(),
+                    1 if status_enviado else 0,
+                    status_pagamento,
                     id,
                 ),
             )
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "sucesso"})
+    except Exception as e:
+        return jsonify({"status": "erro", "msg": str(e)}), 500
+
+
+@bp_financeiro.route("/api/atualizar-status-investimento/<int:id>", methods=["POST"])
+def atualizar_status_investimento(id):
+    if "usuario_logado" not in session:
+        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+
+    status_pagamento = request.form.get("status_pagamento", "").strip() or None
+    opcoes_validas = {None, "Em aberto", "Parcial", "Quitado", "Vencido", "Vencendo"}
+    if status_pagamento not in opcoes_validas:
+        return jsonify({"status": "erro", "msg": "Status de pagamento invalido."}), 400
+
+    try:
+        garantir_schema_financeiro()
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE investimentos SET status_pagamento = %s WHERE id = %s",
+                (status_pagamento, id),
+            )
+            if cur.rowcount == 0:
+                conn.rollback()
+                conn.close()
+                return jsonify({"status": "erro", "msg": "Investimento nao encontrado."}), 404
         conn.commit()
         conn.close()
         return jsonify({"status": "sucesso"})
