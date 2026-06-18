@@ -40,7 +40,7 @@
     
     .sidebar-brand {
       padding: 20px;
-      background-color: #1e293b; /* <--- Mude aqui tambÃ©m */
+      background-color: #1e293b; /* Ajuste a cor aqui também */
       border-bottom: 1px solid #334155;
       display: flex;
       flex-direction: column;
@@ -110,7 +110,7 @@
       margin-right: 12px;
       font-size: 16px;
     }
-    /* Checkbox Minimalista - Oculto atÃ© passar o mouse */
+    /* Checkbox minimalista - oculto até passar o mouse */
     .chk-item-excluir {
         width: 14px !important;
         height: 14px !important;
@@ -124,7 +124,7 @@
         top: 8px;
         left: 8px;
         z-index: 20;
-        opacity: 0; /* ComeÃ§a invisÃ­vel */
+        opacity: 0; /* Começa invisível */
     }
 
     /* Ao passar o mouse no card, o checkbox aparece */
@@ -133,7 +133,7 @@
         background-color: white;
     }
 
-    /* Efeito de marcado (sempre visÃ­vel se estiver marcado) */
+    /* Efeito de marcado, sempre visível se estiver marcado */
     .chk-item-excluir:checked {
         opacity: 1 !important;
         background-color: #ef4444;
@@ -141,7 +141,7 @@
         background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
     }
 
-    /* BOTÃƒO INTERNO DA AGENDA */
+    /* Botão interno da agenda */
     .sidebar-agenda-box {
       padding: 10px 20px;
       border-bottom: 1px solid #334155;
@@ -169,7 +169,7 @@
       color: white;
     }
 
-    /* ÃREA OPERACIONAL DIREITA */
+    /* Área operacional direita */
     .main-workspace {
       flex-grow: 1;
       display: flex;
@@ -217,7 +217,7 @@
       height: 100%;
     }
 
-    /* BARRA DE ENDEREÃ‡O */
+    /* Barra de endereço */
     .explorer-address-bar {
       display: flex;
       align-items: center;
@@ -236,7 +236,7 @@
       margin-right: 10px;
     }
 
-   /* GRADE CORPORATIVA E MODOS DE VISUALIZAÃ‡ÃƒO */
+   /* Grade corporativa e modos de visualização */
     .explorer-grid {
       display: grid;
       gap: 20px;
@@ -280,18 +280,18 @@
       100% { background-position: 0 50%; }
     }
 
-    /* PadrÃ£o MÃ©dio */
+    /* Padrão médio */
     .explorer-grid { grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); }
     
-    /* Modos de VisualizaÃ§Ã£o */
+    /* Modos de visualização */
     
-    /* Modo Pequeno: Ãcones menores e texto compacto */
+    /* Modo pequeno: ícones menores e texto compacto */
     .view-pequeno { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)) !important; }
     .view-pequeno .explorer-card { min-height: 100px; padding: 10px 5px; }
     .view-pequeno .icon-wrapper { font-size: 32px !important; margin-bottom: 4px; }
     .view-pequeno .item-label { font-size: 11px !important; line-height: 1.2; }
 
-    /* Modo Lista: Compacto, Ã­cone Ã  esquerda e texto alinhado */
+    /* Modo lista: compacto, ícone à esquerda e texto alinhado */
     .view-lista { grid-template-columns: 1fr !important; }
     .view-lista .explorer-card { 
         flex-direction: row; 
@@ -305,7 +305,7 @@
     /* Esconde o autor na lista para deixar limpo igual o Windows */
     .view-lista .item-author { display: none !important; }
     
-    /* Card padrÃ£o (Pastas e Arquivos) */
+    /* Card padrão (pastas e arquivos) */
     .explorer-card {
       background: #ffffff;
       border: 1px solid #e2e8f0;
@@ -408,7 +408,7 @@
       color: var(--jp2-blue);
     }
 
-    /* VersÃ£o Premium para os SITES */
+    /* Versão premium para os sites */
     .explorer-card.explorer-site-card {
       align-items: stretch;
       justify-content: space-between;
@@ -1027,7 +1027,7 @@
             </a>
             {% if usuario_e_admin %}
                 <a href="/admin/usuarios" class="menu-item">
-                    <i class="bi bi-people-fill text-warning"></i> Gestao de Socios
+                    <i class="bi bi-people-fill text-warning"></i> Gestão de Sócios
                 </a>
                 <a href="/admin/logs" class="menu-item">
                     <i class="bi bi-clipboard-data text-secondary"></i> Auditoria (Logs)
@@ -1143,7 +1143,7 @@
                 <label class="jp2-modal-label" for="renomearNovoNome">Novo nome</label>
                 <input type="text" id="renomearNovoNome" class="form-control mb-3" placeholder="Digite o novo nome">
                 <label class="jp2-modal-label" for="renomearSenha">Confirme sua senha</label>
-                <input type="password" id="renomearSenha" class="form-control" placeholder="Senha do usuario">
+                <input type="password" id="renomearSenha" class="form-control" placeholder="Senha do usuário">
             </div>
             <div class="jp2-modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -1357,10 +1357,10 @@
                 invalidarCacheListagem();
                 renomearItemNaGrade(id, novoNome);
             } else {
-                mostrarToast('Nao foi possivel renomear', d.mensagem || 'Verifique a senha e tente novamente.', 'erro');
+                mostrarToast('Não foi possível renomear', d.mensagem || 'Verifique a senha e tente novamente.', 'erro');
             }
         })
-        .catch(() => mostrarToast('Erro de conexao', 'Nao foi possivel falar com o servidor.', 'erro'));
+        .catch(() => mostrarToast('Erro de conexão', 'Não foi possível falar com o servidor.', 'erro'));
     }
     let estadoDoPainel = { bloco: 'instituto', categoria: 'raiz', pasta_pai_id: null, nivel_atual: 'raiz_bloco', string_caminho: 'INSTITUTO' };
     let instanciaCalendario = null;
@@ -1386,7 +1386,7 @@
 
     const descricoesSitesJP2 = {
         'IBDTEC': 'Instituto, tecnologia, eventos e desenvolvimento institucional.',
-        'Expo Feiras CO': 'Portal principal das feiras, exposicoes e projetos comerciais.',
+        'Expo Feiras CO': 'Portal principal das feiras, exposições e projetos comerciais.',
         'Expo Centro Oeste': 'Evento regional para negocios, marcas e experiencias.',
         'Expo Fashion Brasil': 'Moda, vestuario e relacionamento com o mercado fashion.',
         'Capital Mix': 'Ativacoes, experiencias e agenda de entretenimento.',
@@ -1877,16 +1877,16 @@
 
     function alterarVisualizacao(modo) {
         let grid = document.getElementById("wrapper-explorer-grid");
-        // Remove as classes de visualizaÃ§Ã£o anteriores para nÃ£o conflitar
+        // Remove as classes de visualização anteriores para não conflitar
         grid.classList.remove('view-pequeno', 'view-lista');
         
-        // Se o modo selecionado for diferente de 'medio' (o padrÃ£o), aplica a classe
+        // Se o modo selecionado for diferente de 'medio' (o padrão), aplica a classe
         if(modo !== 'medio') {
             grid.classList.add('view-' + modo);
         }
     }
 
-    // ðŸŸ¢ FUNÃ‡Ã•ES NOVAS ADICIONADAS: CONTROLE DE SELEÃ‡ÃƒO E EXCLUSÃƒO EM LOTE
+    // Funções de controle de seleção e exclusão em lote
     function gerenciarBotaoLote() {
         let selecionados = document.querySelectorAll('.chk-item-excluir:checked');
         let btnLote = document.getElementById('btn-excluir-lote');
@@ -1928,12 +1928,12 @@
                 gerenciarBotaoLote();
                 mostrarToast("Itens excluidos", "Os itens selecionados foram enviados para a lixeira.");
             } else {
-                mostrarToast("Nao foi possivel excluir", data.mensagem || "Verifique a senha e tente novamente.", "erro");
+                mostrarToast("Não foi possível excluir", data.mensagem || "Verifique a senha e tente novamente.", "erro");
             }
         })
         .catch(err => {
             console.error("Erro na exclusao em lote:", err);
-            mostrarToast("Erro ao excluir", "Nao foi possivel processar a exclusao.", "erro");
+            mostrarToast("Erro ao excluir", "Não foi possível processar a exclusão.", "erro");
         });
     }    
     function entrarSubpastaReal(id, nomePasta) {
@@ -2078,12 +2078,12 @@
                 invalidarCacheListagem();
                 sincronizarGrade();
             } else {
-                mostrarToast("Nao foi possivel salvar", data.mensagem || "Verifique os dados e tente novamente.", "erro");
+                mostrarToast("Não foi possível salvar", data.mensagem || "Verifique os dados e tente novamente.", "erro");
             }
         })
         .catch(err => {
             console.error("Erro ao salvar site:", err);
-            mostrarToast("Erro ao salvar", "Nao foi possivel falar com o servidor.", "erro");
+            mostrarToast("Erro ao salvar", "Não foi possível falar com o servidor.", "erro");
         });
     }
 
@@ -2113,12 +2113,12 @@
                 removerItemDaGrade(id);
                 gerenciarBotaoLote();
             } else {
-                mostrarToast("Nao foi possivel excluir", data.mensagem || "Verifique a senha e tente novamente.", "erro");
+                mostrarToast("Não foi possível excluir", data.mensagem || "Verifique a senha e tente novamente.", "erro");
             }
         })
         .catch(err => {
             console.error("Erro na exclusao:", err);
-            mostrarToast("Erro de conexao", "Nao foi possivel falar com o servidor.", "erro");
+            mostrarToast("Erro de conexão", "Não foi possível falar com o servidor.", "erro");
         });
     }
 
@@ -2154,7 +2154,7 @@
             let fileInput = overlay.querySelector('#arquivo_temp');
             if(fileInput.files.length === 0) return mostrarToast("Arquivo obrigatorio", "Selecione um arquivo para enviar.", "erro");
             
-            // ðŸŸ¢ ADICIONADO: Fecha a caixa cinza na hora para liberar a visÃ£o da faixa azul no topo!
+            // Fecha a caixa cinza na hora para liberar a visão da faixa azul no topo.
             overlay.remove();
             
             // Repassa o arquivo selecionado diretamente para o fatiador mestre acelerado
@@ -2164,7 +2164,7 @@
         overlay.querySelector('#btn_fechar_temp').onclick = () => overlay.remove();
     }        
 
-    // ðŸš€ ATUALIZAÃ‡ÃƒO: SISTEMA DE UPLOAD FRAGMENTADO DE ALTA VELOCIDADE COM FATIAS DE 1MB
+    // Sistema de upload fragmentado com fatias de 1 MB.
     function dispararUploadAvancado(inputPassado) {
         let filesInput = inputPassado || document.getElementById('inputArquivosAvancado');
         if (!filesInput || filesInput.files.length === 0) return mostrarToast("Arquivo obrigatorio", "Selecione os arquivos para enviar.", "erro");
@@ -2177,7 +2177,7 @@
         let indiceArquivoAtual = 0;
         let itensEnviados = [];
 
-        // âš¡ MINI-FATIAS DE 1MB: Passam voando pela Render sem ativar o limite 413 ou estourar a memÃ³ria
+        // Mini-fatias de 1 MB para evitar limite 413 ou estouro de memória.
         const CHUNK_SIZE = 1 * 1024 * 1024;
         
         function subirProximoArquivo() {
@@ -2235,10 +2235,10 @@
                         if (respostaUpload.item) itensEnviados.push(respostaUpload.item);
                         chunkIndex++;
                         if (chunkIndex < totalChunks) {
-                            enviarFatia(); // Despacha a prÃ³xima fatia leve imediatamente
+                            enviarFatia(); // Despacha a próxima fatia leve imediatamente
                         } else {
                             indiceArquivoAtual++;
-                            subirProximoArquivo(); // Arquivo finalizado! Passa para o prÃ³ximo do lote
+                            subirProximoArquivo(); // Arquivo finalizado. Passa para o próximo do lote
                         }
                     } else {
                         let mensagemErro = "Erro ao transmitir fragmento de rede. Tentativa abortada.";
@@ -2341,7 +2341,7 @@
             let dataFim = document.getElementById('dataFimEventoInput').value;
             if (!titulo) return mostrarToast("Evento obrigatorio", "Informe qual evento sera realizado.", "erro");
             if (!dataIni || !dataFim) return mostrarToast("Periodo obrigatorio", "Preencha a data inicial e final do evento.", "erro");
-            if (dataFim < dataIni) return mostrarToast("Periodo invalido", "A data final nao pode ser anterior a data inicial.", "erro");
+            if (dataFim < dataIni) return mostrarToast("Período inválido", "A data final não pode ser anterior à data inicial.", "erro");
             fd.append('dataReuniaoInput', dataIni);
             fd.append('data_fim', dataFim);
             fd.append('horario', '');
@@ -2360,12 +2360,12 @@
                     window.location.reload(); 
                 }
             } else {
-                mostrarToast("Nao foi possivel salvar", data.mensagem || "Verifique os dados e tente novamente.", "erro");
+                mostrarToast("Não foi possível salvar", data.mensagem || "Verifique os dados e tente novamente.", "erro");
             }
         })
         .catch(err => {
             console.error("Erro ao salvar:", err);
-            mostrarToast("Erro ao salvar", "Nao foi possivel falar com o servidor.", "erro");
+            mostrarToast("Erro ao salvar", "Não foi possível falar com o servidor.", "erro");
         });
     }
 
@@ -2399,7 +2399,7 @@
 
   <div id="mobile-only-ui">
       <nav class="mobile-nav">
-        <a href="/" class="nav-item">ðŸ  InÃ­cio</a>
+        <a href="/" class="nav-item">Início</a>
         <a href="/agenda" class="nav-item">ðŸ“… Agenda</a>
         <a href="#" class="nav-item" onclick="toggleMenu()">â˜° Mais</a>
       </nav>
@@ -2409,7 +2409,7 @@
         <a onclick="clicarBlocoMestre('instituto', this)" style="cursor:pointer;">ðŸ¢ Instituto (IBDTEC)</a>
         <a onclick="clicarBlocoMestre('jp2_business', this)" style="cursor:pointer;">ðŸ’¼ JP2 Business</a>
         <a href="/contatos">Agenda Telefonica</a>
-        <a href="/admin/usuarios">ðŸ‘¥ Gestao de Socios</a>
+        <a href="/admin/usuarios">Gestão de Sócios</a>
         <a href="/admin/logs">ðŸ“Š Auditoria (Logs)</a>
         <a onclick="clicarBlocoMestre('sites_jp2', this)" style="cursor:pointer;">ðŸŒ Sites JP2 Business</a>
       </div>

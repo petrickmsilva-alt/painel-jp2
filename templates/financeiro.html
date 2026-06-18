@@ -45,7 +45,7 @@
                 <i class="bi bi-file-earmark-spreadsheet"></i> Importar Excel
             </button>
             <button type="button" class="btn btn-outline-danger" onclick="limparInvestimentos()">
-                <i class="bi bi-trash3"></i> Limpar lancamentos
+                <i class="bi bi-trash3"></i> Limpar lançamentos
             </button>
         </div>
     </header>
@@ -78,11 +78,11 @@
             <div class="col-lg-6">
                 <label class="form-label">Tipo de recurso</label>
                 <select name="tipo_recurso" class="form-select">
-                    <option value="Proprio">Proprio</option>
+                    <option value="Proprio">Próprio</option>
                     <option value="Terceiros Particular">Terceiros particular</option>
-                    <option value="Instituicoes Financeiras">Instituicoes financeiras</option>
+                    <option value="Instituicoes Financeiras">Instituições financeiras</option>
                     <option value="Empresas Privadas">Empresas privadas</option>
-                    <option value="Investidor Pessoa Fisica">Investidor pessoa fisica</option>
+                    <option value="Investidor Pessoa Fisica">Investidor pessoa física</option>
                 </select>
             </div>
             <div class="col-lg-6">
@@ -90,8 +90,8 @@
                 <select name="finalidade" class="form-select">
                     <option value="Pagamento Contas">Pagamento contas</option>
                     <option value="Aporte Financeiro">Aporte financeiro</option>
-                    <option value="Emprestimo">Emprestimo</option>
-                    <option value="Aplicacao Investidor">Aplicacao investidor</option>
+                    <option value="Emprestimo">Empréstimo</option>
+                    <option value="Aplicacao Investidor">Aplicação investidor</option>
                 </select>
             </div>
             <div class="col-lg-6">
@@ -111,7 +111,7 @@
                 <input type="date" name="data_pgto" class="form-control">
             </div>
             <div class="col-12">
-                <label class="form-label">Observacoes</label>
+                <label class="form-label">Observações</label>
                 <textarea name="observacoes" class="form-control" rows="2"></textarea>
             </div>
             <div class="col-12 d-flex justify-content-end gap-2">
@@ -131,7 +131,7 @@
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead><tr><th>Nome</th><th>CNPJ</th><th>Ramo</th><th>Acoes</th></tr></thead>
+                <thead><tr><th>Nome</th><th>CNPJ</th><th>Ramo</th><th>Ações</th></tr></thead>
                 <tbody id="corpoTabelaEmpresas"></tbody>
             </table>
         </div>
@@ -144,7 +144,7 @@
             <div class="modal-header">
                 <div>
                     <h5 class="modal-title fw-bold"><i class="bi bi-file-earmark-spreadsheet text-success"></i> Importar planilha financeira</h5>
-                    <div class="text-secondary small fw-semibold">Pre-visualize antes de importar. Duplicados serao ignorados.</div>
+                    <div class="text-secondary small fw-semibold">Pré-visualize antes de importar. Duplicados serão ignorados.</div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
@@ -155,11 +155,11 @@
                         <input type="file" class="form-control" id="arquivoImportacaoExcel" accept=".xlsx">
                     </div>
                     <div class="col-lg-4 d-flex gap-2">
-                        <button type="button" class="btn btn-outline-primary flex-fill" onclick="previewImportacaoExcel()"><i class="bi bi-eye"></i> Pre-visualizar</button>
+                        <button type="button" class="btn btn-outline-primary flex-fill" onclick="previewImportacaoExcel()"><i class="bi bi-eye"></i> Pré-visualizar</button>
                         <button type="button" class="btn btn-success flex-fill" id="btnConfirmarImportacao" onclick="confirmarImportacaoExcel()" disabled><i class="bi bi-cloud-arrow-up"></i> Importar</button>
                     </div>
                 </div>
-                <div class="alert alert-info border-0 mt-3 mb-0">A importacao cria empresas ausentes automaticamente e pula registros duplicados.</div>
+                <div class="alert alert-info border-0 mt-3 mb-0">A importação cria empresas ausentes automaticamente e ignora registros duplicados.</div>
                 <div id="resultadoPreviewImportacao" class="mt-3"></div>
             </div>
         </div>
@@ -254,11 +254,11 @@
     }
 
     function limparInvestimentos() {
-        const texto = prompt('Para limpar todos os lancamentos financeiros, digite LIMPAR FINANCEIRO');
+        const texto = prompt('Para limpar todos os lançamentos financeiros, digite LIMPAR FINANCEIRO');
         if (texto !== 'LIMPAR FINANCEIRO') return;
         fetch('/api/limpar-investimentos?confirmar=SIM&frase=' + encodeURIComponent(texto), { method:'DELETE' }).then(res => res.json()).then(data => {
             if (data.status !== 'sucesso') return alert(data.msg || 'Erro ao limpar.');
-            alert('Lancamentos financeiros removidos. Empresas e demais dados foram mantidos.');
+            alert('Lançamentos financeiros removidos. Empresas e demais dados foram mantidos.');
         });
     }
 
@@ -278,7 +278,7 @@
             <div class="import-summary mb-3">
                 <div class="import-summary-item"><span>Registros</span><strong>${resumo.qtd}</strong></div>
                 <div class="import-summary-item"><span>Valor inicial</span><strong>${resumo.total_valor_formatado}</strong></div>
-                <div class="import-summary-item"><span>Divida futura</span><strong>${resumo.total_futuro_formatado}</strong></div>
+                <div class="import-summary-item"><span>Dívida futura</span><strong>${resumo.total_futuro_formatado}</strong></div>
             </div>
             <div class="table-responsive border rounded"><table class="table table-sm align-middle mb-0"><thead><tr><th>ID</th><th>Empresa</th><th>Credor</th><th>Captador</th><th>Finalidade</th><th>Valor</th></tr></thead><tbody>${linhas}</tbody></table></div>`;
     }
@@ -294,10 +294,10 @@
     }
     function confirmarImportacaoExcel() {
         const formData = montarFormImportacao(); if (!formData) return;
-        if (!confirm('Confirmar importacao para o sistema?')) return;
+        if (!confirm('Confirmar importação para o sistema?')) return;
         fetch('/api/importar-investimentos-excel', { method:'POST', body:formData }).then(res => res.json()).then(data => {
             if (data.status !== 'sucesso') return alert(data.msg || 'Erro ao importar.');
-            document.getElementById('resultadoPreviewImportacao').innerHTML = `<div class="alert alert-success mb-0">Importacao concluida. Inseridos: <strong>${data.inseridos}</strong>. Duplicados ignorados: <strong>${data.duplicados}</strong>.</div>`;
+            document.getElementById('resultadoPreviewImportacao').innerHTML = `<div class="alert alert-success mb-0">Importação concluída. Inseridos: <strong>${data.inseridos}</strong>. Duplicados ignorados: <strong>${data.duplicados}</strong>.</div>`;
             carregarEmpresas(); carregarTabelaEmpresas();
         });
     }
