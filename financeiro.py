@@ -512,6 +512,73 @@ def substituir_pagamentos_importados_excel(cur, investimentos_por_importacao, pa
     return total_lancamentos, total_valor
 
 
+def substituir_pagamentos_importados_excel(cur, investimentos_por_importacao, pagamentos_detalhados):
+    total_lancamentos = 0
+    total_valor = Decimal("0")
+
+    for importacao_id, investimento_id in investimentos_por_importacao.items():
+        pagamentos = pagamentos_detalhados.get(str(importacao_id), [])
+        if not pagamentos:
+            continue
+
+        total_detalhado = sum((decimal_ou_zero(p.get("valor_pago")) for p in pagamentos), Decimal("0"))
+        cur.execute(
+            """
+            SELECT COUNT(*) AS qtd, COALESCE(SUM(valor_pago), 0) AS total
+            FROM investimento_pagamentos
+            WHERE investimento_id = %s
+            """,
+            (investimento_id,),
+        )
+        pagamentos_atuais = cur.fetchone() or {}
+        consolidado_unico_antigo = (
+            int(pagamentos_atuais.get("qtd") or 0) == 1
+            and decimal_ou_zero(pagamentos_atuais.get("total")) == total_detalhado
+        )
+
+        cur.execute(
+            """
+            DELETE FROM investimento_pagamentos
+            WHERE investimento_id = %s
+              AND (
+                    criado_por = %s
+                    OR criado_por LIKE 'Import%%'
+                    OR observacoes LIKE 'Pagamento consolidado importado%%'
+                    OR observacoes LIKE 'Pagamento importado da aba detalhe%%'
+                    OR (%s = 1 AND valor_pago = %s)
+                  )
+            """,
+            (investimento_id, CRIADO_POR_IMPORTACAO, 1 if consolidado_unico_antigo else 0, total_detalhado),
+        )
+
+        for pagamento in pagamentos:
+            cur.execute(
+                """
+                INSERT INTO investimento_pagamentos
+                (investimento_id, data_pagamento, valor_pago, observacoes, criado_por)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (
+                    investimento_id,
+                    pagamento["data_pagamento"],
+                    pagamento["valor_pago"],
+                    pagamento["observacoes"],
+                    CRIADO_POR_IMPORTACAO,
+                ),
+            )
+            total_lancamentos += 1
+            total_valor += pagamento["valor_pago"]
+
+        registrar_auditoria(
+            cur,
+            investimento_id,
+            "Pagamentos importados",
+            f"{len(pagamentos)} pagamento(s) detalhado(s) importado(s) da planilha.",
+        )
+
+    return total_lancamentos, total_valor
+
+
 def juros_sobre_saldo(valor, taxa_percentual, data_inicio, data_fim):
     principal = decimal_ou_zero(valor)
     taxa = decimal_ou_zero(taxa_percentual) / Decimal("100")
