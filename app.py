@@ -231,14 +231,18 @@ def formatar_telefone_br(valor):
     if not digitos:
         return ""
 
-    if digitos.startswith("55") and len(digitos) >= 12:
+    if digitos.startswith("0055"):
+        digitos = digitos[4:]
+    elif digitos.startswith("55") and len(digitos) > 11:
         digitos = digitos[2:]
+
+    digitos = digitos[:11]
 
     if len(digitos) < 10:
         return str(valor or "").strip()
 
     ddd = digitos[:2]
-    numero = digitos[2:11]
+    numero = digitos[2:]
     if len(numero) == 9:
         return f"+55 {ddd} {numero[:5]}-{numero[5:]}"
     if len(numero) == 8:
