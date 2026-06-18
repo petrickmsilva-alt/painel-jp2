@@ -44,6 +44,10 @@ ROTAS_MONITORADAS = (
 from financeiro import bp_financeiro
 app.register_blueprint(bp_financeiro)
 
+# Registro do módulo de cadastro de eventos
+from eventos import bp_eventos
+app.register_blueprint(bp_eventos)
+
 # DIRETÃ“RIO LOCAL DE ARMAZENAMENTO
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
