@@ -297,7 +297,7 @@
         if (!confirm('Confirmar importação para o sistema?')) return;
         fetch('/api/importar-investimentos-excel', { method:'POST', body:formData }).then(res => res.json()).then(data => {
             if (data.status !== 'sucesso') return alert(data.msg || 'Erro ao importar.');
-            document.getElementById('resultadoPreviewImportacao').innerHTML = `<div class="alert alert-success mb-0">Importação concluída. Inseridos: <strong>${data.inseridos}</strong>. Duplicados ignorados: <strong>${data.duplicados}</strong>.</div>`;
+            document.getElementById('resultadoPreviewImportacao').innerHTML = `<div class="alert alert-success mb-0">Importação concluída. Inseridos: <strong>${data.inseridos}</strong>. Duplicados ignorados: <strong>${data.duplicados}</strong>. Pagamentos detalhados importados: <strong>${data.pagamentos_importados || 0}</strong> (${data.total_pagamentos_importados_formatado || 'R$ 0,00'}).</div>`;
             carregarEmpresas(); carregarTabelaEmpresas();
         });
     }
