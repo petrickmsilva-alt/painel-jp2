@@ -252,7 +252,7 @@
             <div>
                 <div class="page-kicker">Central de Relacionamento</div>
                 <h1 class="page-title">Agenda Telefonica</h1>
-                <div class="text-secondary">Contatos compartilhados entre socios, empresas, eventos e parceiros.</div>
+                <div class="text-secondary">Contatos compartilhados entre sócios, empresas, eventos e parceiros.</div>
             </div>
             <div class="d-flex gap-2 flex-wrap">
                 <a href="/" class="btn btn-outline-secondary">
@@ -304,7 +304,7 @@
                     <span>Categoria</span>
                     <span>Telefone</span>
                     <span>E-mail</span>
-                    <span class="text-end">Acoes</span>
+                    <span class="text-end">Ações</span>
                 </div>
                 {% for contato in contatos %}
                     <article class="contact-row">
@@ -398,7 +398,7 @@
             <section class="panel empty-state">
                 <i class="bi bi-person-rolodex"></i>
                 <h2 class="h5 fw-bold mt-3">Nenhum contato encontrado</h2>
-                <p class="text-secondary mb-3">Cadastre contatos importantes para que todos os socios encontrem rapidamente.</p>
+                <p class="text-secondary mb-3">Cadastre contatos importantes para que todos os sócios encontrem rapidamente.</p>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovoContato">
                     <i class="bi bi-person-plus"></i> Cadastrar primeiro contato
                 </button>
@@ -450,7 +450,7 @@
                             <input class="form-control" type="email" name="email">
                         </div>
                         <div class="col-12">
-                            <label class="form-label small fw-bold text-secondary">Observacoes</label>
+                            <label class="form-label small fw-bold text-secondary">Observações</label>
                             <textarea class="form-control" name="observacoes" rows="3"></textarea>
                         </div>
                     </div>
@@ -505,7 +505,7 @@
                             <input class="form-control" type="email" name="email" id="editEmail">
                         </div>
                         <div class="col-12">
-                            <label class="form-label small fw-bold text-secondary">Observacoes</label>
+                            <label class="form-label small fw-bold text-secondary">Observações</label>
                             <textarea class="form-control" name="observacoes" id="editObservacoes" rows="3"></textarea>
                         </div>
                     </div>
@@ -599,7 +599,7 @@
             if (!email) return;
             navigator.clipboard.writeText(email)
                 .then(() => mostrarToastContato('E-mail copiado.'))
-                .catch(() => mostrarToastContato('Nao foi possivel copiar.'));
+                .catch(() => mostrarToastContato('Não foi possível copiar.'));
         }
     </script>
 </body>

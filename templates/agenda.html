@@ -254,7 +254,7 @@
     <main class="agenda-shell">
         <section class="agenda-topbar">
             <div>
-                <div class="agenda-eyebrow">Gestao de compromissos</div>
+                <div class="agenda-eyebrow">Gestão de compromissos</div>
                 <h1>Agenda JP2 Business</h1>
             </div>
             <div class="agenda-actions">
@@ -297,7 +297,7 @@
                         <strong id="agendaDetalheHorario">-</strong>
                     </div>
                     <label class="form-label fw-bold mt-2" for="senhaExcluirEvento">Confirme sua senha para excluir</label>
-                    <input type="password" id="senhaExcluirEvento" class="form-control" placeholder="Senha do usuario">
+                    <input type="password" id="senhaExcluirEvento" class="form-control" placeholder="Senha do usuário">
                 </div>
                 <div class="jp2-modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
@@ -336,7 +336,7 @@
             const props = info.event.extendedProps || {};
             document.getElementById('agendaDetalheTitulo').innerText = props.titulo_original || info.event.title;
             document.getElementById('agendaDetalheTipo').innerText = textoTipoAgenda(props.tipo);
-            document.getElementById('agendaDetalheLocal').innerText = props.local || 'Nao informado';
+            document.getElementById('agendaDetalheLocal').innerText = props.local || 'Não informado';
             document.getElementById('agendaDetalheHorario').innerText = props.horario || 'Dia inteiro';
             document.getElementById('senhaExcluirEvento').value = '';
             new bootstrap.Modal(document.getElementById('modalDetalheAgenda')).show();
@@ -365,10 +365,10 @@
                     if (calendarioAgenda) calendarioAgenda.refetchEvents();
                     mostrarAgendaToast('Compromisso removido', 'A agenda foi atualizada com sucesso.');
                 } else {
-                    mostrarAgendaToast('Nao foi possivel excluir', data.mensagem || 'Verifique a senha e tente novamente.', 'erro');
+                    mostrarAgendaToast('Não foi possível excluir', data.mensagem || 'Verifique a senha e tente novamente.', 'erro');
                 }
             })
-            .catch(() => mostrarAgendaToast('Erro de conexao', 'Nao foi possivel falar com o servidor.', 'erro'));
+            .catch(() => mostrarAgendaToast('Erro de conexão', 'Não foi possível falar com o servidor.', 'erro'));
         }
 
         document.addEventListener('DOMContentLoaded', function() {
