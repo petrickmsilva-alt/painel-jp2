@@ -25,6 +25,38 @@
       width: 100vw;
     }
 
+    .sidebar-toggle-btn {
+      align-items: center;
+      background: #ffffff;
+      border: 1px solid #d7e2ef;
+      border-radius: 0 8px 8px 0;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, .16);
+      color: #1e293b;
+      display: inline-flex;
+      height: 38px;
+      justify-content: center;
+      left: 241px;
+      position: fixed;
+      top: 18px;
+      transition: left .22s ease, background .18s ease, color .18s ease;
+      width: 38px;
+      z-index: 130;
+    }
+
+    .sidebar-toggle-btn:hover {
+      background: #155eef;
+      border-color: #155eef;
+      color: #ffffff;
+    }
+
+    body.sidebar-collapsed .sidebar-enterprise {
+      margin-left: calc(var(--sidebar-width) * -1);
+    }
+
+    body.sidebar-collapsed .sidebar-toggle-btn {
+      left: 0;
+    }
+
     /* SIDEBAR LATERAL ESQUERDA CORPORATIVA */
     .sidebar-enterprise {
       width: var(--sidebar-width);
@@ -36,6 +68,7 @@
       flex-shrink: 0;
       box-shadow: 4px 0 15px rgba(0,0,0,0.05);
       z-index: 100;
+      transition: margin-left .22s ease;
     }
     
     .sidebar-brand {
@@ -834,12 +867,21 @@
     }
 
     .explorer-card .icon-wrapper {
-      font-size: 42px;
-      margin-bottom: 12px;
+      align-items: center;
+      background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+      border: 1px solid #dbe7f7;
+      border-radius: 12px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9);
+      display: inline-flex;
+      font-size: 34px;
+      height: 62px;
+      justify-content: center;
+      margin-bottom: 14px;
+      width: 72px;
     }
 
     .explorer-card .icon-wrapper .text-warning {
-      color: #d8a11d !important;
+      color: #e6a400 !important;
     }
 
     .explorer-card .icon-wrapper .text-primary {
@@ -963,6 +1005,9 @@
 <body>
 
 <div class="workspace-wrapper">
+    <button class="sidebar-toggle-btn" type="button" onclick="alternarMenuLateral()" title="Ocultar ou mostrar menu">
+        <i class="bi bi-layout-sidebar-inset"></i>
+    </button>
     <aside class="sidebar-enterprise">
         <div class="sidebar-brand">
             <span style="font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px;">CONSOLE DE GESTAO</span>
@@ -998,12 +1043,6 @@
                 </div>
             </div>
         </div>
-        <div class="sidebar-agenda-box">
-            <button class="btn-sidebar-agenda" onclick="abrirConfiguradorComContexto()">
-                <i class="bi bi-calendar3-event text-danger"></i> Agendar Compromisso
-            </button>
-        </div>
-        
         <div class="sidebar-menu">
             <a href="/" class="menu-item"><i class="bi bi-house"></i> Voltar ao Painel</a>
                                   
@@ -1018,6 +1057,9 @@
             <div class="menu-header mt-3">GESTAO</div>
             <a href="/agenda" class="menu-item">
                  <i class="bi bi-calendar-event-fill text-danger"></i> Agenda 
+            </a>
+            <a class="menu-item" onclick="abrirConfiguradorComContexto()">
+                 <i class="bi bi-calendar-plus-fill text-primary"></i> Agendar Compromisso
             </a>
             <a href="/eventos" class="menu-item">
                  <i class="bi bi-calendar2-week-fill text-info"></i> Cadastro de Eventos
@@ -1107,7 +1149,7 @@
                         </button>
                         <div class="folder-search">
                             <i class="bi bi-search"></i>
-                            <input type="search" id="inputBuscaPasta" placeholder="Buscar nesta pasta" oninput="filtrarItensDaGrade(this.value)">
+                            <input type="search" id="inputBuscaPasta" value="" autocomplete="off" placeholder="Buscar nesta pasta" oninput="filtrarItensDaGrade(this.value)">
                         </div>
                         
                         <select id="selectView" class="form-select form-select-sm ms-auto" style="width: 158px;" onchange="alterarVisualizacao(this.value)">
@@ -1194,8 +1236,7 @@
             <div class="jp2-modal-body">
                 <label class="jp2-modal-label" for="tipoEventoSelect">Tipo de compromisso</label>
                 <select id="tipoEventoSelect" class="form-select mb-3" onchange="alternarCamposAgenda(this.value)">
-                    <option value="reuniao">Reuniao</option>
-                    <option value="evento">Evento</option>
+                    <option value="reuniao">Compromisso / Reuniao</option>
                 </select>
 
                 <div id="blocoReuniao">
@@ -1451,7 +1492,20 @@
         'IBDTEC': 'IBDTEC.jpeg'
     };
 
+    function alternarMenuLateral() {
+        const recolhido = document.body.classList.toggle('sidebar-collapsed');
+        localStorage.setItem('jp2SidebarCollapsed', recolhido ? '1' : '0');
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
+        if (localStorage.getItem('jp2SidebarCollapsed') === '1') {
+            document.body.classList.add('sidebar-collapsed');
+        }
+        const buscaInicial = document.getElementById('inputBuscaPasta');
+        if (buscaInicial) {
+            buscaInicial.value = '';
+            setTimeout(() => { buscaInicial.value = ''; filtrarItensDaGrade(''); }, 120);
+        }
         console.log("Sistema carregado. Tentando carregar Instituto...");
         let el = document.getElementById('menu-bloco-instituto');
         if(el) {
