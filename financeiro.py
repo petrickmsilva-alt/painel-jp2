@@ -630,6 +630,7 @@ def listar_investimentos_com_pagamentos(cur):
                i.status_pagamento, i.valor_juros_day, i.valor_divida_day, i.pgto_day,
                i.valor_divida_futuro, i.importacao_origem, i.importacao_id,
                COALESCE(SUM(p.valor_pago), 0) AS total_pago,
+               COUNT(p.id) AS qtd_pagamentos,
                MAX(p.data_pagamento) AS ultima_data_pagamento
         FROM investimentos i
         LEFT JOIN empresas e ON e.id = i.empresa_id
