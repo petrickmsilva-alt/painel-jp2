@@ -183,7 +183,7 @@ def caminho_aba(zf, nome_aba):
         if local_name(sheet.tag) == "sheet" and normalizar_busca(sheet.attrib.get("name")) == alvo:
             target = rel_map[sheet.attrib[rel_ns]].lstrip("/")
             return target if target.startswith("xl/") else f"xl/{target}"
-    raise ValueError(f"Aba '{nome_aba}' nao encontrada na planilha.")
+    raise ValueError(f"Aba '{nome_aba}' não encontrada na planilha.")
 
 
 def valor_celula(cell, shared_strings):
@@ -338,7 +338,7 @@ def sincronizar_pagamentos_importados(cur):
         (investimento_id, data_pagamento, valor_pago, observacoes, criado_por)
         SELECT i.id, CURDATE(), i.pgto_day,
                'Pagamento consolidado importado da coluna PGTO DAY da planilha.',
-               'Importacao Excel'
+               'Importação Excel'
         FROM investimentos i
         LEFT JOIN investimento_pagamentos p ON p.investimento_id = i.id
         WHERE COALESCE(i.pgto_day, 0) > 0
@@ -573,7 +573,7 @@ def pagina_auditoria_financeira():
 @bp_financeiro.route("/api/empresas", methods=["GET"])
 def listar_empresas():
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "mensagem": "Nao autorizado"}), 401
+        return jsonify({"status": "erro", "mensagem": "Não autorizado"}), 401
 
     conn = None
     try:
@@ -592,7 +592,7 @@ def listar_empresas():
 @bp_financeiro.route("/api/adicionar-empresa", methods=["POST"])
 def adicionar_empresa():
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "mensagem": "Nao autorizado"}), 401
+        return jsonify({"status": "erro", "mensagem": "Não autorizado"}), 401
 
     nome = request.form.get("nome", "").strip()
     if not nome:
@@ -614,7 +614,7 @@ def adicionar_empresa():
 @bp_financeiro.route("/api/excluir-empresa/<id>", methods=["DELETE"])
 def excluir_empresa(id):
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "mensagem": "Nao autorizado"}), 401
+        return jsonify({"status": "erro", "mensagem": "Não autorizado"}), 401
 
     conn = get_db_connection()
     try:
@@ -629,7 +629,7 @@ def excluir_empresa(id):
 @bp_financeiro.route("/api/resumo-investimentos", methods=["GET"])
 def resumo_investimentos():
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+        return jsonify({"status": "erro", "msg": "Não autorizado"}), 401
 
     try:
         garantir_schema_financeiro()
@@ -645,7 +645,7 @@ def resumo_investimentos():
 @bp_financeiro.route("/api/detalhe-investimento/<int:id>", methods=["GET"])
 def detalhe_investimento(id):
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+        return jsonify({"status": "erro", "msg": "Não autorizado"}), 401
 
     try:
         garantir_schema_financeiro()
@@ -668,7 +668,7 @@ def detalhe_investimento(id):
             investimento = cur.fetchone()
             if not investimento:
                 conn.close()
-                return jsonify({"status": "erro", "msg": "Investimento nao encontrado."}), 404
+                return jsonify({"status": "erro", "msg": "Investimento não encontrado."}), 404
             cur.execute(
                 """
                 SELECT data_pagamento, valor_pago, observacoes
@@ -709,7 +709,7 @@ def detalhe_investimento(id):
 @bp_financeiro.route("/api/adicionar-investimento", methods=["POST"])
 def adicionar_investimento():
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+        return jsonify({"status": "erro", "msg": "Não autorizado"}), 401
 
     try:
         garantir_schema_financeiro()
@@ -748,7 +748,7 @@ def adicionar_investimento():
 @bp_financeiro.route("/api/editar-investimento/<int:id>", methods=["POST"])
 def editar_investimento(id):
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+        return jsonify({"status": "erro", "msg": "Não autorizado"}), 401
 
     try:
         garantir_schema_financeiro()
@@ -793,12 +793,12 @@ def editar_investimento(id):
 @bp_financeiro.route("/api/atualizar-status-investimento/<int:id>", methods=["POST"])
 def atualizar_status_investimento(id):
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+        return jsonify({"status": "erro", "msg": "Não autorizado"}), 401
 
     status_pagamento = request.form.get("status_pagamento", "").strip() or None
     opcoes_validas = {None, "Em aberto", "Parcial", "Quitado", "Vencido", "Vencendo"}
     if status_pagamento not in opcoes_validas:
-        return jsonify({"status": "erro", "msg": "Status de pagamento invalido."}), 400
+        return jsonify({"status": "erro", "msg": "Status de pagamento inválido."}), 400
 
     try:
         garantir_schema_financeiro()
@@ -811,7 +811,7 @@ def atualizar_status_investimento(id):
             if cur.rowcount == 0:
                 conn.rollback()
                 conn.close()
-                return jsonify({"status": "erro", "msg": "Investimento nao encontrado."}), 404
+                return jsonify({"status": "erro", "msg": "Investimento não encontrado."}), 404
             registrar_auditoria(cur, id, "Status", f"Status alterado para {status_pagamento or 'Automatico'}.")
         conn.commit()
         conn.close()
@@ -823,7 +823,7 @@ def atualizar_status_investimento(id):
 @bp_financeiro.route("/api/preview-importacao-investimentos", methods=["POST"])
 def preview_importacao_investimentos():
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+        return jsonify({"status": "erro", "msg": "Não autorizado"}), 401
     arquivo = request.files.get("arquivo")
     if not arquivo:
         return jsonify({"status": "erro", "msg": "Envie uma planilha Excel."}), 400
@@ -854,7 +854,7 @@ def preview_importacao_investimentos():
 @bp_financeiro.route("/api/importar-investimentos-excel", methods=["POST"])
 def importar_investimentos_excel():
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+        return jsonify({"status": "erro", "msg": "Não autorizado"}), 401
     arquivo = request.files.get("arquivo")
     if not arquivo:
         return jsonify({"status": "erro", "msg": "Envie uma planilha Excel."}), 400
@@ -926,11 +926,11 @@ def importar_investimentos_excel():
                             investimento_id,
                             item["pgto_day"],
                             "Pagamento consolidado importado da coluna PGTO DAY da planilha.",
-                            "Importacao Excel",
+                            "Importação Excel",
                         ),
                     )
                     registrar_auditoria(cur, investimento_id, "Pagamento importado", f"Pagamento consolidado importado no valor de {dinheiro(item['pgto_day'])}.")
-                registrar_auditoria(cur, investimento_id, "Importacao", "Investimento importado da planilha Excel.")
+                registrar_auditoria(cur, investimento_id, "Importação", "Investimento importado da planilha Excel.")
                 inseridos += 1
         conn.commit()
         conn.close()
@@ -948,7 +948,7 @@ def importar_investimentos_excel():
 @bp_financeiro.route("/api/lancar-pagamento-investimento/<int:id>", methods=["POST"])
 def lancar_pagamento_investimento(id):
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+        return jsonify({"status": "erro", "msg": "Não autorizado"}), 401
 
     valor = decimal_ou_zero(request.form.get("valor_pago"))
     data_pagamento = request.form.get("data_pagamento") or datetime.now().date().isoformat()
@@ -970,10 +970,10 @@ def lancar_pagamento_investimento(id):
                     """,
                     (id, data_pagamento, valor, request.form.get("observacoes", "").strip(), session.get("nome_exibicao", "Sistema")),
                 )
-                registrar_auditoria(cur, id, "Pagamento", f"Pagamento lancado no valor de {dinheiro(valor)}.")
+                registrar_auditoria(cur, id, "Pagamento", f"Pagamento lançado no valor de {dinheiro(valor)}.")
         if not existe:
             conn.close()
-            return jsonify({"status": "erro", "msg": "Investimento nao encontrado."}), 404
+            return jsonify({"status": "erro", "msg": "Investimento não encontrado."}), 404
         conn.commit()
         conn.close()
         return jsonify({"status": "sucesso"})
@@ -984,7 +984,7 @@ def lancar_pagamento_investimento(id):
 @bp_financeiro.route("/api/pagamentos-investimentos", methods=["GET"])
 def pagamentos_investimentos():
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+        return jsonify({"status": "erro", "msg": "Não autorizado"}), 401
     try:
         garantir_schema_financeiro()
         conn = get_db_connection()
@@ -1010,7 +1010,7 @@ def pagamentos_investimentos():
 @bp_financeiro.route("/api/auditoria-investimentos", methods=["GET"])
 def auditoria_investimentos():
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+        return jsonify({"status": "erro", "msg": "Não autorizado"}), 401
     try:
         garantir_schema_financeiro()
         conn = get_db_connection()
@@ -1036,7 +1036,7 @@ def auditoria_investimentos():
 @bp_financeiro.route("/api/anexos-investimento/<int:id>", methods=["GET", "POST"])
 def anexos_investimento(id):
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+        return jsonify({"status": "erro", "msg": "Não autorizado"}), 401
     try:
         garantir_schema_financeiro()
         conn = get_db_connection()
@@ -1046,11 +1046,11 @@ def anexos_investimento(id):
                 url = request.form.get("url", "").strip()
                 if not titulo or not url:
                     conn.close()
-                    return jsonify({"status": "erro", "msg": "Informe titulo e link do anexo."}), 400
+                    return jsonify({"status": "erro", "msg": "Informe título e link do anexo."}), 400
                 cur.execute("SELECT id FROM investimentos WHERE id = %s", (id,))
                 if not cur.fetchone():
                     conn.close()
-                    return jsonify({"status": "erro", "msg": "Investimento nao encontrado."}), 404
+                    return jsonify({"status": "erro", "msg": "Investimento não encontrado."}), 404
                 cur.execute(
                     """
                     INSERT INTO investimento_anexos
@@ -1087,7 +1087,7 @@ def anexos_investimento(id):
 @bp_financeiro.route("/api/excluir-anexo-investimento/<int:id>", methods=["DELETE"])
 def excluir_anexo_investimento(id):
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+        return jsonify({"status": "erro", "msg": "Não autorizado"}), 401
     try:
         garantir_schema_financeiro()
         conn = get_db_connection()
@@ -1096,7 +1096,7 @@ def excluir_anexo_investimento(id):
             anexo = cur.fetchone()
             cur.execute("DELETE FROM investimento_anexos WHERE id = %s", (id,))
             if anexo:
-                registrar_auditoria(cur, anexo["investimento_id"], "Exclusao de anexo", f"Anexo excluido: {anexo['titulo']}.")
+                registrar_auditoria(cur, anexo["investimento_id"], "Exclusão de anexo", f"Anexo excluído: {anexo['titulo']}.")
         conn.commit()
         conn.close()
         return jsonify({"status": "sucesso"})
@@ -1107,7 +1107,7 @@ def excluir_anexo_investimento(id):
 @bp_financeiro.route("/api/excluir-pagamento-investimento/<int:id>", methods=["DELETE"])
 def excluir_pagamento_investimento(id):
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+        return jsonify({"status": "erro", "msg": "Não autorizado"}), 401
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
@@ -1115,7 +1115,7 @@ def excluir_pagamento_investimento(id):
             pagamento = cur.fetchone()
             cur.execute("DELETE FROM investimento_pagamentos WHERE id = %s", (id,))
             if pagamento:
-                registrar_auditoria(cur, pagamento["investimento_id"], "Exclusao de pagamento", f"Pagamento de {dinheiro(pagamento['valor_pago'])} excluido.")
+                registrar_auditoria(cur, pagamento["investimento_id"], "Exclusão de pagamento", f"Pagamento de {dinheiro(pagamento['valor_pago'])} excluído.")
         conn.commit()
         conn.close()
         return jsonify({"status": "sucesso"})
@@ -1126,7 +1126,7 @@ def excluir_pagamento_investimento(id):
 @bp_financeiro.route("/api/limpar-investimentos", methods=["DELETE"])
 def limpar_investimentos():
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+        return jsonify({"status": "erro", "msg": "Não autorizado"}), 401
 
     confirmar = request.args.get("confirmar") == "SIM" and request.args.get("frase") == "LIMPAR FINANCEIRO"
     if not confirmar:
@@ -1136,7 +1136,7 @@ def limpar_investimentos():
         garantir_schema_financeiro()
         conn = get_db_connection()
         with conn.cursor() as cur:
-            registrar_auditoria(cur, None, "Limpeza", "Todos os lancamentos financeiros foram removidos.")
+            registrar_auditoria(cur, None, "Limpeza", "Todos os lançamentos financeiros foram removidos.")
             cur.execute("DELETE FROM investimento_pagamentos")
             cur.execute("DELETE FROM investimentos")
         conn.commit()
@@ -1149,12 +1149,12 @@ def limpar_investimentos():
 @bp_financeiro.route("/api/excluir-investimento/<int:id>", methods=["DELETE"])
 def excluir_investimento(id):
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+        return jsonify({"status": "erro", "msg": "Não autorizado"}), 401
 
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
-            registrar_auditoria(cur, id, "Exclusao", "Investimento excluido.")
+            registrar_auditoria(cur, id, "Exclusão", "Investimento excluído.")
             cur.execute("DELETE FROM investimento_pagamentos WHERE investimento_id = %s", (id,))
             cur.execute("DELETE FROM investimentos WHERE id = %s", (id,))
         conn.commit()
