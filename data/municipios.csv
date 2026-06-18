@@ -1,4 +1,4 @@
-CIDADE,UF,REGIAO
+﻿CIDADE,UF,REGIAO
 Alta Floresta D'Oeste,RO,Norte
 Alto Alegre dos Parecis,RO,Norte
 Alto Paraíso,RO,Norte
@@ -97,86 +97,86 @@ Codajás,AM,Norte
 Eirunepé,AM,Norte
 Envira,AM,Norte
 Fonte Boa,AM,Norte
-CIDADE,UF,REGIAO
-Alta Floresta D'Oeste,RO,Norte
-Alto Alegre dos Parecis,RO,Norte
-Alto Paraíso,RO,Norte
-Alvorada D'Oeste,RO,Norte
-Ariquemes,RO,Norte
-Buritis,RO,Norte
-Cabixi,RO,Norte
-Cacaulândia,RO,Norte
-Cacoal,RO,Norte
-Campo Novo de Rondônia,RO,Norte
-Candeias do Jamari,RO,Norte
-Castanheiras,RO,Norte
-Cerejeiras,RO,Norte
-Chupinguaia,RO,Norte
-Colorado do Oeste,RO,Norte
-Corumbiara,RO,Norte
-Costa Marques,RO,Norte
-Cujubim,RO,Norte
-Espigão D'Oeste,RO,Norte
-Governador Jorge Teixeira,RO,Norte
-Guajará-Mirim,RO,Norte
-Itapuã do Oeste,RO,Norte
-Jaru,RO,Norte
-Ji-Paraná,RO,Norte
-Machadinho D'Oeste,RO,Norte
-Ministro Andreazza,RO,Norte
-Mirante da Serra,RO,Norte
-Monte Negro,RO,Norte
-Nova Brasilândia D'Oeste,RO,Norte
-Nova Mamoré,RO,Norte
-Nova União,RO,Norte
-Novo Horizonte do Oeste,RO,Norte
-Ouro Preto do Oeste,RO,Norte
-Parecis,RO,Norte
-Pimenta Bueno,RO,Norte
-Pimenteiras do Oeste,RO,Norte
-Porto Velho,RO,Norte
-Presidente Médici,RO,Norte
-Primavera de Rondônia,RO,Norte
-Rio Crespo,RO,Norte
-Rolim de Moura,RO,Norte
-Santa Luzia D'Oeste,RO,Norte
-São Felipe D'Oeste,RO,Norte
-São Francisco do Guaporé,RO,Norte
-São Miguel do Guaporé,RO,Norte
-Seringueiras,RO,Norte
-Teixeirópolis,RO,Norte
-Theobroma,RO,Norte
-Urupá,RO,Norte
-Vale do Anari,RO,Norte
-Vale do Paraíso,RO,Norte
-Vilhena,RO,Norte
-Acrelândia,AC,Norte
-Assis Brasil,AC,Norte
-Brasiléia,AC,Norte
-Bujari,AC,Norte
-Capixaba,AC,Norte
-Cruzeiro do Sul,AC,Norte
-Epitaciolândia,AC,Norte
-Feijó,AC,Norte
-Jordão,AC,Norte
-Mâncio Lima,AC,Norte
-Manoel Urbano,AC,Norte
-Marechal Thaumaturgo,AC,Norte
-Plácido de Castro,AC,Norte
-Porto Acre,AC,Norte
-Porto Walter,AC,Norte
-Rio Branco,AC,Norte
-Rodrigues Alves,AC,Norte
-Santa Rosa do Purus,AC,Norte
-Sena Madureira,AC,Norte
-Senador Guiomard,AC,Norte
-Tarauacá,AC,Norte
-Xapuri,AC,Norte
-Alvarães,AM,Norte
-Amaturá,AM,Norte
-Anamã,AM,Norte
-Anori,AM,Norte
-Apuí,AM,Norte
+Guajará,AM,Norte
+Humaitá,AM,Norte
+Ipixuna,AM,Norte
+Iranduba,AM,Norte
+Itacoatiara,AM,Norte
+Itamarati,AM,Norte
+Itapiranga,AM,Norte
+Japurá,AM,Norte
+Juruá,AM,Norte
+Jutaí,AM,Norte
+Lábrea,AM,Norte
+Manacapuru,AM,Norte
+Manaquiri,AM,Norte
+Manaus,AM,Norte
+Manicoré,AM,Norte
+Maraã,AM,Norte
+Maués,AM,Norte
+Nhamundá,AM,Norte
+Nova Olinda do Norte,AM,Norte
+Novo Airão,AM,Norte
+Novo Aripuanã,AM,Norte
+Parintins,AM,Norte
+Pauini,AM,Norte
+Presidente Figueiredo,AM,Norte
+Rio Preto da Eva,AM,Norte
+Santa Isabel do Rio Negro,AM,Norte
+Santo Antônio do Içá,AM,Norte
+São Gabriel da Cachoeira,AM,Norte
+São Paulo de Olivença,AM,Norte
+São Sebastião do Uatumã,AM,Norte
+Silves,AM,Norte
+Tabatinga,AM,Norte
+Tapauá,AM,Norte
+Tefé,AM,Norte
+Tonantins,AM,Norte
+Uarini,AM,Norte
+Urucará,AM,Norte
+Urucurituba,AM,Norte
+Alto Alegre,RR,Norte
+Amajari,RR,Norte
+Boa Vista,RR,Norte
+Bonfim,RR,Norte
+Cantá,RR,Norte
+Caracaraí,RR,Norte
+Caroebe,RR,Norte
+Iracema,RR,Norte
+Mucajaí,RR,Norte
+Normandia,RR,Norte
+Pacaraima,RR,Norte
+Rorainópolis,RR,Norte
+São João da Baliza,RR,Norte
+São Luiz,RR,Norte
+Uiramutã,RR,Norte
+Abaetetuba,PA,Norte
+Abel Figueiredo,PA,Norte
+Acará,PA,Norte
+Afuá,PA,Norte
+Água Azul do Norte,PA,Norte
+Alenquer,PA,Norte
+Almeirim,PA,Norte
+Altamira,PA,Norte
+Anajás,PA,Norte
+Ananindeua,PA,Norte
+Anapu,PA,Norte
+Augusto Corrêa,PA,Norte
+Aurora do Pará,PA,Norte
+Aveiro,PA,Norte
+Bagre,PA,Norte
+Baião,PA,Norte
+Bannach,PA,Norte
+Barcarena,PA,Norte
+Belém,PA,Norte
+Belterra,PA,Norte
+Benevides,PA,Norte
+Bom Jesus do Tocantins,PA,Norte
+Bonito,PA,Norte
+Bragança,PA,Norte
+Brasil Novo,PA,Norte
+Brejo Grande do Araguaia,PA,Norte
+Breu Branco,PA,Norte
 Breves,PA,Norte
 Bujaru,PA,Norte
 Cachoeira do Arari,PA,Norte
