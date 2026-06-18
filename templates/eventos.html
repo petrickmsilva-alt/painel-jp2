@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cadastro de Eventos | JP2 Business</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    <style>
+        :root{--ink:#101828;--muted:#667085;--line:#d9e2ef;--panel:#fff;--soft:#f4f7fb;--blue:#155eef;--nav:#101a2b}
+        body{background:var(--soft);display:flex;margin:0;min-height:100vh;color:var(--ink);font-family:Inter,Segoe UI,system-ui,sans-serif}
+        #sidebar{background:var(--nav);color:#fff;flex-shrink:0;padding:24px 18px;width:270px}
+        .sidebar-kicker{color:#93a4bd;font-size:11px;font-weight:850;letter-spacing:.1em;text-transform:uppercase}
+        .sidebar-title{font-size:22px;font-weight:850;line-height:1.08;margin:6px 0 18px}
+        .sidebar-divider{background:rgba(255,255,255,.12);height:1px;margin:18px 0}
+        #sidebar a{align-items:center;border:1px solid transparent;border-radius:8px;color:#d6e0ef;display:flex;font-weight:750;gap:10px;margin-bottom:7px;padding:11px 10px;text-decoration:none}
+        #sidebar a:hover,#sidebar a.active{background:#172b49;border-color:rgba(21,94,239,.45);color:#fff}
+        #sidebar i{color:#7fb4ff;font-size:16px}.content{flex-grow:1;min-width:0;overflow-x:hidden;padding:28px}
+        .hero{align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 36px rgba(15,23,42,.06);display:flex;justify-content:space-between;gap:18px;margin-bottom:16px;padding:18px}
+        .brand{align-items:center;display:flex;gap:14px}.brand img{background:#050505;border-radius:10px;height:58px;object-fit:contain;padding:8px;width:170px}
+        .kicker{color:var(--muted);font-size:12px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}.title{font-size:28px;font-weight:900;margin:2px 0}.subtitle{color:var(--muted);font-size:14px}
+        .summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}.metric{background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(15,23,42,.05);padding:14px}.metric span{color:var(--muted);font-size:11px;font-weight:850;text-transform:uppercase}.metric strong{display:block;font-size:20px;font-weight:900;margin-top:4px}
+        .panel{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 36px rgba(15,23,42,.06);margin-bottom:16px;overflow:hidden}.panel-head{align-items:center;border-bottom:1px solid #edf1f7;display:flex;justify-content:space-between;gap:12px;padding:14px 16px}.panel-head h2{font-size:16px;font-weight:900;margin:0}.panel-head p{color:var(--muted);font-size:12px;margin:2px 0 0}.panel-body{padding:16px}
+        .nav-pills .nav-link{border-radius:8px;color:#344054;font-weight:800}.nav-pills .nav-link.active{background:#155eef}
+        label{font-size:12px;font-weight:850;color:#475467}.form-control,.form-select{border-color:#d5deeb;border-radius:8px;min-height:42px}.form-control:focus,.form-select:focus{border-color:#155eef;box-shadow:0 0 0 4px rgba(21,94,239,.1)}
+        .table th{background:#f8fafc;color:#667085;font-size:11px;font-weight:900;text-transform:uppercase;white-space:nowrap}.table td{font-size:13px;vertical-align:middle}.money{font-weight:900;white-space:nowrap}.muted{color:#667085;font-size:12px}.actions{display:flex;gap:6px;white-space:nowrap}.actions .btn{align-items:center;display:inline-flex;height:32px;justify-content:center;width:32px}
+        .pill{border-radius:999px;display:inline-flex;font-size:11px;font-weight:900;padding:5px 9px;white-space:nowrap}.s-Autorizado{background:#ecfdf3;color:#078c55}.s-Em-Andamento{background:#eef4ff;color:#155eef}.s-Pendente{background:#fff7ed;color:#b54708}.s-Em-Analise{background:#fff4ed;color:#c4320a}.s-Encerrado{background:#f2f4f7;color:#475467}
+        .calendar-shell{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px}.calendar-toolbar{align-items:center;display:flex;justify-content:space-between;gap:12px;margin-bottom:12px}.calendar-title{font-size:20px;font-weight:900}.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);border-left:1px solid #e5eaf2;border-top:1px solid #e5eaf2}.weekday,.day{border-bottom:1px solid #e5eaf2;border-right:1px solid #e5eaf2}.weekday{background:#f8fafc;color:#667085;font-size:11px;font-weight:900;padding:10px;text-align:center;text-transform:uppercase}.day{background:#fff;min-height:118px;padding:8px}.day.other{background:#f8fafc;color:#98a2b3}.day-number{font-size:12px;font-weight:900}.event-chip{border-radius:7px;color:#101828;display:block;font-size:11px;font-weight:800;margin-top:6px;overflow:hidden;padding:5px 6px;text-overflow:ellipsis;white-space:nowrap}.chip-Autorizado{background:#bbf7d0}.chip-Em-Andamento{background:#bfdbfe}.chip-Pendente{background:#fde68a}.chip-Em-Analise{background:#fed7aa}.chip-Encerrado{background:#e5e7eb}
+        .year-panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}.mini-year{display:grid;gap:10px;grid-template-columns:repeat(2,1fr)}.mini-month{border:1px solid #edf1f7;border-radius:8px;padding:8px}.mini-title{font-size:11px;font-weight:900;margin-bottom:5px;text-align:center}.mini-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}.mini-day{border-radius:999px;font-size:8px;min-height:12px;text-align:center}.mini-dot{background:#155eef;color:#fff}
+        .year-main{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.year-card{border:1px solid #edf1f7;border-radius:10px;padding:10px}.year-card h3{font-size:13px;font-weight:900;text-align:center}.legend{display:flex;flex-wrap:wrap;gap:8px}.legend span{align-items:center;color:#475467;display:flex;font-size:12px;font-weight:800;gap:5px}.legend i{border-radius:99px;display:inline-block;height:10px;width:10px}
+        @media(max-width:1100px){.summary{grid-template-columns:repeat(2,1fr)}.calendar-shell{grid-template-columns:1fr}.year-main{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:820px){body{display:block}#sidebar{width:100%}.content{padding:16px}.hero{align-items:flex-start;flex-direction:column}.summary{grid-template-columns:1fr}.calendar-grid{min-width:760px}.calendar-overflow{overflow-x:auto}}
+        @media print{#sidebar,.no-print,.nav-pills,.panel-head .btn,.actions{display:none!important}body{display:block;background:#fff}.content{padding:0}.panel,.hero,.metric{box-shadow:none}}
+    </style>
+</head>
+<body>
+<aside id="sidebar">
+    <div class="sidebar-kicker">Painel de eventos</div>
+    <div class="sidebar-title">Gestão de eventos</div>
+    <div class="sidebar-divider"></div>
+    <a href="/"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
+    <a href="#cadastro" class="active" data-tab-target="cadastro"><i class="bi bi-plus-square"></i> Cadastro</a>
+    <a href="#resumo" data-tab-target="resumo"><i class="bi bi-table"></i> Resumo geral</a>
+    <a href="#calendario" data-tab-target="calendario"><i class="bi bi-calendar3"></i> Agenda visual</a>
+</aside>
+
+<main class="content">
+    <section class="hero">
+        <div class="brand">
+            <img src="{{ url_for('static', filename='image/logo_painel_eventos.png') }}" onerror="this.src='{{ url_for('static', filename='image/jp2_business.png') }}'" alt="JP2 Eventos">
+            <div>
+                <div class="kicker">Cadastro de eventos</div>
+                <h1 class="title">Painel de eventos JP2</h1>
+                <div class="subtitle">Cadastro, acompanhamento, agenda visual e exportação dos eventos do ecossistema.</div>
+            </div>
+        </div>
+        <div class="d-flex gap-2 no-print">
+            <button class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+            <button class="btn btn-primary" onclick="exportarEventos()"><i class="bi bi-download"></i> Exportar CSV</button>
+        </div>
+    </section>
+
+    <section class="summary">
+        <div class="metric"><span>Total de eventos</span><strong id="mTotal">0</strong></div>
+        <div class="metric"><span>Valor total</span><strong id="mValor">R$ 0</strong></div>
+        <div class="metric"><span>Próximo evento</span><strong id="mProximo">-</strong></div>
+        <div class="metric"><span>Em andamento</span><strong id="mAndamento">0</strong></div>
+    </section>
+
+    <ul class="nav nav-pills gap-2 mb-3 no-print" id="tabsEventos">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#cadastro">Cadastro</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#resumo">Resumo geral</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#calendario">Agenda visual</button></li>
+    </ul>
+
+    <div class="tab-content">
+        <section class="tab-pane fade show active" id="cadastro">
+            <div class="panel">
+                <div class="panel-head"><div><h2>Novo evento</h2><p>Selecione a cidade para preencher UF e região automaticamente.</p></div></div>
+                <div class="panel-body">
+                    <form id="formEvento" class="row g-3">
+                        <input type="hidden" id="eventoId">
+                        <input type="hidden" id="cidade">
+                        <input type="hidden" id="uf">
+                        <input type="hidden" id="regiao">
+                        <div class="col-lg-4">
+                            <label>Cidade do evento</label>
+                            <input class="form-control" id="cidadeBusca" list="listaMunicipios" placeholder="Digite a cidade ou UF" autocomplete="off" required>
+                            <datalist id="listaMunicipios"></datalist>
+                        </div>
+                        <div class="col-lg-2"><label>UF</label><input class="form-control" id="ufView" readonly></div>
+                        <div class="col-lg-3"><label>Região</label><input class="form-control" id="regiaoView" readonly></div>
+                        <div class="col-lg-3"><label>Valor da verba</label><input class="form-control" id="valorVerba" placeholder="R$ 0" oninput="formatarMoedaEvento(this)" required></div>
+                        <div class="col-lg-6"><label>Nome do evento</label><input class="form-control" id="nomeEvento" placeholder="Ex: Expo Fashion Brasil" required></div>
+                        <div class="col-lg-3"><label>Data inicial</label><input type="date" class="form-control" id="dataInicio" required></div>
+                        <div class="col-lg-3"><label>Data final</label><input type="date" class="form-control" id="dataFim" required></div>
+                        <div class="col-lg-3"><label>Origem do recurso</label><select class="form-select" id="origem" required><option value="">Selecione</option><option>Emenda Direta</option><option>Fomento</option><option>Emenda Pós</option><option>Privado</option></select></div>
+                        <div class="col-lg-3"><label>Status</label><select class="form-select" id="status" required><option value="">Selecione</option><option>Autorizado</option><option>Em Andamento</option><option>Pendente</option><option>Em Análise</option><option>Encerrado</option></select></div>
+                        <div class="col-lg-6"><label>Observações</label><input class="form-control" id="observacoes" placeholder="Anotações relevantes do evento"></div>
+                        <div class="col-12 d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-outline-secondary" onclick="limparFormulario()">Limpar</button>
+                            <button class="btn btn-primary px-4"><i class="bi bi-save"></i> Salvar evento</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section class="tab-pane fade" id="resumo">
+            <div class="panel no-print">
+                <div class="panel-body">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-lg-2"><label>UF</label><select class="form-select" id="fUf"></select></div>
+                        <div class="col-lg-2"><label>Região</label><select class="form-select" id="fRegiao"></select></div>
+                        <div class="col-lg-2"><label>Mês</label><select class="form-select" id="fMes"></select></div>
+                        <div class="col-lg-2"><label>Origem</label><select class="form-select" id="fOrigem"></select></div>
+                        <div class="col-lg-2"><label>Status</label><select class="form-select" id="fStatus"></select></div>
+                        <div class="col-lg-2"><label>Buscar</label><input class="form-control" id="fBusca" placeholder="Evento, cidade, obs."></div>
+                        <div class="col-lg-3"><label>Início a partir de</label><input type="date" class="form-control" id="fInicio"></div>
+                        <div class="col-lg-3"><label>Até</label><input type="date" class="form-control" id="fFim"></div>
+                        <div class="col-lg-6 d-flex gap-2"><button class="btn btn-primary flex-fill" onclick="aplicarFiltros()">Filtrar</button><button class="btn btn-outline-secondary" onclick="limparFiltros()">Limpar</button></div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-head"><div><h2>Resumo geral</h2><p>Edite, exclua e acompanhe todos os eventos cadastrados.</p></div></div>
+                <div class="table-responsive panel-body">
+                    <table class="table table-hover align-middle" id="tabelaEventos">
+                        <thead><tr><th>Evento</th><th>Cidade</th><th>Período</th><th>Dias</th><th>Valor</th><th>Origem</th><th>Status</th><th>Ações</th></tr></thead>
+                        <tbody id="corpoEventos"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section class="tab-pane fade" id="calendario">
+            <div class="panel">
+                <div class="panel-head">
+                    <div><h2>Agenda de eventos</h2><p>Visualização mensal e anual por status.</p></div>
+                    <div class="d-flex gap-2 no-print">
+                        <button class="btn btn-outline-secondary" onclick="mudarPeriodo(-1)"><i class="bi bi-chevron-left"></i></button>
+                        <button class="btn btn-outline-secondary" onclick="irHoje()">Hoje</button>
+                        <button class="btn btn-outline-secondary" onclick="mudarPeriodo(1)"><i class="bi bi-chevron-right"></i></button>
+                        <button class="btn btn-primary" onclick="alternarCalendario()"><span id="modoCalendario">Mês</span></button>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="legend mb-3" id="legendaStatus"></div>
+                    <div class="calendar-shell">
+                        <div>
+                            <div class="calendar-toolbar"><div class="calendar-title" id="tituloCalendario"></div></div>
+                            <div class="calendar-overflow" id="calendarioPrincipal"></div>
+                        </div>
+                        <aside class="year-panel">
+                            <div class="calendar-toolbar"><strong id="tituloAnoLateral"></strong></div>
+                            <div class="mini-year" id="miniAno"></div>
+                        </aside>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<script>
+let eventos=[], filtrados=[], tabela=null, municipioMap={}, calendarioData=new Date(), calendarioAno=false;
+const meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const mesesTitulo=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const statusCores={'Autorizado':'#16a34a','Em Andamento':'#2563eb','Pendente':'#d97706','Em Análise':'#ea580c','Encerrado':'#64748b'};
+function h(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+function dinheiro(v){return (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});}
+function dataBR(v){if(!v)return '-'; const p=String(v).split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:'-';}
+function numeroBR(v){return Number(String(v||'0').replace(/\D/g,''))||0;}
+function formatarMoedaEvento(el){const n=numeroBR(el.value); el.value=n?dinheiro(n):'';}
+function statusClass(s){return 's-'+String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-');}
+function chipClass(s){return 'chip-'+String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-');}
+function qs(){const p=new URLSearchParams(); [['uf',fUf.value],['regiao',fRegiao.value],['mes',fMes.value],['origem',fOrigem.value],['status',fStatus.value],['q',fBusca.value],['inicio',fInicio.value],['fim',fFim.value]].forEach(([k,v])=>{if(v)p.set(k,v)}); return p.toString();}
+function opcoes(id, valores){document.getElementById(id).innerHTML='<option value="">Todos</option>'+[...new Set(valores.filter(Boolean))].sort().map(v=>`<option>${h(v)}</option>`).join('');}
+function atualizarMetricas(){
+    mTotal.innerText=filtrados.length;
+    mValor.innerText=dinheiro(filtrados.reduce((s,e)=>s+Number(e.valor_verba||0),0));
+    mAndamento.innerText=filtrados.filter(e=>e.status==='Em Andamento').length;
+    const hoje=new Date().toISOString().slice(0,10);
+    const prox=filtrados.find(e=>e.data_fim>=hoje);
+    mProximo.innerText=prox?`${prox.cidade} - ${dataBR(prox.data_inicio)}`:'-';
+}
+function carregarEventos(){
+    fetch('/api/eventos?'+qs()).then(r=>r.json()).then(d=>{
+        filtrados=Array.isArray(d.dados)?d.dados:[];
+        if(!eventos.length){eventos=filtrados; montarFiltros(eventos);}
+        renderTabela(); atualizarMetricas(); renderCalendario();
+    });
+}
+function montarFiltros(base){opcoes('fUf',base.map(e=>e.uf)); opcoes('fRegiao',base.map(e=>e.regiao)); opcoes('fMes',base.map(e=>e.mes)); opcoes('fOrigem',base.map(e=>e.origem)); opcoes('fStatus',base.map(e=>e.status));}
+function aplicarFiltros(){carregarEventos();}
+function limparFiltros(){['fUf','fRegiao','fMes','fOrigem','fStatus','fBusca','fInicio','fFim'].forEach(id=>document.getElementById(id).value=''); carregarEventos();}
+function renderTabela(){
+    if(tabela){tabela.destroy(); tabela=null;}
+    corpoEventos.innerHTML=filtrados.map(e=>`<tr><td><div class="money">${h(e.nome_evento)}</div><div class="muted">${h(e.observacoes||'')}</div></td><td>${h(e.cidade)}<div class="muted">${h(e.uf)} - ${h(e.regiao)}</div></td><td>${dataBR(e.data_inicio)} a ${dataBR(e.data_fim)}</td><td>${e.dias_evento}</td><td class="money">${dinheiro(e.valor_verba)}</td><td>${h(e.origem)}</td><td><span class="pill ${statusClass(e.status)}">${h(e.status)}</span></td><td><div class="actions"><button class="btn btn-sm btn-outline-primary" title="Editar" onclick='editarEvento(${JSON.stringify(e).replace(/'/g,"&#039;")})'><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-outline-danger" title="Excluir" onclick="excluirEvento(${e.id})"><i class="bi bi-trash"></i></button></div></td></tr>`).join('');
+    if(filtrados.length){tabela=$('#tabelaEventos').DataTable({pageLength:25,language:{sSearch:'Buscar:',sLengthMenu:'Mostrar _MENU_ linhas',sInfo:'Mostrando _START_ até _END_ de _TOTAL_',sInfoEmpty:'Nenhum evento encontrado',sZeroRecords:'Nenhum evento encontrado',oPaginate:{sNext:'Próximo',sPrevious:'Anterior'}}});}
+}
+function buscarMunicipios(q){if((q||'').length<2)return; fetch('/api/eventos/municipios?q='+encodeURIComponent(q)).then(r=>r.json()).then(d=>{listaMunicipios.innerHTML=''; municipioMap={}; (d.dados||[]).forEach(m=>{municipioMap[m.label]=m; listaMunicipios.innerHTML+=`<option value="${h(m.label)}"></option>`;});});}
+cidadeBusca.addEventListener('input',e=>{buscarMunicipios(e.target.value); const m=municipioMap[e.target.value]; if(m){cidade.value=m.cidade; uf.value=m.uf; regiao.value=m.regiao; ufView.value=m.uf; regiaoView.value=m.regiao;}});
+dataInicio.addEventListener('change',()=>{dataFim.min=dataInicio.value; if(dataFim.value && dataFim.value<dataInicio.value)dataFim.value=dataInicio.value;});
+function limparFormulario(){formEvento.reset(); eventoId.value=''; cidade.value=''; uf.value=''; regiao.value=''; ufView.value=''; regiaoView.value=''; dataFim.min='';}
+formEvento.addEventListener('submit',e=>{
+    e.preventDefault();
+    if(!cidade.value){alert('Selecione uma cidade da lista.'); return;}
+    const fd=new FormData(); ['cidade','uf','regiao','nomeEvento','dataInicio','dataFim','valorVerba','origem','status','observacoes'].forEach(id=>{});
+    fd.append('cidade',cidade.value); fd.append('uf',uf.value); fd.append('regiao',regiao.value); fd.append('nome_evento',nomeEvento.value); fd.append('data_inicio',dataInicio.value); fd.append('data_fim',dataFim.value); fd.append('valor_verba',numeroBR(valorVerba.value)); fd.append('origem',origem.value); fd.append('status',status.value); fd.append('observacoes',observacoes.value);
+    const id=eventoId.value; fetch(id?'/api/eventos/'+id:'/api/eventos',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.status!=='sucesso'){alert(d.msg||'Erro ao salvar evento.');return;} limparFormulario(); eventos=[]; carregarEventos(); bootstrap.Tab.getOrCreateInstance(document.querySelector('[data-bs-target="#resumo"]')).show();});
+});
+function editarEvento(e){
+    eventoId.value=e.id; cidade.value=e.cidade; uf.value=e.uf; regiao.value=e.regiao; cidadeBusca.value=`${e.cidade} - ${e.uf}`; ufView.value=e.uf; regiaoView.value=e.regiao; nomeEvento.value=e.nome_evento; dataInicio.value=e.data_inicio; dataFim.value=e.data_fim; dataFim.min=e.data_inicio; valorVerba.value=dinheiro(e.valor_verba); origem.value=e.origem; status.value=e.status; observacoes.value=e.observacoes||''; bootstrap.Tab.getOrCreateInstance(document.querySelector('[data-bs-target="#cadastro"]')).show();
+}
+function excluirEvento(id){if(!confirm('Excluir este evento?'))return; fetch('/api/eventos/'+id,{method:'DELETE'}).then(r=>r.json()).then(d=>{if(d.status==='sucesso'){eventos=[]; carregarEventos();}});}
+function exportarEventos(){window.location='/eventos/exportar?'+qs();}
+function eventosNoDia(ano,mes,dia){const alvo=new Date(ano,mes,dia); return filtrados.filter(e=>new Date(e.data_inicio+'T00:00:00')<=alvo && new Date(e.data_fim+'T00:00:00')>=alvo);}
+function renderCalendario(){
+    legendaStatus.innerHTML=Object.entries(statusCores).map(([s,c])=>`<span><i style="background:${c}"></i>${s}</span>`).join('');
+    tituloAnoLateral.innerText=calendarioData.getFullYear();
+    renderMiniAno();
+    calendarioAno?renderAnoPrincipal():renderMesPrincipal();
+}
+function renderMesPrincipal(){
+    const ano=calendarioData.getFullYear(), mes=calendarioData.getMonth();
+    tituloCalendario.innerText=`${mesesTitulo[mes]} ${ano}`;
+    let html='<div class="calendar-grid">'+['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d=>`<div class="weekday">${d}</div>`).join('');
+    const first=new Date(ano,mes,1).getDay(), total=new Date(ano,mes+1,0).getDate();
+    for(let i=0;i<first;i++)html+='<div class="day other"></div>';
+    for(let d=1;d<=total;d++){const evs=eventosNoDia(ano,mes,d).slice(0,3); html+=`<div class="day"><span class="day-number">${d}</span>${evs.map(e=>`<span class="event-chip ${chipClass(e.status)}" title="${h(e.nome_evento)}">${h(e.cidade)} - ${h(e.nome_evento)}</span>`).join('')}</div>`;}
+    calendarioPrincipal.innerHTML=html+'</div>';
+}
+function renderAnoPrincipal(){
+    const ano=calendarioData.getFullYear(); tituloCalendario.innerText=`Ano ${ano}`;
+    calendarioPrincipal.innerHTML='<div class="year-main">'+mesesTitulo.map((m,idx)=>{const qtd=filtrados.filter(e=>new Date(e.data_inicio+'T00:00:00').getFullYear()===ano && new Date(e.data_inicio+'T00:00:00').getMonth()===idx).length; return `<div class="year-card"><h3>${m}</h3><div class="metric p-2"><span>Eventos</span><strong>${qtd}</strong></div></div>`}).join('')+'</div>';
+}
+function renderMiniAno(){
+    const ano=calendarioData.getFullYear();
+    miniAno.innerHTML=mesesTitulo.map((m,idx)=>{const total=new Date(ano,idx+1,0).getDate(); let dias=''; for(let d=1;d<=total;d++){dias+=`<span class="mini-day ${eventosNoDia(ano,idx,d).length?'mini-dot':''}">${d}</span>`} return `<div class="mini-month"><div class="mini-title">${m.slice(0,3)}</div><div class="mini-days">${dias}</div></div>`}).join('');
+}
+function mudarPeriodo(dir){calendarioAno?calendarioData.setFullYear(calendarioData.getFullYear()+dir):calendarioData.setMonth(calendarioData.getMonth()+dir); renderCalendario();}
+function irHoje(){calendarioData=new Date(); renderCalendario();}
+function alternarCalendario(){calendarioAno=!calendarioAno; modoCalendario.innerText=calendarioAno?'Ano':'Mês'; renderCalendario();}
+document.querySelectorAll('[data-tab-target]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault(); bootstrap.Tab.getOrCreateInstance(document.querySelector(`[data-bs-target="#${a.dataset.tabTarget}"]`)).show(); document.querySelectorAll('#sidebar a').forEach(x=>x.classList.remove('active')); a.classList.add('active');}));
+document.querySelectorAll('[data-bs-toggle="pill"]').forEach(b=>b.addEventListener('shown.bs.tab',()=>{const id=b.dataset.bsTarget.replace('#',''); document.querySelectorAll('#sidebar a').forEach(x=>x.classList.toggle('active',x.dataset.tabTarget===id)); if(id==='calendario')renderCalendario();}));
+document.addEventListener('DOMContentLoaded',()=>{buscarMunicipios('GO'); carregarEventos();});
+</script>
+</body>
+</html>
