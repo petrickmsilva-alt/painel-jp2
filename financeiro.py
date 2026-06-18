@@ -13,6 +13,8 @@ bp_financeiro = Blueprint("financeiro", __name__)
 FINANCEIRO_SCHEMA_VERIFICADO = False
 ORIGEM_IMPORTACAO_EXCEL = "excel_junho_2026"
 ABA_IMPORTACAO_EXCEL = "RELACAO DE EMPRESTIMOS (2)"
+ABA_DETALHE_PAGAMENTOS_EXCEL = "DETALHE DE EMPRESTIMO_BASE"
+CRIADO_POR_IMPORTACAO = "Importação Excel"
 
 
 def coluna_existe(cur, tabela, coluna):
@@ -128,6 +130,46 @@ def data_excel(valor):
         except ValueError:
             continue
     return None
+
+
+def data_pagamento_por_mes(valor):
+    texto = texto_limpo(valor)
+    if not texto:
+        return None
+
+    data_serial = data_excel(texto)
+    if data_serial:
+        return data_serial
+
+    meses = {
+        "JANEIRO": 1,
+        "FEVEREIRO": 2,
+        "MARCO": 3,
+        "ABRIL": 4,
+        "MAIO": 5,
+        "JUNHO": 6,
+        "JULHO": 7,
+        "AGOSTO": 8,
+        "SETEMBRO": 9,
+        "OUTUBRO": 10,
+        "NOVEMBRO": 11,
+        "DEZEMBRO": 12,
+    }
+    texto_normalizado = normalizar_busca(texto)
+    encontrado = re.search(r"([A-Z]+)[/\-\s]+(\d{4})", texto_normalizado)
+    if not encontrado:
+        return None
+
+    mes = meses.get(encontrado.group(1))
+    ano = int(encontrado.group(2))
+    if not mes:
+        return None
+
+    if mes == 12:
+        ultimo_dia = datetime(ano + 1, 1, 1).date() - timedelta(days=1)
+    else:
+        ultimo_dia = datetime(ano, mes + 1, 1).date() - timedelta(days=1)
+    return ultimo_dia.isoformat()
 
 
 def texto_limpo(valor):
@@ -260,6 +302,79 @@ def extrair_registros_excel(arquivo):
     return registros
 
 
+def extrair_pagamentos_detalhados_excel(arquivo):
+    arquivo.seek(0)
+    pagamentos = {}
+    try:
+        zf = zipfile.ZipFile(arquivo)
+    except zipfile.BadZipFile:
+        return pagamentos
+
+    with zf:
+        shared_strings = carregar_shared_strings(zf)
+        try:
+            sheet_path = caminho_aba(zf, ABA_DETALHE_PAGAMENTOS_EXCEL)
+        except ValueError:
+            return pagamentos
+
+        aguardando_cabecalho_lancamento = False
+        importacao_id_atual = None
+        credor_atual = ""
+
+        with zf.open(sheet_path) as stream:
+            for _, elem in ET.iterparse(stream, events=("end",)):
+                if local_name(elem.tag) != "row":
+                    continue
+
+                cells = {}
+                for cell in elem:
+                    if local_name(cell.tag) != "c":
+                        continue
+                    cells[coluna_para_indice(cell.attrib.get("r"))] = texto_limpo(valor_celula(cell, shared_strings))
+
+                coluna_a = normalizar_busca(cells.get(1))
+                coluna_b = normalizar_busca(cells.get(2))
+                coluna_c = normalizar_busca(cells.get(3))
+
+                if coluna_a == "CREDOR" and "LANCAMENTO" in coluna_b:
+                    aguardando_cabecalho_lancamento = True
+                    importacao_id_atual = None
+                    credor_atual = ""
+                    elem.clear()
+                    continue
+
+                if aguardando_cabecalho_lancamento:
+                    importacao_id_atual = texto_limpo(cells.get(2))
+                    credor_atual = texto_limpo(cells.get(1))
+                    aguardando_cabecalho_lancamento = False
+                    elem.clear()
+                    continue
+
+                if not importacao_id_atual or coluna_c == "SOMA":
+                    elem.clear()
+                    continue
+
+                valor_pago = decimal_ou_zero(cells.get(9))
+                if valor_pago <= 0:
+                    elem.clear()
+                    continue
+
+                data_pagamento = data_pagamento_por_mes(cells.get(2))
+                if not data_pagamento:
+                    elem.clear()
+                    continue
+
+                pagamentos.setdefault(importacao_id_atual, []).append({
+                    "data_pagamento": data_pagamento,
+                    "valor_pago": valor_pago,
+                    "observacoes": f"Pagamento importado da aba detalhe ({texto_limpo(cells.get(2))}).",
+                    "credor": credor_atual,
+                })
+                elem.clear()
+
+    return pagamentos
+
+
 def dinheiro(valor):
     numero = decimal_ou_zero(valor)
     return f"R$ {numero:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
@@ -345,6 +460,56 @@ def sincronizar_pagamentos_importados(cur):
           AND p.id IS NULL
         """
     )
+
+
+def substituir_pagamentos_importados_excel(cur, investimentos_por_importacao, pagamentos_detalhados):
+    total_lancamentos = 0
+    total_valor = Decimal("0")
+
+    for importacao_id, investimento_id in investimentos_por_importacao.items():
+        pagamentos = pagamentos_detalhados.get(str(importacao_id), [])
+        if not pagamentos:
+            continue
+
+        cur.execute(
+            """
+            DELETE FROM investimento_pagamentos
+            WHERE investimento_id = %s
+              AND (
+                    criado_por IN (%s, %s)
+                    OR observacoes LIKE 'Pagamento consolidado importado%%'
+                    OR observacoes LIKE 'Pagamento importado da aba detalhe%%'
+                  )
+            """,
+            (investimento_id, CRIADO_POR_IMPORTACAO, "ImportaÃ§Ã£o Excel"),
+        )
+
+        for pagamento in pagamentos:
+            cur.execute(
+                """
+                INSERT INTO investimento_pagamentos
+                (investimento_id, data_pagamento, valor_pago, observacoes, criado_por)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (
+                    investimento_id,
+                    pagamento["data_pagamento"],
+                    pagamento["valor_pago"],
+                    pagamento["observacoes"],
+                    CRIADO_POR_IMPORTACAO,
+                ),
+            )
+            total_lancamentos += 1
+            total_valor += pagamento["valor_pago"]
+
+        registrar_auditoria(
+            cur,
+            investimento_id,
+            "Pagamentos importados",
+            f"{len(pagamentos)} pagamento(s) detalhado(s) importado(s) da planilha.",
+        )
+
+    return total_lancamentos, total_valor
 
 
 def juros_sobre_saldo(valor, taxa_percentual, data_inicio, data_fim):
@@ -812,7 +977,7 @@ def atualizar_status_investimento(id):
                 conn.rollback()
                 conn.close()
                 return jsonify({"status": "erro", "msg": "Investimento não encontrado."}), 404
-            registrar_auditoria(cur, id, "Status", f"Status alterado para {status_pagamento or 'Automatico'}.")
+            registrar_auditoria(cur, id, "Status", f"Status alterado para {status_pagamento or 'Automático'}.")
         conn.commit()
         conn.close()
         return jsonify({"status": "sucesso"})
@@ -862,10 +1027,15 @@ def importar_investimentos_excel():
     try:
         garantir_schema_financeiro()
         registros = extrair_registros_excel(arquivo.stream)
+        arquivo.stream.seek(0)
+        pagamentos_detalhados = extrair_pagamentos_detalhados_excel(arquivo.stream)
         conn = get_db_connection()
         inseridos = 0
         duplicados = 0
+        pagamentos_importados = 0
+        total_pagamentos_importados = Decimal("0")
         empresas_criadas = set()
+        investimentos_por_importacao = {}
         with conn.cursor() as cur:
             for item in registros:
                 cur.execute(
@@ -876,7 +1046,9 @@ def importar_investimentos_excel():
                     """,
                     (ORIGEM_IMPORTACAO_EXCEL, item["importacao_id"]),
                 )
-                if cur.fetchone():
+                investimento_existente = cur.fetchone()
+                if investimento_existente:
+                    investimentos_por_importacao[item["importacao_id"]] = investimento_existente["id"]
                     duplicados += 1
                     continue
 
@@ -915,7 +1087,8 @@ def importar_investimentos_excel():
                     ),
                 )
                 investimento_id = cur.lastrowid
-                if item["pgto_day"] > 0:
+                investimentos_por_importacao[item["importacao_id"]] = investimento_id
+                if item["pgto_day"] > 0 and not pagamentos_detalhados.get(str(item["importacao_id"])):
                     cur.execute(
                         """
                         INSERT INTO investimento_pagamentos
@@ -932,12 +1105,20 @@ def importar_investimentos_excel():
                     registrar_auditoria(cur, investimento_id, "Pagamento importado", f"Pagamento consolidado importado no valor de {dinheiro(item['pgto_day'])}.")
                 registrar_auditoria(cur, investimento_id, "Importação", "Investimento importado da planilha Excel.")
                 inseridos += 1
+            pagamentos_importados, total_pagamentos_importados = substituir_pagamentos_importados_excel(
+                cur,
+                investimentos_por_importacao,
+                pagamentos_detalhados,
+            )
         conn.commit()
         conn.close()
         return jsonify({
             "status": "sucesso",
             "inseridos": inseridos,
             "duplicados": duplicados,
+            "pagamentos_importados": pagamentos_importados,
+            "total_pagamentos_importados": normalizar_json(total_pagamentos_importados),
+            "total_pagamentos_importados_formatado": dinheiro(total_pagamentos_importados),
             "empresas_criadas": sorted(empresas_criadas),
             "resumo": resumo_registros(registros),
         })
