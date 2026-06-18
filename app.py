@@ -522,6 +522,13 @@ def pagina_agenda():
     if 'usuario_logado' not in session: return redirect(url_for('tela_login'))
     return render_template('agenda.html', nome_socio=session.get('nome_exibicao', 'Socio'))
 
+@app.route('/compromissos')
+def pagina_compromissos():
+    if 'usuario_logado' not in session:
+        return redirect(url_for('tela_login'))
+    garantir_colunas_agenda()
+    return render_template('compromissos.html', nome_socio=session.get('nome_exibicao', 'Socio'))
+
 @app.route('/contatos')
 def pagina_contatos():
     if 'usuario_logado' not in session:
