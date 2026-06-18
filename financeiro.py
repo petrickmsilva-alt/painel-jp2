@@ -84,6 +84,7 @@ def garantir_schema_financeiro():
             for coluna, definicao in colunas.items():
                 if not coluna_existe(cur, "investimentos", coluna):
                     cur.execute(f"ALTER TABLE investimentos ADD COLUMN {coluna} {definicao}")
+            sincronizar_pagamentos_importados(cur)
         conn.commit()
         FINANCEIRO_SCHEMA_VERIFICADO = True
     finally:
@@ -327,6 +328,22 @@ def registrar_auditoria(cur, investimento_id, acao, descricao):
         VALUES (%s, %s, %s, %s)
         """,
         (investimento_id, acao, descricao, session.get("nome_exibicao") or session.get("usuario_logado") or "Sistema"),
+    )
+
+
+def sincronizar_pagamentos_importados(cur):
+    cur.execute(
+        """
+        INSERT INTO investimento_pagamentos
+        (investimento_id, data_pagamento, valor_pago, observacoes, criado_por)
+        SELECT i.id, CURDATE(), i.pgto_day,
+               'Pagamento consolidado importado da coluna PGTO DAY da planilha.',
+               'Importacao Excel'
+        FROM investimentos i
+        LEFT JOIN investimento_pagamentos p ON p.investimento_id = i.id
+        WHERE COALESCE(i.pgto_day, 0) > 0
+          AND p.id IS NULL
+        """
     )
 
 
@@ -897,7 +914,23 @@ def importar_investimentos_excel():
                         item["importacao_id"],
                     ),
                 )
-                registrar_auditoria(cur, cur.lastrowid, "Importacao", "Investimento importado da planilha Excel.")
+                investimento_id = cur.lastrowid
+                if item["pgto_day"] > 0:
+                    cur.execute(
+                        """
+                        INSERT INTO investimento_pagamentos
+                        (investimento_id, data_pagamento, valor_pago, observacoes, criado_por)
+                        VALUES (%s, CURDATE(), %s, %s, %s)
+                        """,
+                        (
+                            investimento_id,
+                            item["pgto_day"],
+                            "Pagamento consolidado importado da coluna PGTO DAY da planilha.",
+                            "Importacao Excel",
+                        ),
+                    )
+                    registrar_auditoria(cur, investimento_id, "Pagamento importado", f"Pagamento consolidado importado no valor de {dinheiro(item['pgto_day'])}.")
+                registrar_auditoria(cur, investimento_id, "Importacao", "Investimento importado da planilha Excel.")
                 inseridos += 1
         conn.commit()
         conn.close()
