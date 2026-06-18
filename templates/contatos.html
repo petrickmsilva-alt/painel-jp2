@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="utf-8">
-    <title>Agenda Telefonica | JP2 Business</title>
+    <title>Agenda Telefônica | JP2 Business</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -251,7 +251,7 @@
         <header class="page-header">
             <div>
                 <div class="page-kicker">Central de Relacionamento</div>
-                <h1 class="page-title">Agenda Telefonica</h1>
+                <h1 class="page-title">Agenda Telefônica</h1>
                 <div class="text-secondary">Contatos compartilhados entre sócios, empresas, eventos e parceiros.</div>
             </div>
             <div class="d-flex gap-2 flex-wrap">
@@ -327,11 +327,11 @@
                         <div class="contact-lines">
                             <div class="contact-line">
                                 <i class="bi bi-telephone text-primary"></i>
-                                <span>{{ contato.telefone or 'Telefone nao informado' }}</span>
+                                <span>{{ contato.telefone or 'Telefone não informado' }}</span>
                             </div>
                             <div class="contact-line">
                                 <i class="bi bi-whatsapp text-success"></i>
-                                <span>{{ contato.whatsapp or 'WhatsApp nao informado' }}</span>
+                                <span>{{ contato.whatsapp or 'WhatsApp não informado' }}</span>
                             </div>
                         </div>
 
@@ -426,7 +426,7 @@
                             <input class="form-control" name="empresa">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-secondary">Cargo / Funcao</label>
+                            <label class="form-label small fw-bold text-secondary">Cargo / Função</label>
                             <input class="form-control" name="cargo">
                         </div>
                         <div class="col-md-6">
@@ -439,11 +439,11 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-secondary">Telefone</label>
-                            <input class="form-control telefone-br" name="telefone" inputmode="tel" maxlength="18" placeholder="+55 62 9688-0762">
+                            <input class="form-control telefone-br" name="telefone" inputmode="tel" autocomplete="tel" maxlength="18" placeholder="+55 62 9688-0762">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-secondary">WhatsApp</label>
-                            <input class="form-control telefone-br" name="whatsapp" inputmode="tel" maxlength="18" placeholder="+55 62 9688-0762">
+                            <input class="form-control telefone-br" name="whatsapp" inputmode="tel" autocomplete="tel" maxlength="18" placeholder="+55 62 9688-0762">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-secondary">E-mail</label>
@@ -481,7 +481,7 @@
                             <input class="form-control" name="empresa" id="editEmpresa">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-secondary">Cargo / Funcao</label>
+                            <label class="form-label small fw-bold text-secondary">Cargo / Função</label>
                             <input class="form-control" name="cargo" id="editCargo">
                         </div>
                         <div class="col-md-6">
@@ -494,11 +494,11 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-secondary">Telefone</label>
-                            <input class="form-control telefone-br" name="telefone" id="editTelefone" inputmode="tel" maxlength="18" placeholder="+55 62 9688-0762">
+                            <input class="form-control telefone-br" name="telefone" id="editTelefone" inputmode="tel" autocomplete="tel" maxlength="18" placeholder="+55 62 9688-0762">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-secondary">WhatsApp</label>
-                            <input class="form-control telefone-br" name="whatsapp" id="editWhatsapp" inputmode="tel" maxlength="18" placeholder="+55 62 9688-0762">
+                            <input class="form-control telefone-br" name="whatsapp" id="editWhatsapp" inputmode="tel" autocomplete="tel" maxlength="18" placeholder="+55 62 9688-0762">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold text-secondary">E-mail</label>
@@ -512,7 +512,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar alteracoes</button>
+                    <button type="submit" class="btn btn-primary">Salvar alterações</button>
                 </div>
             </form>
         </div>
@@ -526,7 +526,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="mb-0">Deseja remover <strong id="nomeContatoExcluir">este contato</strong> da agenda telefonica?</p>
+                    <p class="mb-0">Deseja remover <strong id="nomeContatoExcluir">este contato</strong> da agenda telefônica?</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -538,30 +538,43 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function formatarTelefoneBR(valor) {
-            let digitos = String(valor || '').replace(/\D/g, '');
-            if (digitos.startsWith('55') && digitos.length > 11) {
+        function digitosTelefoneBR(valor) {
+            const texto = String(valor || '').trim();
+            let digitos = texto.replace(/\D/g, '');
+            if (!digitos) return '';
+
+            const temCodigoPais = texto.startsWith('+55') || digitos.length > 11;
+            if (temCodigoPais && digitos.startsWith('55')) {
                 digitos = digitos.slice(2);
             }
-            digitos = digitos.slice(0, 11);
-            if (digitos.length <= 2) {
-                return digitos ? `+55 ${digitos}` : '';
-            }
+
+            return digitos.slice(0, 11);
+        }
+
+        function formatarTelefoneBR(valor) {
+            const digitos = digitosTelefoneBR(valor);
+            if (!digitos) return '';
 
             const ddd = digitos.slice(0, 2);
             const numero = digitos.slice(2);
+
+            if (digitos.length <= 2) {
+                return `+55 ${ddd}`;
+            }
             if (numero.length <= 4) {
                 return `+55 ${ddd} ${numero}`;
             }
             if (numero.length <= 8) {
                 return `+55 ${ddd} ${numero.slice(0, 4)}-${numero.slice(4)}`;
             }
-            return `+55 ${ddd} ${numero.slice(0, 5)}-${numero.slice(5)}`;
+            return `+55 ${ddd} ${numero.slice(0, 5)}-${numero.slice(5, 9)}`;
         }
 
         document.querySelectorAll('.telefone-br').forEach((campo) => {
             campo.addEventListener('input', () => {
-                campo.value = formatarTelefoneBR(campo.value);
+                const valorFormatado = formatarTelefoneBR(campo.value);
+                campo.value = valorFormatado;
+                campo.setSelectionRange(valorFormatado.length, valorFormatado.length);
             });
             campo.addEventListener('blur', () => {
                 campo.value = formatarTelefoneBR(campo.value);
