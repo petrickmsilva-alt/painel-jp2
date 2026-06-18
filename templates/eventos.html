@@ -10,7 +10,8 @@
     <style>
         :root{--ink:#101828;--muted:#667085;--line:#d9e2ef;--panel:#fff;--soft:#f4f7fb;--blue:#155eef;--nav:#101a2b}
         body{background:var(--soft);display:flex;margin:0;min-height:100vh;color:var(--ink);font-family:Inter,Segoe UI,system-ui,sans-serif}
-        #sidebar{background:var(--nav);color:#fff;flex-shrink:0;padding:24px 18px;width:270px}
+        .sidebar-toggle-btn{align-items:center;background:#fff;border:1px solid #d7e2ef;border-radius:0 8px 8px 0;box-shadow:0 12px 30px rgba(15,23,42,.16);color:#1e293b;display:inline-flex;height:38px;justify-content:center;left:270px;position:fixed;top:18px;transition:left .22s ease,background .18s ease,color .18s ease;width:38px;z-index:130}.sidebar-toggle-btn:hover{background:#155eef;border-color:#155eef;color:#fff}body.sidebar-collapsed #sidebar{margin-left:-270px}body.sidebar-collapsed .sidebar-toggle-btn{left:0}
+        #sidebar{background:var(--nav);color:#fff;flex-shrink:0;padding:24px 18px;width:270px;transition:margin-left .22s ease}
         .sidebar-kicker{color:#93a4bd;font-size:11px;font-weight:850;letter-spacing:.1em;text-transform:uppercase}
         .sidebar-title{font-size:22px;font-weight:850;line-height:1.08;margin:6px 0 18px}
         .sidebar-divider{background:rgba(255,255,255,.12);height:1px;margin:18px 0}
@@ -35,6 +36,9 @@
     </style>
 </head>
 <body>
+<button class="sidebar-toggle-btn" type="button" onclick="alternarMenuLateral()" title="Ocultar ou mostrar menu">
+    <i class="bi bi-layout-sidebar-inset"></i>
+</button>
 <aside id="sidebar">
     <div class="sidebar-kicker">Painel de eventos</div>
     <div class="sidebar-title">Gestão de eventos</div>
@@ -172,6 +176,7 @@ let eventos=[], filtrados=[], tabela=null, municipioMap={}, calendarioData=new D
 const meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const mesesTitulo=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const statusCores={'Autorizado':'#16a34a','Em Andamento':'#2563eb','Pendente':'#d97706','Em Análise':'#ea580c','Encerrado':'#64748b'};
+function alternarMenuLateral(){const r=document.body.classList.toggle('sidebar-collapsed');localStorage.setItem('jp2EventosSidebarCollapsed',r?'1':'0');}
 function h(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
 function dinheiro(v){return (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});}
 function dataBR(v){if(!v)return '-'; const p=String(v).split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:'-';}
@@ -249,7 +254,7 @@ function irHoje(){calendarioData=new Date(); renderCalendario();}
 function alternarCalendario(){calendarioAno=!calendarioAno; modoCalendario.innerText=calendarioAno?'Ano':'Mês'; renderCalendario();}
 document.querySelectorAll('[data-tab-target]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault(); bootstrap.Tab.getOrCreateInstance(document.querySelector(`[data-bs-target="#${a.dataset.tabTarget}"]`)).show(); document.querySelectorAll('#sidebar a').forEach(x=>x.classList.remove('active')); a.classList.add('active');}));
 document.querySelectorAll('[data-bs-toggle="pill"]').forEach(b=>b.addEventListener('shown.bs.tab',()=>{const id=b.dataset.bsTarget.replace('#',''); document.querySelectorAll('#sidebar a').forEach(x=>x.classList.toggle('active',x.dataset.tabTarget===id)); if(id==='calendario')renderCalendario();}));
-document.addEventListener('DOMContentLoaded',()=>{buscarMunicipios('GO'); carregarEventos();});
+document.addEventListener('DOMContentLoaded',()=>{if(localStorage.getItem('jp2EventosSidebarCollapsed')==='1')document.body.classList.add('sidebar-collapsed'); buscarMunicipios('GO'); carregarEventos();});
 </script>
 </body>
 </html>
