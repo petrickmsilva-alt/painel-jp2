@@ -461,15 +461,14 @@ def contexto_global():
 def home():
     if 'usuario_logado' not in session: 
         return redirect(url_for('tela_login'))
-    
-    # Debug: Printa o caminho real onde o Flask busca o 'home.html'
-    template_path = os.path.join(app.root_path, 'templates', 'home.html')
-    print("DEBUG: O Flask estÃ¡ buscando o arquivo em ->", template_path)
-    
-    return render_template('home.html', nome_socio=session.get('nome_exibicao', 'Socio'))
+
+    return render_template('home.html', nome_socio=session.get('nome_exibicao', 'Sócio'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def tela_login():
+    if request.method == 'GET' and 'usuario_logado' in session:
+        return redirect(url_for('home'))
+
     if request.method == 'POST':
         u = request.form.get('usuario', '').lower().strip()
         s = request.form.get('senha', '').strip()
@@ -497,10 +496,10 @@ def tela_login():
                 if user:
                     flash("Senha incorreta digitada!")
                 else:
-                    flash("Usuario nao encontrado no sistema!")
+                    flash("Usuário não encontrado no sistema!")
         except Exception as e:
             print(f"Erro no Login: {e}")
-            flash(f"Erro de conexao com o banco: {str(e)}")
+            flash(f"Erro de conexão com o banco: {str(e)}")
             return redirect(url_for('tela_login'))
         finally:
             if conn:
@@ -705,7 +704,7 @@ def admin_usuarios():
             conn.commit()
             conn.close()
             invalidar_cache_resumo_dashboard()
-            registrar_log(f"Cadastrou um novo usuÃ¡rio no painel: {novo_user}")
+            registrar_log(f"Cadastrou um novo usuário no painel: {novo_user}")
         except Exception as e:
             print(f"Erro cadastro: {e}")
             
@@ -728,17 +727,17 @@ def excluir_usuario(usuario_id):
             cur.execute("SELECT usuario, perfil FROM usuarios WHERE id = %s", (usuario_id,))
             usuario_alvo = cur.fetchone()
             if usuario_alvo and usuario_alvo.get('usuario') == session.get('usuario_logado'):
-                flash("Voce nao pode excluir seu proprio usuario.")
+                flash("Você não pode excluir seu próprio usuário.")
                 conn.close()
                 return redirect(url_for('admin_usuarios'))
             cur.execute("DELETE FROM usuarios WHERE id = %s", (usuario_id,))
         conn.commit()
         conn.close()
         invalidar_cache_resumo_dashboard()
-        registrar_log(f"Removeu o usuÃ¡rio ID: {usuario_id} do sistema")
-        flash("SÃ³cio removido com sucesso!")
+        registrar_log(f"Removeu o usuário ID: {usuario_id} do sistema")
+        flash("Sócio removido com sucesso!")
     except Exception as e:
-        print(f"Erro ao deletar usuÃ¡rio: {e}")
+        print(f"Erro ao deletar usuário: {e}")
     return redirect(url_for('admin_usuarios'))
 
 @app.route('/admin/alterar_perfil/<int:usuario_id>', methods=['POST'])
@@ -749,7 +748,7 @@ def alterar_perfil_usuario(usuario_id):
 
     novo_perfil = request.form.get('perfil', 'socio')
     if novo_perfil not in ['admin', 'socio', 'leitura']:
-        flash("Perfil invalido.")
+        flash("Perfil inválido.")
         return redirect(url_for('admin_usuarios'))
 
     try:
@@ -759,22 +758,22 @@ def alterar_perfil_usuario(usuario_id):
             cur.execute("SELECT usuario, perfil FROM usuarios WHERE id = %s", (usuario_id,))
             usuario_alvo = cur.fetchone()
             if not usuario_alvo:
-                flash("Usuario nao encontrado.")
+                flash("Usuário não encontrado.")
                 conn.close()
                 return redirect(url_for('admin_usuarios'))
 
             if usuario_alvo.get('usuario') == session.get('usuario_logado') and novo_perfil != 'admin':
-                flash("Voce nao pode remover seu proprio perfil de administrador.")
+                flash("Você não pode remover seu próprio perfil de administrador.")
                 conn.close()
                 return redirect(url_for('admin_usuarios'))
 
             cur.execute("UPDATE usuarios SET perfil = %s WHERE id = %s", (novo_perfil, usuario_id))
         conn.close()
-        registrar_log(f"Alterou perfil do usuario {usuario_alvo.get('usuario')} para {novo_perfil}")
+        registrar_log(f"Alterou perfil do usuário {usuario_alvo.get('usuario')} para {novo_perfil}")
         flash("Perfil atualizado com sucesso.")
     except Exception as e:
         print(f"Erro ao alterar perfil: {e}")
-        flash("Nao foi possivel atualizar o perfil.")
+        flash("Não foi possível atualizar o perfil.")
 
     return redirect(url_for('admin_usuarios'))
 
@@ -792,7 +791,7 @@ def alterar_senha_usuario(usuario_id):
         return redirect(url_for('admin_usuarios'))
 
     if nova_senha != confirmar_senha:
-        flash("A confirmacao da senha nao confere.")
+        flash("A confirmação da senha não confere.")
         return redirect(url_for('admin_usuarios'))
 
     try:
@@ -801,7 +800,7 @@ def alterar_senha_usuario(usuario_id):
             cur.execute("SELECT usuario FROM usuarios WHERE id = %s", (usuario_id,))
             usuario_alvo = cur.fetchone()
             if not usuario_alvo:
-                flash("Usuario nao encontrado.")
+                flash("Usuário não encontrado.")
                 conn.close()
                 return redirect(url_for('admin_usuarios'))
 
@@ -810,11 +809,11 @@ def alterar_senha_usuario(usuario_id):
                 (gerar_hash_senha(nova_senha), usuario_id)
             )
         conn.close()
-        registrar_log(f"Alterou a senha do usuario {usuario_alvo.get('usuario')}")
+        registrar_log(f"Alterou a senha do usuário {usuario_alvo.get('usuario')}")
         flash("Senha atualizada com sucesso.")
     except Exception as e:
         print(f"Erro ao alterar senha: {e}")
-        flash("Nao foi possivel alterar a senha.")
+        flash("Não foi possível alterar a senha.")
 
     return redirect(url_for('admin_usuarios'))
 
