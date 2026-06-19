@@ -160,8 +160,34 @@ def garantir_schema_eventos():
                 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
                 """
             )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS eventos_financeiro (
+                    evento_id INT PRIMARY KEY,
+                    percentual_parlamentar DECIMAL(8,2) NOT NULL DEFAULT 0,
+                    observacoes TEXT NULL,
+                    atualizado_por VARCHAR(120) NULL,
+                    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS eventos_custos (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    evento_id INT NOT NULL,
+                    categoria VARCHAR(90) NOT NULL,
+                    descricao VARCHAR(220) NULL,
+                    fornecedor VARCHAR(160) NULL,
+                    valor DECIMAL(15,2) NOT NULL DEFAULT 0,
+                    criado_por VARCHAR(120) NULL,
+                    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                """
+            )
             criar_indice(cur, "eventos_cadastro", "idx_eventos_periodo", "data_inicio, data_fim")
             criar_indice(cur, "eventos_cadastro", "idx_eventos_filtros", "uf, regiao(40), status, origem")
+            criar_indice(cur, "eventos_custos", "idx_eventos_custos_evento", "evento_id")
             cur.execute("SELECT COUNT(1) AS total FROM eventos_cadastro")
             if int((cur.fetchone() or {}).get("total") or 0) == 0:
                 importar_eventos_csv(cur)
@@ -297,6 +323,39 @@ def listar_eventos(args):
         conn.close()
 
 
+def normalizar_financeiro_evento(evento, financeiro=None, custos=None):
+    financeiro = financeiro or {}
+    custos = custos or []
+    valor_verba = decimal_ou_zero(evento.get("valor_verba"))
+    percentual = decimal_ou_zero(financeiro.get("percentual_parlamentar"))
+    valor_parlamentar = valor_verba * percentual / Decimal("100")
+    total_custos = sum((decimal_ou_zero(item.get("valor")) for item in custos), Decimal("0"))
+    sobra = valor_verba - valor_parlamentar - total_custos
+    return {
+        "evento": normalizar_evento(evento),
+        "percentual_parlamentar": float(percentual),
+        "valor_parlamentar": float(valor_parlamentar),
+        "valor_parlamentar_formatado": dinheiro(valor_parlamentar),
+        "total_custos": float(total_custos),
+        "total_custos_formatado": dinheiro(total_custos),
+        "resultado_instituto": float(sobra),
+        "resultado_instituto_formatado": dinheiro(sobra),
+        "observacoes": financeiro.get("observacoes") or "",
+        "custos": [
+            {
+                "id": item.get("id"),
+                "categoria": item.get("categoria") or "",
+                "descricao": item.get("descricao") or "",
+                "fornecedor": item.get("fornecedor") or "",
+                "valor": float(decimal_ou_zero(item.get("valor"))),
+                "valor_formatado": dinheiro(item.get("valor")),
+                "criado_por": item.get("criado_por") or "",
+            }
+            for item in custos
+        ],
+    }
+
+
 @bp_eventos.route("/eventos")
 def pagina_eventos():
     if "usuario_logado" not in session:
@@ -416,6 +475,124 @@ def api_municipios_eventos():
     if termo:
         dados = [item for item in dados if termo in item["busca"]]
     return jsonify({"status": "sucesso", "dados": dados[:60]})
+
+
+@bp_eventos.route("/api/eventos/financeiro/<int:evento_id>", methods=["GET"])
+def api_evento_financeiro(evento_id):
+    erro = login_obrigatorio_json()
+    if erro:
+        return erro
+    garantir_schema_eventos()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, cidade, uf, regiao, nome_evento, data_inicio, data_fim, mes,
+                       dias_evento, valor_verba, origem, status, observacoes, criado_por
+                FROM eventos_cadastro
+                WHERE id = %s
+                LIMIT 1
+                """,
+                (evento_id,),
+            )
+            evento = cur.fetchone()
+            if not evento:
+                return jsonify({"status": "erro", "msg": "Evento não encontrado."}), 404
+            cur.execute("SELECT percentual_parlamentar, observacoes FROM eventos_financeiro WHERE evento_id = %s", (evento_id,))
+            financeiro = cur.fetchone() or {}
+            cur.execute(
+                """
+                SELECT id, categoria, descricao, fornecedor, valor, criado_por
+                FROM eventos_custos
+                WHERE evento_id = %s
+                ORDER BY criado_em DESC, id DESC
+                """,
+                (evento_id,),
+            )
+            custos = cur.fetchall()
+        return jsonify({"status": "sucesso", "dados": normalizar_financeiro_evento(evento, financeiro, custos)})
+    finally:
+        conn.close()
+
+
+@bp_eventos.route("/api/eventos/financeiro/<int:evento_id>", methods=["POST"])
+def api_salvar_evento_financeiro(evento_id):
+    erro = login_obrigatorio_json()
+    if erro:
+        return erro
+    percentual = decimal_ou_zero(request.form.get("percentual_parlamentar"))
+    observacoes = reparar_texto(request.form.get("observacoes"))
+    if percentual < 0 or percentual > 100:
+        return jsonify({"status": "erro", "msg": "Informe um percentual entre 0 e 100."}), 400
+    garantir_schema_eventos()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id FROM eventos_cadastro WHERE id = %s", (evento_id,))
+            if not cur.fetchone():
+                return jsonify({"status": "erro", "msg": "Evento não encontrado."}), 404
+            cur.execute(
+                """
+                INSERT INTO eventos_financeiro
+                (evento_id, percentual_parlamentar, observacoes, atualizado_por)
+                VALUES (%s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    percentual_parlamentar = VALUES(percentual_parlamentar),
+                    observacoes = VALUES(observacoes),
+                    atualizado_por = VALUES(atualizado_por)
+                """,
+                (evento_id, percentual, observacoes, session.get("nome_exibicao", "Sistema")),
+            )
+        return jsonify({"status": "sucesso"})
+    finally:
+        conn.close()
+
+
+@bp_eventos.route("/api/eventos/financeiro/<int:evento_id>/custos", methods=["POST"])
+def api_adicionar_custo_evento(evento_id):
+    erro = login_obrigatorio_json()
+    if erro:
+        return erro
+    categoria = reparar_texto(request.form.get("categoria"))
+    descricao = reparar_texto(request.form.get("descricao"))
+    fornecedor = reparar_texto(request.form.get("fornecedor"))
+    valor = decimal_ou_zero(request.form.get("valor"))
+    if not categoria or valor <= 0:
+        return jsonify({"status": "erro", "msg": "Informe a categoria e um valor maior que zero."}), 400
+    garantir_schema_eventos()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id FROM eventos_cadastro WHERE id = %s", (evento_id,))
+            if not cur.fetchone():
+                return jsonify({"status": "erro", "msg": "Evento não encontrado."}), 404
+            cur.execute(
+                """
+                INSERT INTO eventos_custos
+                (evento_id, categoria, descricao, fornecedor, valor, criado_por)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (evento_id, categoria, descricao, fornecedor, valor, session.get("nome_exibicao", "Sistema")),
+            )
+        return jsonify({"status": "sucesso"})
+    finally:
+        conn.close()
+
+
+@bp_eventos.route("/api/eventos/financeiro/custos/<int:custo_id>", methods=["DELETE"])
+def api_excluir_custo_evento(custo_id):
+    erro = login_obrigatorio_json()
+    if erro:
+        return erro
+    garantir_schema_eventos()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM eventos_custos WHERE id = %s", (custo_id,))
+        return jsonify({"status": "sucesso"})
+    finally:
+        conn.close()
 
 
 @bp_eventos.route("/eventos/exportar")
