@@ -1,11 +1,13 @@
 import re
 import unicodedata
 import zipfile
+import hashlib
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from xml.etree import ElementTree as ET
 
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
+from werkzeug.security import check_password_hash
 from database import get_db_connection
 
 bp_financeiro = Blueprint("financeiro", __name__)
@@ -15,6 +17,26 @@ ORIGEM_IMPORTACAO_EXCEL = "excel_junho_2026"
 ABA_IMPORTACAO_EXCEL = "RELACAO DE EMPRESTIMOS (2)"
 ABA_DETALHE_PAGAMENTOS_EXCEL = "DETALHE DE EMPRESTIMO_BASE"
 CRIADO_POR_IMPORTACAO = "Importação Excel"
+
+
+def senha_sha256(senha_pura):
+    return hashlib.sha256(senha_pura.encode("utf-8")).hexdigest()
+
+
+def senha_confere_financeiro(hash_salvo, senha_pura):
+    hash_salvo = str(hash_salvo or "")
+    if hash_salvo.startswith(("pbkdf2:", "scrypt:")):
+        return check_password_hash(hash_salvo, senha_pura)
+    return hash_salvo == senha_sha256(senha_pura)
+
+
+def validar_senha_usuario_atual(cur, senha):
+    usuario = session.get("usuario_logado")
+    if not usuario or not senha:
+        return False
+    cur.execute("SELECT senha FROM usuarios WHERE usuario = %s", (usuario,))
+    dados = cur.fetchone()
+    return bool(dados and senha_confere_financeiro(dados.get("senha"), senha))
 
 
 def coluna_existe(cur, tabela, coluna):
@@ -68,6 +90,18 @@ def garantir_schema_financeiro():
                     observacoes TEXT NULL,
                     criado_por VARCHAR(120) NULL,
                     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                """
+            )
+            cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS financeiro_nomes (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    tipo VARCHAR(30) NOT NULL,
+                    nome VARCHAR(160) NOT NULL,
+                    criado_por VARCHAR(120) NULL,
+                    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE KEY uq_financeiro_nomes (tipo, nome)
                 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
                 """
             )
@@ -860,6 +894,62 @@ def excluir_empresa(id):
         conn.close()
 
 
+@bp_financeiro.route("/api/financeiro-nomes", methods=["GET"])
+def listar_nomes_financeiros():
+    if "usuario_logado" not in session:
+        return jsonify({"status": "erro", "msg": "NÃ£o autorizado"}), 401
+    garantir_schema_financeiro()
+    conn = get_db_connection()
+    try:
+        credores = set()
+        captadores = set()
+        with conn.cursor() as cur:
+            cur.execute("SELECT nome_investidor, captador FROM investimentos")
+            for row in cur.fetchall():
+                if row.get("nome_investidor"):
+                    credores.add(str(row["nome_investidor"]).strip())
+                if row.get("captador"):
+                    captadores.add(str(row["captador"]).strip())
+            cur.execute("SELECT tipo, nome FROM financeiro_nomes")
+            for row in cur.fetchall():
+                if row.get("tipo") == "credor":
+                    credores.add(str(row["nome"]).strip())
+                elif row.get("tipo") == "captador":
+                    captadores.add(str(row["nome"]).strip())
+        return jsonify({
+            "status": "sucesso",
+            "credores": sorted([n for n in credores if n]),
+            "captadores": sorted([n for n in captadores if n]),
+        })
+    finally:
+        conn.close()
+
+
+@bp_financeiro.route("/api/financeiro-nomes", methods=["POST"])
+def adicionar_nome_financeiro():
+    if "usuario_logado" not in session:
+        return jsonify({"status": "erro", "msg": "NÃ£o autorizado"}), 401
+    tipo = request.form.get("tipo", "").strip().lower()
+    nome = request.form.get("nome", "").strip()
+    if tipo not in ("credor", "captador") or not nome:
+        return jsonify({"status": "erro", "msg": "Informe tipo e nome."}), 400
+    garantir_schema_financeiro()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT IGNORE INTO financeiro_nomes (tipo, nome, criado_por)
+                VALUES (%s, %s, %s)
+                """,
+                (tipo, nome, session.get("nome_exibicao", "Sistema")),
+            )
+        conn.commit()
+        return jsonify({"status": "sucesso"})
+    finally:
+        conn.close()
+
+
 @bp_financeiro.route("/api/resumo-investimentos", methods=["GET"])
 def resumo_investimentos():
     if "usuario_logado" not in session:
@@ -1422,8 +1512,16 @@ def limpar_investimentos():
         return jsonify({"status": "erro", "msg": "Não autorizado"}), 401
 
     confirmar = request.args.get("confirmar") == "SIM" and request.args.get("frase") == "LIMPAR FINANCEIRO"
+    senha = request.args.get("senha", "")
     if not confirmar:
         return jsonify({"status": "erro", "msg": "Confirmacao obrigatoria."}), 400
+
+    conn_validacao = get_db_connection()
+    with conn_validacao.cursor() as cur_validacao:
+        senha_ok = validar_senha_usuario_atual(cur_validacao, senha)
+    conn_validacao.close()
+    if not senha_ok:
+        return jsonify({"status": "erro", "msg": "Senha de liberacao incorreta."}), 401
 
     try:
         garantir_schema_financeiro()
@@ -1432,6 +1530,28 @@ def limpar_investimentos():
             registrar_auditoria(cur, None, "Limpeza", "Todos os lançamentos financeiros foram removidos.")
             cur.execute("DELETE FROM investimento_pagamentos")
             cur.execute("DELETE FROM investimentos")
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "sucesso"})
+    except Exception as e:
+        return jsonify({"status": "erro", "msg": str(e)}), 500
+
+
+@bp_financeiro.route("/api/excluir-investimentos-lote", methods=["DELETE"])
+def excluir_investimentos_lote():
+    if "usuario_logado" not in session:
+        return jsonify({"status": "erro", "msg": "NÃ£o autorizado"}), 401
+    payload = request.get_json(silent=True) or {}
+    ids = [int(i) for i in payload.get("ids", []) if str(i).isdigit()]
+    if not ids:
+        return jsonify({"status": "erro", "msg": "Selecione pelo menos um lancamento."}), 400
+    try:
+        conn = get_db_connection()
+        placeholders = ",".join(["%s"] * len(ids))
+        with conn.cursor() as cur:
+            cur.execute(f"DELETE FROM investimento_pagamentos WHERE investimento_id IN ({placeholders})", tuple(ids))
+            cur.execute(f"DELETE FROM investimentos WHERE id IN ({placeholders})", tuple(ids))
+            registrar_auditoria(cur, None, "Exclusao em massa", f"{len(ids)} lancamento(s) excluido(s).")
         conn.commit()
         conn.close()
         return jsonify({"status": "sucesso"})

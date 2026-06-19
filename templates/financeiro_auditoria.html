@@ -7,13 +7,21 @@
  <div><div class="kicker">Auditoria financeira</div><h1 class="title">Histórico de movimentações</h1><div class="subtitle">Rastreamento de cadastros, edições, pagamentos, anexos, status e exclusões.</div></div>
  <div class="actions"><button class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button></div>
 </header>
+<section class="panel mb-3"><div class="p-3"><div class="row g-2 align-items-end"><div class="col-lg-4"><label class="form-label small fw-bold text-secondary">Usuário</label><select id="filtroUsuarioAuditoria" class="form-select"></select></div><div class="col-lg-3"><label class="form-label small fw-bold text-secondary">Data</label><input type="date" id="filtroDataAuditoria" class="form-control"></div><div class="col-lg-3 d-flex gap-2"><button class="btn btn-primary flex-fill" onclick="aplicarFiltrosAuditoria()">Filtrar</button><button class="btn btn-outline-secondary" onclick="limparFiltrosAuditoria()">Limpar</button></div></div></div></section>
 <section class="panel">
  <div class="table-responsive p-3"><table class="table table-hover align-middle" id="tabelaAuditoria"><thead><tr><th>Data/Hora</th><th>Ação</th><th>Investimento</th><th>Descrição</th><th>Usuário</th></tr></thead><tbody id="corpoAuditoria"></tbody></table></div>
 </section>
 <script>
-let tabela=null;
+let tabela=null, auditoria=[], auditoriaFiltrada=[];
 function dataBR(v){if(!v)return '-'; const d=new Date(v); return Number.isNaN(d.getTime())?String(v):d.toLocaleString('pt-BR');}
-function carregarAuditoria(){fetch('/api/auditoria-investimentos').then(r=>r.json()).then(data=>{const lista=Array.isArray(data.dados)?data.dados:[]; const tb=corpoAuditoria; tb.innerHTML=''; if(tabela){tabela.destroy(); tabela=null;} lista.forEach(a=>{tb.innerHTML+=`<tr><td>${dataBR(a.criado_em)}</td><td><span class="pill">${a.acao||'-'}</span></td><td><strong>${a.importacao_id||a.investimento_id||'-'}</strong><div class="muted">${a.empresa_nome||''} ${a.nome_investidor||''}</div></td><td>${a.descricao||'-'}</td><td>${a.usuario||'-'}</td></tr>`;}); if(lista.length){tabela=$('#tabelaAuditoria').DataTable({pageLength:25,order:[[0,'desc']],language:{sSearch:'Pesquisar:',sLengthMenu:'Exibir _MENU_',sInfo:'Mostrando _START_ até _END_ de _TOTAL_',oPaginate:{sNext:'Próximo',sPrevious:'Anterior'}}});}});}
+function iso(v){return v?String(v).slice(0,10):'';}
+function html(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+function opts(id,valores){const el=document.getElementById(id); const atual=el.value; el.innerHTML='<option value="">Todos</option>'+[...new Set(valores.filter(Boolean))].sort().map(v=>`<option>${html(v)}</option>`).join(''); if([...el.options].some(o=>o.value===atual))el.value=atual;}
+function renderAuditoria(){const lista=auditoriaFiltrada; const tb=corpoAuditoria; if(tabela){tabela.destroy(); tabela=null;} tb.innerHTML=''; lista.forEach(a=>{tb.innerHTML+=`<tr><td>${dataBR(a.criado_em)}</td><td><span class="pill">${html(a.acao||'-')}</span></td><td><strong>${html(a.importacao_id||a.investimento_id||'-')}</strong><div class="muted">${html(a.empresa_nome||'')} ${html(a.nome_investidor||'')}</div></td><td>${html(a.descricao||'-')}</td><td>${html(a.usuario||'-')}</td></tr>`;}); if(lista.length){tabela=$('#tabelaAuditoria').DataTable({pageLength:25,order:[[0,'desc']],language:{sSearch:'Pesquisar:',sLengthMenu:'Exibir _MENU_',sInfo:'Mostrando _START_ até _END_ de _TOTAL_',oPaginate:{sNext:'Próximo',sPrevious:'Anterior'}}});}}
+function aplicarFiltrosAuditoria(){const user=filtroUsuarioAuditoria.value, data=filtroDataAuditoria.value; auditoriaFiltrada=auditoria.filter(a=>(!user||a.usuario===user)&&(!data||iso(a.criado_em)===data)); renderAuditoria();}
+function limparFiltrosAuditoria(){filtroUsuarioAuditoria.value=''; filtroDataAuditoria.value=''; auditoriaFiltrada=auditoria; renderAuditoria();}
+function carregarAuditoria(){fetch('/api/auditoria-investimentos').then(r=>r.json()).then(data=>{auditoria=Array.isArray(data.dados)?data.dados:[]; auditoriaFiltrada=auditoria; opts('filtroUsuarioAuditoria',auditoria.map(a=>a.usuario)); renderAuditoria();});}
+['filtroUsuarioAuditoria','filtroDataAuditoria'].forEach(id=>document.getElementById(id)?.addEventListener('change',aplicarFiltrosAuditoria));
 document.addEventListener('DOMContentLoaded',carregarAuditoria);
 </script>
 {% endblock %}
