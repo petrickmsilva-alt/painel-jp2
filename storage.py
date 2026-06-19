@@ -1,4 +1,5 @@
 import os
+import mimetypes
 from io import BytesIO
 from urllib.parse import quote
 
@@ -73,6 +74,9 @@ def gerar_url_temporaria_r2(uri, nome_arquivo=None, force_download=False, expire
         modo = "attachment" if force_download else "inline"
         nome_codificado = quote(nome_arquivo)
         params["ResponseContentDisposition"] = f"{modo}; filename*=UTF-8''{nome_codificado}"
+        content_type = mimetypes.guess_type(nome_arquivo)[0]
+        if content_type:
+            params["ResponseContentType"] = content_type
 
     return r2_client().generate_presigned_url(
         "get_object",
