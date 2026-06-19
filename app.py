@@ -24,12 +24,24 @@ if not SECRET_KEY:
     raise RuntimeError("Defina a variavel FLASK_SECRET_KEY antes de iniciar o painel.")
 app.secret_key = SECRET_KEY
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.environ.get("FLASK_COOKIE_SECURE", "true").lower() != "false",
+    PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
+    SEND_FILE_MAX_AGE_DEFAULT=timedelta(days=7),
+)
 INDICES_PERFORMANCE_VERIFICADOS = False
 COLUNA_PERFIL_USUARIOS_VERIFICADA = False
 COLUNAS_AGENDA_VERIFICADAS = False
 TABELA_CONTATOS_VERIFICADA = False
 USUARIOS_ADMIN_CACHE = None
 RESUMO_DASHBOARD_CACHE = {"expira_em": None, "dados": None}
+LISTAR_CACHE = {}
+LISTAR_CACHE_TTL_SEGUNDOS = 12
+LOGIN_TENTATIVAS = {}
+LOGIN_MAX_TENTATIVAS = 6
+LOGIN_BLOQUEIO_SEGUNDOS = 15 * 60
 PERFORMANCE_ROTAS = deque(maxlen=160)
 ROTAS_MONITORADAS = (
     "/listar",
@@ -97,6 +109,45 @@ def usuarios_admin():
 def invalidar_cache_resumo_dashboard():
     RESUMO_DASHBOARD_CACHE["expira_em"] = None
     RESUMO_DASHBOARD_CACHE["dados"] = None
+
+def invalidar_cache_listagem():
+    LISTAR_CACHE.clear()
+
+def chave_listagem_cache(bloco, pasta_pai_id):
+    pasta_normalizada = str(pasta_pai_id or "").strip()
+    if pasta_normalizada in ("", "null", "undefined"):
+        pasta_normalizada = "raiz"
+    return (str(bloco or ""), pasta_normalizada)
+
+def obter_ip_cliente():
+    forwarded = request.headers.get("X-Forwarded-For", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.remote_addr or "desconhecido"
+
+def chave_login_tentativa(usuario):
+    return f"{obter_ip_cliente()}:{str(usuario or '').lower().strip()}"
+
+def login_esta_bloqueado(usuario):
+    dados = LOGIN_TENTATIVAS.get(chave_login_tentativa(usuario))
+    if not dados:
+        return False
+    bloqueado_ate = dados.get("bloqueado_ate")
+    if bloqueado_ate and bloqueado_ate > time.time():
+        return True
+    if bloqueado_ate:
+        LOGIN_TENTATIVAS.pop(chave_login_tentativa(usuario), None)
+    return False
+
+def registrar_falha_login(usuario):
+    chave = chave_login_tentativa(usuario)
+    dados = LOGIN_TENTATIVAS.setdefault(chave, {"tentativas": 0, "bloqueado_ate": None})
+    dados["tentativas"] += 1
+    if dados["tentativas"] >= LOGIN_MAX_TENTATIVAS:
+        dados["bloqueado_ate"] = time.time() + LOGIN_BLOQUEIO_SEGUNDOS
+
+def limpar_falhas_login(usuario):
+    LOGIN_TENTATIVAS.pop(chave_login_tentativa(usuario), None)
 
 def data_iso_ou_none(valor):
     if not valor:
@@ -276,6 +327,13 @@ def garantir_indices_performance():
         ("logs_auditoria", "idx_logs_data_registro", "data_registro"),
         ("agenda_eventos", "idx_agenda_data_evento", "data_evento"),
         ("usuarios", "idx_usuarios_usuario", "usuario(80)"),
+        ("empresas", "idx_empresas_nome", "nome(120)"),
+        ("investimentos", "idx_investimentos_empresa_datas", "empresa_id, data_inicio, data_pgto"),
+        ("investimentos", "idx_investimentos_credor", "nome_investidor(120)"),
+        ("investimentos", "idx_investimentos_captador", "captador(120)"),
+        ("investimento_pagamentos", "idx_pagamentos_investimento_data", "investimento_id, data_pagamento"),
+        ("eventos_cadastro", "idx_eventos_data_cidade", "data_inicio, cidade(120), uf(2)"),
+        ("eventos_custos", "idx_eventos_custos_evento", "evento_id"),
     ]
 
     conn = get_db_connection()
@@ -305,6 +363,19 @@ def preparar_performance_banco():
 def iniciar_medicao_performance():
     g.inicio_request = time.perf_counter()
 
+@app.before_request
+def proteger_requisicoes_de_escrita():
+    if request.method not in ("POST", "PUT", "PATCH", "DELETE"):
+        return
+
+    origem = request.headers.get("Origin") or request.headers.get("Referer")
+    if not origem:
+        return
+
+    host_origem = urlparse(origem).netloc
+    if host_origem and host_origem != request.host:
+        return jsonify({"status": "erro", "mensagem": "Origem da requisicao nao autorizada."}), 403
+
 @app.after_request
 def finalizar_medicao_performance(response):
     inicio = getattr(g, "inicio_request", None)
@@ -313,6 +384,12 @@ def finalizar_medicao_performance(response):
 
     duracao_ms = round((time.perf_counter() - inicio) * 1000, 1)
     response.headers["X-Response-Time-ms"] = str(duracao_ms)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+    if request.is_secure:
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 
     caminho = request.path
     if rota_monitorada(caminho) or duracao_ms >= 1000:
@@ -477,6 +554,11 @@ def tela_login():
         u = request.form.get('usuario', '').lower().strip()
         s = request.form.get('senha', '').strip()
 
+        if login_esta_bloqueado(u):
+            registrar_log(f"Login bloqueado temporariamente para o usuario {u}")
+            flash("Muitas tentativas incorretas. Aguarde alguns minutos e tente novamente.")
+            return redirect(url_for('tela_login'))
+
         conn = None
         try:
             conn = get_db_connection()
@@ -494,13 +576,13 @@ def tela_login():
                     session['usuario_logado'] = user['usuario']
                     session['nome_exibicao'] = user.get('nome_exibicao', user['usuario'])
                     session['perfil_usuario'] = user.get('perfil') or obter_perfil_usuario(user['usuario']) or 'socio'
+                    session.permanent = True
+                    limpar_falhas_login(u)
                     registrar_log("Realizou login no sistema")
                     return redirect(url_for('home'))
 
-                if user:
-                    flash("Senha incorreta digitada!")
-                else:
-                    flash("Usuário não encontrado no sistema!")
+                registrar_falha_login(u)
+                flash("Usuario ou senha incorretos.")
         except Exception as e:
             print(f"Erro no Login: {e}")
             flash(f"Erro de conexão com o banco: {str(e)}")
@@ -916,6 +998,14 @@ def listar_arquivos():
     if 'usuario_logado' not in session: return jsonify({'erro': 'NÃ£o autorizado'}), 401
     bloco = request.args.get('bloco')
     pasta_pai_id = request.args.get('pasta_pai_id')
+    cache_key = chave_listagem_cache(bloco, pasta_pai_id)
+    cache_item = LISTAR_CACHE.get(cache_key)
+    agora_cache = time.time()
+    if cache_item and cache_item["expira_em"] > agora_cache:
+        resp = make_response(jsonify(cache_item["dados"]))
+        resp.headers['Cache-Control'] = 'private, max-age=12'
+        resp.headers['X-Cache-Painel'] = 'HIT'
+        return resp
     
     conn = None # Declaramos aqui para o finally poder acessar
     try:
@@ -941,8 +1031,14 @@ def listar_arquivos():
         for l in linhas:
             itens_formatados.append(formatar_item_painel(l))
         
-        resp = make_response(jsonify({'itens': itens_formatados}))
-        resp.headers['Cache-Control'] = 'private, max-age=30'
+        payload = {'itens': itens_formatados}
+        LISTAR_CACHE[cache_key] = {
+            "expira_em": agora_cache + LISTAR_CACHE_TTL_SEGUNDOS,
+            "dados": payload,
+        }
+        resp = make_response(jsonify(payload))
+        resp.headers['Cache-Control'] = 'private, max-age=12'
+        resp.headers['X-Cache-Painel'] = 'MISS'
         return resp
 
     except Exception as e:
@@ -992,6 +1088,7 @@ def criar_pasta():
             novo_id = cur.lastrowid
         conn.commit()
         conn.close()
+        invalidar_cache_listagem()
         registrar_log(f"Criou a pasta: {nome} no bloco {bloco}")
         return jsonify({
             'status': 'sucesso',
@@ -1065,6 +1162,7 @@ def upload_avancado():
                 pass
 
             invalidar_cache_resumo_dashboard()
+            invalidar_cache_listagem()
             return jsonify({
                 'status': 'sucesso',
                 'guid': guid_uuid,
@@ -1160,6 +1258,7 @@ def renomear_item():
         conn.commit()
         conn.close()
         
+        invalidar_cache_listagem()
         registrar_log(f"Renomeou o(a) {item_antigo['tipo']} '{item_antigo['nome_original']}' para '{novo_nome}' (ID: {id_item})")
         return jsonify({'status': 'sucesso'})
     except Exception as e:
@@ -1194,8 +1293,9 @@ def excluir_arquivo():
                     SET deletado = 1, deletado_em = NOW() 
                     WHERE id IN ({format_strings}) AND deletado = 0
                 """, tuple(lista_ids))
-                
+
                 invalidar_cache_resumo_dashboard()
+                invalidar_cache_listagem()
                 return jsonify({'status': 'sucesso'})
         
         return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
@@ -1236,6 +1336,7 @@ def salvar_site():
             """, (nome, bloco_final, categoria_site, url, session.get('nome_exibicao', 'Sistema')))
         conn.commit()
         conn.close()
+        invalidar_cache_listagem()
         registrar_log(f"Incluiu o site {nome} ({url}) na categoria {categoria_site}")
         return jsonify({'status': 'sucesso'})
     except Exception as e:
