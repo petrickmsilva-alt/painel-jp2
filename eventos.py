@@ -595,6 +595,34 @@ def api_excluir_custo_evento(custo_id):
         conn.close()
 
 
+@bp_eventos.route("/api/eventos/financeiro/custos/<int:custo_id>", methods=["POST"])
+def api_editar_custo_evento(custo_id):
+    erro = login_obrigatorio_json()
+    if erro:
+        return erro
+    categoria = reparar_texto(request.form.get("categoria"))
+    descricao = reparar_texto(request.form.get("descricao"))
+    fornecedor = reparar_texto(request.form.get("fornecedor"))
+    valor = decimal_ou_zero(request.form.get("valor"))
+    if not categoria or valor < 0:
+        return jsonify({"status": "erro", "msg": "Informe a categoria e um valor válido."}), 400
+    garantir_schema_eventos()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE eventos_custos
+                SET categoria = %s, descricao = %s, fornecedor = %s, valor = %s
+                WHERE id = %s
+                """,
+                (categoria, descricao, fornecedor, valor, custo_id),
+            )
+        return jsonify({"status": "sucesso"})
+    finally:
+        conn.close()
+
+
 @bp_eventos.route("/eventos/exportar")
 def exportar_eventos():
     if "usuario_logado" not in session:
