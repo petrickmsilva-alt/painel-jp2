@@ -115,6 +115,22 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalEditarPagamento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" id="formEditarPagamento">
+            <div class="modal-header"><h5 class="modal-title fw-bold"><i class="bi bi-pencil-square text-warning"></i> Editar pagamento</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <input type="hidden" id="editPagamentoId">
+                <input type="hidden" id="editPagamentoInvestimentoId">
+                <div class="mb-3"><label class="form-label small fw-bold text-secondary">Data do pagamento</label><input type="date" class="form-control" id="editPagamentoData" required></div>
+                <div class="mb-3"><label class="form-label small fw-bold text-secondary">Valor pago</label><input type="text" class="form-control" id="editPagamentoValor" oninput="formatarMoeda(this)" required></div>
+                <div><label class="form-label small fw-bold text-secondary">Observações</label><textarea class="form-control" id="editPagamentoObs" rows="2"></textarea></div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-warning">Salvar alteração</button></div>
+        </form>
+    </div>
+</div>
+
 <div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <form class="modal-content" id="formEditar">
@@ -189,6 +205,8 @@ function abrirPagamentosDetalhados(i){
 }
 function abrirPagamentosDetalhados(i){
     pagamentosDetalheTitulo.innerText=`${i.importacao_id||i.id} - ${i.empresa_nome||'-'} - ${i.nome_investidor||'-'}`;
+    const cabecalhoExtrato=document.querySelector('#modalPagamentosDetalhados thead tr');
+    if(cabecalhoExtrato) cabecalhoExtrato.innerHTML='<th>Data</th><th>Valor pago</th><th>Observações</th><th class="text-end">Ações</th>';
     corpoPagamentosDetalhados.innerHTML='<tr><td colspan="4" class="text-center text-secondary py-4">Carregando pagamentos...</td></tr>';
     bootstrap.Modal.getOrCreateInstance(modalPagamentosDetalhados).show();
     fetch('/api/detalhe-investimento/'+i.id).then(r=>r.json()).then(d=>{
@@ -204,6 +222,29 @@ function excluirPagamentoExtrato(id, investimentoId){
         carregarRelacao();
     });
 }
+function abrirPagamentosDetalhados(i){
+    pagamentosDetalheTitulo.innerText=`${i.importacao_id||i.id} - ${i.empresa_nome||'-'} - ${i.nome_investidor||'-'}`;
+    const cabecalhoExtratoFinal=document.querySelector('#modalPagamentosDetalhados thead tr');
+    if(cabecalhoExtratoFinal) cabecalhoExtratoFinal.innerHTML='<th>Data</th><th>Valor pago</th><th>Observações</th><th class="text-end">Ações</th>';
+    corpoPagamentosDetalhados.innerHTML='<tr><td colspan="4" class="text-center text-secondary py-4">Carregando pagamentos...</td></tr>';
+    bootstrap.Modal.getOrCreateInstance(modalPagamentosDetalhados).show();
+    fetch('/api/detalhe-investimento/'+i.id).then(r=>r.json()).then(d=>{
+        const lista=Array.isArray(d.pagamentos)?d.pagamentos:[];
+        corpoPagamentosDetalhados.innerHTML=lista.length?lista.map(p=>{
+            const obs=encodeURIComponent(p.observacoes||'');
+            const valor=Number(p.valor_pago)||0;
+            return `<tr><td>${dataBR(p.data_pagamento)}<div class="muted">${html(p.criado_por||'')}</div></td><td class="money">${dinheiro(valor)}</td><td>${html(p.observacoes||'-')}</td><td class="text-end"><div class="d-flex justify-content-end gap-1"><button class="btn btn-sm btn-outline-warning" title="Editar pagamento" onclick="abrirEditarPagamentoExtrato(${p.id},${i.id},'${iso(p.data_pagamento)}',${valor},'${obs}')"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-outline-danger" title="Excluir pagamento" onclick="excluirPagamentoExtrato(${p.id},${i.id})"><i class="bi bi-trash"></i></button></div></td></tr>`;
+        }).join(''):'<tr><td colspan="4" class="text-center text-secondary py-4">Nenhum pagamento lançado.</td></tr>';
+    }).catch(()=>{corpoPagamentosDetalhados.innerHTML='<tr><td colspan="4" class="text-center text-danger py-4">Não foi possível carregar o extrato.</td></tr>';});
+}
+function abrirEditarPagamentoExtrato(id, investimentoId, data, valor, obs){
+    editPagamentoId.value=id;
+    editPagamentoInvestimentoId.value=investimentoId;
+    editPagamentoData.value=data||new Date().toISOString().slice(0,10);
+    editPagamentoValor.value=dinheiro(valor).replace('R$ ','');
+    editPagamentoObs.value=decodeURIComponent(obs||'');
+    bootstrap.Modal.getOrCreateInstance(modalEditarPagamento).show();
+}
 function abrirEditar(i){editId.value=i.id; editEmpresa.value=i.empresa_id||''; editCredor.value=i.nome_investidor||''; editCaptador.value=i.captador||''; editTipo.value=i.tipo_recurso||''; editFinalidade.value=i.finalidade||''; editValor.value=dinheiro(i.valor_inicial).replace('R$ ',''); editJuros.value=Number(i.juros_mensais||0).toLocaleString('pt-BR'); editDataRecurso.value=iso(i.data_inicio); editDataPgto.value=iso(i.data_pgto); editObs.value=i.observacoes||''; bootstrap.Modal.getOrCreateInstance(modalEditar).show();}
 function abrirStatus(i){statusInvestimentoId.value=i.id; statusTitulo.innerText=`${i.importacao_id||i.id} - ${i.empresa_nome||'-'} - ${i.nome_investidor||'-'}`; statusPagamento.value=i.status_pagamento||''; bootstrap.Modal.getOrCreateInstance(modalStatus).show();}
 function abrirAnexos(i){anexoInvestimentoId.value=i.id; anexoTituloInvestimento.innerText=`${i.importacao_id||i.id} - ${i.empresa_nome||'-'} - ${i.nome_investidor||'-'}`; anexoTitulo.value=''; anexoUrl.value=''; anexoObs.value=''; carregarAnexos(); bootstrap.Modal.getOrCreateInstance(modalAnexos).show();}
@@ -211,6 +252,7 @@ function carregarAnexos(){fetch('/api/anexos-investimento/'+anexoInvestimentoId.
 function salvarAnexo(){const fd=new FormData(); fd.append('titulo',anexoTitulo.value); fd.append('tipo',anexoTipo.value); fd.append('url',anexoUrl.value); fd.append('observacoes',anexoObs.value); fetch('/api/anexos-investimento/'+anexoInvestimentoId.value,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.status!=='sucesso')return alert(d.msg||'Erro ao salvar anexo.'); anexoTitulo.value=''; anexoUrl.value=''; anexoObs.value=''; carregarAnexos();});}
 function excluirAnexo(id){if(!confirm('Excluir este anexo?'))return; fetch('/api/excluir-anexo-investimento/'+id,{method:'DELETE'}).then(()=>carregarAnexos());}
 function excluirInvestimento(id){if(!confirm('Excluir este lançamento?'))return; fetch('/api/excluir-investimento/'+id,{method:'DELETE'}).then(()=>carregarRelacao());}
+formEditarPagamento.addEventListener('submit',e=>{e.preventDefault(); const fd=new FormData(); fd.append('data_pagamento',editPagamentoData.value); fd.append('valor_pago',numeroBR(editPagamentoValor.value)); fd.append('observacoes',editPagamentoObs.value); fetch('/api/editar-pagamento-investimento/'+editPagamentoId.value,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.status!=='sucesso')return alert(d.msg||'Erro ao editar pagamento.'); bootstrap.Modal.getOrCreateInstance(modalEditarPagamento).hide(); abrirPagamentosDetalhados({id:editPagamentoInvestimentoId.value, importacao_id:editPagamentoInvestimentoId.value, empresa_nome:'Investimento', nome_investidor:''}); carregarRelacao();});});
 formPagamento.addEventListener('submit',e=>{e.preventDefault(); const fd=new FormData(); fd.append('data_pagamento',dataPagamento.value); fd.append('valor_pago',numeroBR(valorPagamento.value)); fd.append('observacoes',obsPagamento.value); fetch('/api/lancar-pagamento-investimento/'+pagamentoInvestimentoId.value,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.status!=='sucesso')return alert(d.msg||'Erro.'); bootstrap.Modal.getOrCreateInstance(modalPagamento).hide(); carregarRelacao();});});
 formStatus.addEventListener('submit',e=>{e.preventDefault(); const fd=new FormData(); fd.append('status_pagamento',statusPagamento.value); fetch('/api/atualizar-status-investimento/'+statusInvestimentoId.value,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.status!=='sucesso')return alert(d.msg||'Erro ao salvar status.'); bootstrap.Modal.getOrCreateInstance(modalStatus).hide(); carregarRelacao();});});
 formEditar.addEventListener('submit',e=>{e.preventDefault(); const fd=new FormData(); fd.append('empresa_id',editEmpresa.value); fd.append('quem',editCredor.value); fd.append('captador',editCaptador.value); fd.append('tipo_recurso',editTipo.value); fd.append('finalidade',editFinalidade.value); fd.append('valor',numeroBR(editValor.value)); fd.append('juros',numeroBR(editJuros.value)); fd.append('data_recurso',editDataRecurso.value); fd.append('data_pgto',editDataPgto.value); fd.append('observacoes',editObs.value); fetch('/api/editar-investimento/'+editId.value,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.status!=='sucesso')return alert(d.msg||'Erro.'); bootstrap.Modal.getOrCreateInstance(modalEditar).hide(); carregarRelacao();});});

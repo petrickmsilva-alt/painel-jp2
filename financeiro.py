@@ -1256,6 +1256,47 @@ def pagamentos_investimentos():
         return jsonify({"status": "erro", "msg": str(e)}), 500
 
 
+@bp_financeiro.route("/api/editar-pagamento-investimento/<int:id>", methods=["POST"])
+def editar_pagamento_investimento(id):
+    if "usuario_logado" not in session:
+        return jsonify({"status": "erro", "msg": "Não autorizado"}), 401
+
+    valor = decimal_ou_zero(request.form.get("valor_pago"))
+    data_pagamento = request.form.get("data_pagamento") or datetime.now().date().isoformat()
+    observacoes = request.form.get("observacoes", "").strip()
+    if valor < 0:
+        return jsonify({"status": "erro", "msg": "Informe um valor válido para o pagamento."}), 400
+
+    try:
+        garantir_schema_financeiro()
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute("SELECT investimento_id, valor_pago FROM investimento_pagamentos WHERE id = %s", (id,))
+            pagamento = cur.fetchone()
+            if not pagamento:
+                conn.close()
+                return jsonify({"status": "erro", "msg": "Pagamento não encontrado."}), 404
+            cur.execute(
+                """
+                UPDATE investimento_pagamentos
+                SET data_pagamento = %s, valor_pago = %s, observacoes = %s, criado_por = %s
+                WHERE id = %s
+                """,
+                (data_pagamento, valor, observacoes, session.get("nome_exibicao", "Sistema"), id),
+            )
+            registrar_auditoria(
+                cur,
+                pagamento["investimento_id"],
+                "Edição de pagamento",
+                f"Pagamento alterado de {dinheiro(pagamento['valor_pago'])} para {dinheiro(valor)}.",
+            )
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "sucesso"})
+    except Exception as e:
+        return jsonify({"status": "erro", "msg": str(e)}), 500
+
+
 @bp_financeiro.route("/api/auditoria-investimentos", methods=["GET"])
 def auditoria_investimentos():
     if "usuario_logado" not in session:
@@ -1362,6 +1403,9 @@ def excluir_pagamento_investimento(id):
         with conn.cursor() as cur:
             cur.execute("SELECT investimento_id, valor_pago FROM investimento_pagamentos WHERE id = %s", (id,))
             pagamento = cur.fetchone()
+            if not pagamento:
+                conn.close()
+                return jsonify({"status": "erro", "msg": "Pagamento não encontrado."}), 404
             cur.execute("DELETE FROM investimento_pagamentos WHERE id = %s", (id,))
             if pagamento:
                 registrar_auditoria(cur, pagamento["investimento_id"], "Exclusão de pagamento", f"Pagamento de {dinheiro(pagamento['valor_pago'])} excluído.")
