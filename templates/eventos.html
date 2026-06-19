@@ -235,7 +235,7 @@
                 <div class="panel-body">
                     <form id="formCustoEvento" class="row g-3 align-items-end">
                         <input type="hidden" id="custoId">
-                        <div class="col-lg-2"><label>Categoria</label><select class="form-select" id="custoCategoria"><option>Som</option><option>Iluminação</option><option>Segurança</option><option>Palco/Estrutura</option><option>Equipe</option><option>Marketing</option><option>Transporte</option><option>Alimentação</option><option>Outros</option></select></div>
+                        <div class="col-lg-2"><label>Categoria</label><input class="form-control" id="custoCategoria" placeholder="Ex: Som"></div>
                         <div class="col-lg-3"><label>Descrição</label><input class="form-control" id="custoDescricao" placeholder="Ex: sonorização"></div>
                         <div class="col-lg-3"><label>Fornecedor</label><input class="form-control" id="custoFornecedor" placeholder="Opcional"></div>
                         <div class="col-lg-2"><label>Valor</label><input class="form-control" id="custoValor" oninput="formatarMoedaEvento(this)" placeholder="R$ 0"></div>
@@ -366,19 +366,41 @@ function carregarCustosEvento(){
         const dados=d.dados||{};
         const custos=Array.isArray(dados.custos)?dados.custos:[];
         totalCustosAba.innerText=dinheiro(dados.total_custos);
-        corpoCustosEvento.innerHTML=custos.length?custos.map(c=>`<tr><td><strong>${h(c.categoria)}</strong></td><td>${h(c.descricao||'-')}</td><td>${h(c.fornecedor||'-')}</td><td class="money">${dinheiro(c.valor)}</td><td><div class="cost-actions"><button class="btn btn-sm btn-outline-primary" title="Editar custo" onclick='editarCustoEvento(${JSON.stringify(c).replace(/'/g,"&#039;")})'><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-outline-danger" title="Excluir custo" onclick="excluirCustoEvento(${c.id})"><i class="bi bi-trash"></i></button></div></td></tr>`).join(''):'<tr><td colspan="5" class="text-center text-secondary py-4">Nenhum custo cadastrado para este evento.</td></tr>';
+        corpoCustosEvento.innerHTML=custos.length?custos.map(c=>`<tr data-custo-id="${c.id}"><td><input class="form-control form-control-sm custo-categoria" value="${h(c.categoria)}" disabled></td><td><input class="form-control form-control-sm custo-descricao" value="${h(c.descricao||'')}" disabled></td><td><input class="form-control form-control-sm custo-fornecedor" value="${h(c.fornecedor||'')}" disabled></td><td><input class="form-control form-control-sm custo-valor money" value="${dinheiro(c.valor).replace('R$ ','')}" oninput="formatarMoedaEvento(this)" disabled></td><td><div class="cost-actions"><button class="btn btn-sm btn-outline-primary" title="Alterar campos" onclick="habilitarEdicaoCusto(${c.id})"><i class="bi bi-pencil-square"></i></button><button class="btn btn-sm btn-outline-success" title="Salvar alteração" onclick="salvarCustoLinha(${c.id})"><i class="bi bi-save"></i></button><button class="btn btn-sm btn-outline-danger" title="Excluir custo" onclick="excluirCustoEvento(${c.id})"><i class="bi bi-trash"></i></button></div></td></tr>`).join(''):'<tr><td colspan="5" class="text-center text-secondary py-4">Nenhum custo cadastrado para este evento.</td></tr>';
     });
 }
 function editarCustoEvento(c){
     custoId.value=c.id||'';
-    custoCategoria.value=c.categoria||'Outros';
+    custoCategoria.value=c.categoria||'';
     custoDescricao.value=c.descricao||'';
     custoFornecedor.value=c.fornecedor||'';
     custoValor.value=dinheiro(c.valor).replace('R$ ','');
 }
+function linhaCusto(id){return document.querySelector(`tr[data-custo-id="${id}"]`);}
+function habilitarEdicaoCusto(id){
+    const tr=linhaCusto(id);
+    if(!tr)return;
+    tr.querySelectorAll('input').forEach(campo=>campo.disabled=false);
+    const primeiro=tr.querySelector('input');
+    if(primeiro)primeiro.focus();
+}
+function salvarCustoLinha(id){
+    const tr=linhaCusto(id);
+    if(!tr)return;
+    const fd=new FormData();
+    fd.append('categoria',tr.querySelector('.custo-categoria').value);
+    fd.append('descricao',tr.querySelector('.custo-descricao').value);
+    fd.append('fornecedor',tr.querySelector('.custo-fornecedor').value);
+    fd.append('valor',numeroBR(tr.querySelector('.custo-valor').value));
+    fetch('/api/eventos/financeiro/custos/'+id,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
+        if(d.status!=='sucesso'){alert(d.msg||'Erro ao salvar custo.');return;}
+        carregarCustosEvento();
+        if(financeiroEventoSelect.value===custoEventoSelect.value)carregarFinanceiroEvento();
+    });
+}
 function limparCustoEvento(){
     custoId.value='';
-    custoCategoria.value='Som';
+    custoCategoria.value='';
     custoDescricao.value='';
     custoFornecedor.value='';
     custoValor.value='';
