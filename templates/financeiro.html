@@ -69,11 +69,19 @@
             </div>
             <div class="col-lg-6">
                 <label class="form-label">Credor</label>
-                <input type="text" name="quem" class="form-control" required>
+                <div class="input-group">
+                    <input type="text" name="quem" class="form-control" id="inputCredor" list="listaCredores" required>
+                    <button type="button" class="btn btn-outline-primary" onclick="abrirModalNomeFinanceiro('credor')"><i class="bi bi-person-plus"></i></button>
+                </div>
+                <datalist id="listaCredores"></datalist>
             </div>
             <div class="col-lg-6">
                 <label class="form-label">Captador de recursos</label>
-                <input type="text" name="captador" class="form-control">
+                <div class="input-group">
+                    <input type="text" name="captador" class="form-control" id="inputCaptador" list="listaCaptadores">
+                    <button type="button" class="btn btn-outline-primary" onclick="abrirModalNomeFinanceiro('captador')"><i class="bi bi-person-plus"></i></button>
+                </div>
+                <datalist id="listaCaptadores"></datalist>
             </div>
             <div class="col-lg-6">
                 <label class="form-label">Tipo de recurso</label>
@@ -188,6 +196,26 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalNomeFinanceiro" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-plus text-primary"></i> Cadastrar nome</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="nomeFinanceiroTipo">
+                <label class="form-label">Nome</label>
+                <input type="text" id="nomeFinanceiroValor" class="form-control" placeholder="Digite o nome">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-primary" onclick="salvarNomeFinanceiro()">Salvar nome</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     function numeroBR(valor) { return Number(String(valor || '0').replace(/\./g, '').replace(',', '.')) || 0; }
     function dinheiro(valor) { return (Number(valor) || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' }); }
@@ -199,6 +227,35 @@
             if (data.status === 'sucesso' && data.dados) {
                 data.dados.forEach(emp => select.innerHTML += `<option value="${emp.id}">${emp.nome}</option>`);
             }
+        });
+    }
+
+    function carregarNomesFinanceiros() {
+        return fetch('/api/financeiro-nomes').then(res => res.json()).then(data => {
+            document.getElementById('listaCredores').innerHTML = (data.credores || []).map(n => `<option value="${n}"></option>`).join('');
+            document.getElementById('listaCaptadores').innerHTML = (data.captadores || []).map(n => `<option value="${n}"></option>`).join('');
+        });
+    }
+
+    function abrirModalNomeFinanceiro(tipo) {
+        document.getElementById('nomeFinanceiroTipo').value = tipo;
+        document.getElementById('nomeFinanceiroValor').value = '';
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalNomeFinanceiro')).show();
+    }
+
+    function salvarNomeFinanceiro() {
+        const tipo = document.getElementById('nomeFinanceiroTipo').value;
+        const nome = document.getElementById('nomeFinanceiroValor').value.trim();
+        if (!nome) return alert('Informe o nome.');
+        const fd = new FormData();
+        fd.append('tipo', tipo);
+        fd.append('nome', nome);
+        fetch('/api/financeiro-nomes', { method:'POST', body:fd }).then(res => res.json()).then(data => {
+            if (data.status !== 'sucesso') return alert(data.msg || 'Erro ao salvar nome.');
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalNomeFinanceiro')).hide();
+            if (tipo === 'credor') document.getElementById('inputCredor').value = nome;
+            if (tipo === 'captador') document.getElementById('inputCaptador').value = nome;
+            carregarNomesFinanceiros();
         });
     }
 
@@ -244,6 +301,7 @@
         fetch('/api/adicionar-investimento', { method:'POST', body:formData }).then(res => res.json()).then(data => {
             if (data.status !== 'sucesso') return alert(data.msg || 'Erro ao salvar investimento.');
             form.reset();
+            carregarNomesFinanceiros();
             alert('Investimento cadastrado com sucesso.');
         });
     }
@@ -257,6 +315,18 @@
         const texto = prompt('Para limpar todos os lançamentos financeiros, digite LIMPAR FINANCEIRO');
         if (texto !== 'LIMPAR FINANCEIRO') return;
         fetch('/api/limpar-investimentos?confirmar=SIM&frase=' + encodeURIComponent(texto), { method:'DELETE' }).then(res => res.json()).then(data => {
+            if (data.status !== 'sucesso') return alert(data.msg || 'Erro ao limpar.');
+            alert('Lançamentos financeiros removidos. Empresas e demais dados foram mantidos.');
+        });
+    }
+
+    function limparInvestimentos() {
+        if (!confirm('Deseja realmente apagar todos os registros lançados?')) return;
+        const texto = prompt('Para limpar todos os lançamentos financeiros, digite LIMPAR FINANCEIRO');
+        if (texto !== 'LIMPAR FINANCEIRO') return;
+        const senha = prompt('Informe sua senha de liberação para concluir a exclusão.');
+        if (!senha) return;
+        fetch('/api/limpar-investimentos?confirmar=SIM&frase=' + encodeURIComponent(texto) + '&senha=' + encodeURIComponent(senha), { method:'DELETE' }).then(res => res.json()).then(data => {
             if (data.status !== 'sucesso') return alert(data.msg || 'Erro ao limpar.');
             alert('Lançamentos financeiros removidos. Empresas e demais dados foram mantidos.');
         });
@@ -305,6 +375,6 @@
     function mascaraCNPJ(i) { i.value = i.value.replace(/\D/g,'').slice(0,14).replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d)/,'.$1/$2').replace(/(\d{4})(\d)/,'$1-$2'); }
     function formatarMoeda(i) { let v = i.value.replace(/\D/g,''); v = (Number(v)/100).toFixed(2).replace('.', ','); i.value = v.replace(/(\d)(\d{3})(\d{3}),/g, '$1.$2.$3,').replace(/(\d)(\d{3}),/g, '$1.$2,'); }
     function formatarPercentual(i) { i.value = i.value.replace(/[^\d,\.]/g, '').replace('.', ','); }
-    document.addEventListener('DOMContentLoaded', () => { carregarEmpresas(); carregarTabelaEmpresas(); });
+    document.addEventListener('DOMContentLoaded', () => { carregarEmpresas(); carregarTabelaEmpresas(); carregarNomesFinanceiros(); });
 </script>
 {% endblock %}
