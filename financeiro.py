@@ -86,7 +86,8 @@ def garantir_schema_financeiro():
             for coluna, definicao in colunas.items():
                 if not coluna_existe(cur, "investimentos", coluna):
                     cur.execute(f"ALTER TABLE investimentos ADD COLUMN {coluna} {definicao}")
-            sincronizar_pagamentos_importados(cur)
+            # Pagamentos ficam manuais para preservar a data real de cada amortizacao.
+            # A coluna PGTO DAY da planilha pode vir consolidada e distorcer o saldo.
         conn.commit()
         FINANCEIRO_SCHEMA_VERIFICADO = True
     finally:
@@ -904,7 +905,7 @@ def detalhe_investimento(id):
                 return jsonify({"status": "erro", "msg": "Investimento não encontrado."}), 404
             cur.execute(
                 """
-                SELECT data_pagamento, valor_pago, observacoes
+                SELECT id, data_pagamento, valor_pago, observacoes, criado_por
                 FROM investimento_pagamentos
                 WHERE investimento_id = %s
                 ORDER BY data_pagamento ASC, id ASC
@@ -1095,8 +1096,7 @@ def importar_investimentos_excel():
     try:
         garantir_schema_financeiro()
         registros = extrair_registros_excel(arquivo.stream)
-        arquivo.stream.seek(0)
-        pagamentos_detalhados = extrair_pagamentos_detalhados_excel(arquivo.stream)
+        pagamentos_detalhados = {}
         conn = get_db_connection()
         inseridos = 0
         duplicados = 0
@@ -1156,7 +1156,7 @@ def importar_investimentos_excel():
                 )
                 investimento_id = cur.lastrowid
                 investimentos_por_importacao[item["importacao_id"]] = investimento_id
-                if item["pgto_day"] > 0 and not pagamentos_detalhados.get(str(item["importacao_id"])):
+                if False:
                     cur.execute(
                         """
                         INSERT INTO investimento_pagamentos
