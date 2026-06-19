@@ -23,6 +23,7 @@
         .kicker{color:var(--muted);font-size:12px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}.title{font-size:28px;font-weight:900;margin:2px 0}.subtitle{color:var(--muted);font-size:14px}
         .summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}.metric{background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(15,23,42,.05);padding:14px}.metric span{color:var(--muted);font-size:11px;font-weight:850;text-transform:uppercase}.metric strong{display:block;font-size:20px;font-weight:900;margin-top:4px}
         .panel{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 36px rgba(15,23,42,.06);margin-bottom:16px;overflow:hidden}.panel-head{align-items:center;border-bottom:1px solid #edf1f7;display:flex;justify-content:space-between;gap:12px;padding:14px 16px}.panel-head h2{font-size:16px;font-weight:900;margin:0}.panel-head p{color:var(--muted);font-size:12px;margin:2px 0 0}.panel-body{padding:16px}
+        .finance-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.finance-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}.finance-card span{color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase}.finance-card strong{display:block;font-size:20px;font-weight:900;margin-top:5px}.finance-card.resultado{background:#ecfdf3;border-color:#bbf7d0}.finance-card.alerta{background:#fff7ed;border-color:#fed7aa}.cost-list{display:grid;gap:8px}.cost-row{align-items:center;border:1px solid #edf1f7;border-radius:9px;display:grid;gap:10px;grid-template-columns:1.1fr 1.2fr 1fr auto auto;padding:10px}.cost-row strong{font-size:13px}.cost-row .btn{height:32px;width:32px}
         .nav-pills .nav-link{border-radius:8px;color:#344054;font-weight:800}.nav-pills .nav-link.active{background:#155eef}
         label{font-size:12px;font-weight:850;color:#475467}.form-control,.form-select{border-color:#d5deeb;border-radius:8px;min-height:42px}.form-control:focus,.form-select:focus{border-color:#155eef;box-shadow:0 0 0 4px rgba(21,94,239,.1)}
         .table th{background:#f8fafc;color:#667085;font-size:11px;font-weight:900;text-transform:uppercase;white-space:nowrap}.table td{font-size:13px;vertical-align:middle}.money{font-weight:900;white-space:nowrap}.muted{color:#667085;font-size:12px}.actions{display:flex;gap:6px;white-space:nowrap}.actions .btn{align-items:center;display:inline-flex;height:32px;justify-content:center;width:32px}
@@ -30,7 +31,7 @@
         .calendar-shell{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px}.calendar-toolbar{align-items:center;display:flex;justify-content:space-between;gap:12px;margin-bottom:12px}.calendar-title{font-size:20px;font-weight:900}.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);border-left:1px solid #e5eaf2;border-top:1px solid #e5eaf2}.weekday,.day{border-bottom:1px solid #e5eaf2;border-right:1px solid #e5eaf2}.weekday{background:#f8fafc;color:#667085;font-size:11px;font-weight:900;padding:10px;text-align:center;text-transform:uppercase}.day{background:#fff;min-height:118px;padding:8px}.day.other{background:#f8fafc;color:#98a2b3}.day-number{font-size:12px;font-weight:900}.event-chip{border-radius:7px;color:#101828;display:block;font-size:11px;font-weight:800;margin-top:6px;overflow:hidden;padding:5px 6px;text-overflow:ellipsis;white-space:nowrap}.chip-Autorizado{background:#bbf7d0}.chip-Em-Andamento{background:#bfdbfe}.chip-Pendente{background:#fde68a}.chip-Em-Analise{background:#fed7aa}.chip-Encerrado{background:#e5e7eb}
         .year-panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}.mini-year{display:grid;gap:10px;grid-template-columns:repeat(2,1fr)}.mini-month{border:1px solid #edf1f7;border-radius:8px;padding:8px}.mini-title{font-size:11px;font-weight:900;margin-bottom:5px;text-align:center}.mini-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}.mini-day{border-radius:999px;font-size:8px;min-height:12px;text-align:center}.mini-dot{background:#155eef;color:#fff}
         .year-main{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.year-card{border:1px solid #edf1f7;border-radius:10px;padding:10px}.year-card h3{font-size:13px;font-weight:900;text-align:center}.legend{display:flex;flex-wrap:wrap;gap:8px}.legend span{align-items:center;color:#475467;display:flex;font-size:12px;font-weight:800;gap:5px}.legend i{border-radius:99px;display:inline-block;height:10px;width:10px}
-        @media(max-width:1100px){.summary{grid-template-columns:repeat(2,1fr)}.calendar-shell{grid-template-columns:1fr}.year-main{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:1100px){.summary,.finance-grid{grid-template-columns:repeat(2,1fr)}.calendar-shell{grid-template-columns:1fr}.year-main{grid-template-columns:repeat(2,1fr)}.cost-row{grid-template-columns:1fr}}
         @media(max-width:820px){body{display:block}#sidebar{width:100%}.content{padding:16px}.hero{align-items:flex-start;flex-direction:column}.summary{grid-template-columns:1fr}.calendar-grid{min-width:760px}.calendar-overflow{overflow-x:auto}}
         @media print{ #sidebar,.no-print,.nav-pills,.panel-head .btn,.actions{display:none!important}body{display:block;background:#fff}.content{padding:0}.panel,.hero,.metric{box-shadow:none}}
     </style>
@@ -46,6 +47,7 @@
     <a href="/"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
     <a href="#cadastro" class="active" data-tab-target="cadastro"><i class="bi bi-plus-square"></i> Cadastro</a>
     <a href="#resumo" data-tab-target="resumo"><i class="bi bi-table"></i> Resumo geral</a>
+    <a href="#financeiro" data-tab-target="financeiro"><i class="bi bi-calculator"></i> Resultado financeiro</a>
     <a href="#calendario" data-tab-target="calendario"><i class="bi bi-calendar3"></i> Agenda visual</a>
 </aside>
 
@@ -75,6 +77,7 @@
     <ul class="nav nav-pills gap-2 mb-3 no-print" id="tabsEventos">
         <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#cadastro">Cadastro</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#resumo">Resumo geral</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#financeiro">Resultado financeiro</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#calendario">Agenda visual</button></li>
     </ul>
 
@@ -138,6 +141,73 @@
             </div>
         </section>
 
+        <section class="tab-pane fade" id="financeiro">
+            <div class="panel">
+                <div class="panel-head">
+                    <div>
+                        <h2>Resultado financeiro do evento</h2>
+                        <p>Calcule valor da emenda, repasse informado, custos operacionais e sobra projetada para o IBDTEC.</p>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-lg-8">
+                            <label>Evento</label>
+                            <select class="form-select" id="financeiroEventoSelect" onchange="carregarFinanceiroEvento()"></select>
+                        </div>
+                        <div class="col-lg-4">
+                            <button class="btn btn-outline-secondary w-100" onclick="carregarFinanceiroEvento()"><i class="bi bi-arrow-clockwise"></i> Atualizar cálculo</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <section class="finance-grid">
+                <div class="finance-card"><span>Valor da emenda</span><strong id="finValorEmenda">R$ 0</strong></div>
+                <div class="finance-card alerta"><span>Repasse informado</span><strong id="finRepasse">R$ 0</strong></div>
+                <div class="finance-card"><span>Custos operacionais</span><strong id="finCustos">R$ 0</strong></div>
+                <div class="finance-card resultado"><span>Resultado IBDTEC</span><strong id="finResultado">R$ 0</strong></div>
+            </section>
+
+            <div class="row g-3 mt-1">
+                <div class="col-lg-5">
+                    <div class="panel h-100">
+                        <div class="panel-head"><div><h2>Parâmetros do repasse</h2><p>Informe o percentual acordado para este evento.</p></div></div>
+                        <div class="panel-body">
+                            <form id="formEventoFinanceiro" class="row g-3">
+                                <div class="col-12">
+                                    <label>Percentual do parlamentar / captador (%)</label>
+                                    <input class="form-control" id="finPercentual" placeholder="Ex: 20" inputmode="decimal">
+                                </div>
+                                <div class="col-12">
+                                    <label>Observações</label>
+                                    <textarea class="form-control" id="finObservacoes" rows="3" placeholder="Condições, responsáveis, observações de conferência"></textarea>
+                                </div>
+                                <div class="col-12 d-flex justify-content-end">
+                                    <button class="btn btn-primary"><i class="bi bi-save"></i> Salvar parâmetros</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-7">
+                    <div class="panel h-100">
+                        <div class="panel-head"><div><h2>Custos do evento</h2><p>Cadastre som, iluminação, segurança, equipe, estrutura e demais despesas.</p></div></div>
+                        <div class="panel-body">
+                            <form id="formCustoEvento" class="row g-2 align-items-end mb-3">
+                                <div class="col-md-3"><label>Categoria</label><select class="form-select" id="custoCategoria"><option>Som</option><option>Iluminação</option><option>Segurança</option><option>Palco/Estrutura</option><option>Equipe</option><option>Marketing</option><option>Transporte</option><option>Alimentação</option><option>Outros</option></select></div>
+                                <div class="col-md-3"><label>Descrição</label><input class="form-control" id="custoDescricao" placeholder="Ex: sonorização"></div>
+                                <div class="col-md-3"><label>Fornecedor</label><input class="form-control" id="custoFornecedor" placeholder="Opcional"></div>
+                                <div class="col-md-2"><label>Valor</label><input class="form-control" id="custoValor" oninput="formatarMoedaEvento(this)" placeholder="R$ 0"></div>
+                                <div class="col-md-1 d-grid"><button class="btn btn-success" title="Adicionar custo"><i class="bi bi-plus-lg"></i></button></div>
+                            </form>
+                            <div class="cost-list" id="listaCustosEvento"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section class="tab-pane fade" id="calendario">
             <div class="panel">
                 <div class="panel-head">
@@ -172,7 +242,7 @@
 <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 <script>
-let eventos=[], filtrados=[], tabela=null, municipioMap={}, calendarioData=new Date(), calendarioAno=false;
+let eventos=[], filtrados=[], tabela=null, municipioMap={}, calendarioData=new Date(), calendarioAno=false, financeiroAtual=null;
 const meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const mesesTitulo=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const statusCores={'Autorizado':'#16a34a','Em Andamento':'#2563eb','Pendente':'#d97706','Em Análise':'#ea580c','Encerrado':'#64748b'};
@@ -181,6 +251,7 @@ function h(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;
 function dinheiro(v){return (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});}
 function dataBR(v){if(!v)return '-'; const p=String(v).split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:'-';}
 function numeroBR(v){return Number(String(v||'0').replace(/\D/g,''))||0;}
+function numeroDecimal(v){return Number(String(v||'0').replace(/\./g,'').replace(',','.').replace(/[^\d.]/g,''))||0;}
 function formatarMoedaEvento(el){const n=numeroBR(el.value); el.value=n?dinheiro(n):'';}
 function statusClass(s){return 's-'+String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-');}
 function chipClass(s){return 'chip-'+String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-');}
@@ -198,8 +269,14 @@ function carregarEventos(){
     fetch('/api/eventos?'+qs()).then(r=>r.json()).then(d=>{
         filtrados=Array.isArray(d.dados)?d.dados:[];
         if(!eventos.length){eventos=filtrados; montarFiltros(eventos);}
-        renderTabela(); atualizarMetricas(); renderCalendario();
+        montarSelectFinanceiro(); renderTabela(); atualizarMetricas(); renderCalendario();
     });
+}
+function montarSelectFinanceiro(){
+    const atual=financeiroEventoSelect.value;
+    financeiroEventoSelect.innerHTML='<option value="">Selecione um evento</option>'+eventos.map(e=>`<option value="${e.id}">${h(e.nome_evento)} - ${h(e.cidade)} (${dinheiro(e.valor_verba)})</option>`).join('');
+    if(atual) financeiroEventoSelect.value=atual;
+    if(!financeiroEventoSelect.value && eventos[0]) financeiroEventoSelect.value=eventos[0].id;
 }
 function montarFiltros(base){opcoes('fUf',base.map(e=>e.uf)); opcoes('fRegiao',base.map(e=>e.regiao)); opcoes('fMes',base.map(e=>e.mes)); opcoes('fOrigem',base.map(e=>e.origem)); opcoes('fStatus',base.map(e=>e.status));}
 function aplicarFiltros(){carregarEventos();}
@@ -225,6 +302,50 @@ function editarEvento(e){
 }
 function excluirEvento(id){if(!confirm('Excluir este evento?'))return; fetch('/api/eventos/'+id,{method:'DELETE'}).then(r=>r.json()).then(d=>{if(d.status==='sucesso'){eventos=[]; carregarEventos();}});}
 function exportarEventos(){window.location='/eventos/exportar?'+qs();}
+function carregarFinanceiroEvento(){
+    const id=financeiroEventoSelect.value;
+    if(!id){listaCustosEvento.innerHTML='<div class="muted">Selecione um evento para iniciar o controle financeiro.</div>'; return;}
+    fetch('/api/eventos/financeiro/'+id).then(r=>r.json()).then(d=>{
+        if(d.status!=='sucesso'){alert(d.msg||'Não foi possível carregar o financeiro.');return;}
+        financeiroAtual=d.dados;
+        const item=financeiroAtual.evento||{};
+        finValorEmenda.innerText=dinheiro(item.valor_verba);
+        finRepasse.innerText=dinheiro(financeiroAtual.valor_parlamentar);
+        finCustos.innerText=dinheiro(financeiroAtual.total_custos);
+        finResultado.innerText=dinheiro(financeiroAtual.resultado_instituto);
+        finPercentual.value=Number(financeiroAtual.percentual_parlamentar||0).toLocaleString('pt-BR');
+        finObservacoes.value=financeiroAtual.observacoes||'';
+        listaCustosEvento.innerHTML=(financeiroAtual.custos||[]).map(c=>`<div class="cost-row"><strong>${h(c.categoria)}</strong><span>${h(c.descricao||'-')}</span><span class="muted">${h(c.fornecedor||'-')}</span><span class="money">${dinheiro(c.valor)}</span><button class="btn btn-sm btn-outline-danger" onclick="excluirCustoEvento(${c.id})" title="Excluir custo"><i class="bi bi-trash"></i></button></div>`).join('')||'<div class="muted">Nenhum custo cadastrado para este evento.</div>';
+    });
+}
+formEventoFinanceiro.addEventListener('submit',e=>{
+    e.preventDefault();
+    const id=financeiroEventoSelect.value;
+    if(!id){alert('Selecione um evento.');return;}
+    const fd=new FormData();
+    fd.append('percentual_parlamentar',numeroDecimal(finPercentual.value));
+    fd.append('observacoes',finObservacoes.value);
+    fetch('/api/eventos/financeiro/'+id,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.status!=='sucesso'){alert(d.msg||'Erro ao salvar.');return;} carregarFinanceiroEvento();});
+});
+formCustoEvento.addEventListener('submit',e=>{
+    e.preventDefault();
+    const id=financeiroEventoSelect.value;
+    if(!id){alert('Selecione um evento.');return;}
+    const fd=new FormData();
+    fd.append('categoria',custoCategoria.value);
+    fd.append('descricao',custoDescricao.value);
+    fd.append('fornecedor',custoFornecedor.value);
+    fd.append('valor',numeroBR(custoValor.value));
+    fetch('/api/eventos/financeiro/'+id+'/custos',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
+        if(d.status!=='sucesso'){alert(d.msg||'Erro ao adicionar custo.');return;}
+        custoDescricao.value=''; custoFornecedor.value=''; custoValor.value='';
+        carregarFinanceiroEvento();
+    });
+});
+function excluirCustoEvento(id){
+    if(!confirm('Excluir este custo do evento?'))return;
+    fetch('/api/eventos/financeiro/custos/'+id,{method:'DELETE'}).then(r=>r.json()).then(d=>{if(d.status==='sucesso')carregarFinanceiroEvento();});
+}
 function eventosNoDia(ano,mes,dia){const alvo=new Date(ano,mes,dia); return filtrados.filter(e=>new Date(e.data_inicio+'T00:00:00')<=alvo && new Date(e.data_fim+'T00:00:00')>=alvo);}
 function renderCalendario(){
     legendaStatus.innerHTML=Object.entries(statusCores).map(([s,c])=>`<span><i style="background:${c}"></i>${s}</span>`).join('');
@@ -253,7 +374,7 @@ function mudarPeriodo(dir){calendarioAno?calendarioData.setFullYear(calendarioDa
 function irHoje(){calendarioData=new Date(); renderCalendario();}
 function alternarCalendario(){calendarioAno=!calendarioAno; modoCalendario.innerText=calendarioAno?'Ano':'Mês'; renderCalendario();}
 document.querySelectorAll('[data-tab-target]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault(); bootstrap.Tab.getOrCreateInstance(document.querySelector(`[data-bs-target="#${a.dataset.tabTarget}"]`)).show(); document.querySelectorAll('#sidebar a').forEach(x=>x.classList.remove('active')); a.classList.add('active');}));
-document.querySelectorAll('[data-bs-toggle="pill"]').forEach(b=>b.addEventListener('shown.bs.tab',()=>{const id=b.dataset.bsTarget.replace('#',''); document.querySelectorAll('#sidebar a').forEach(x=>x.classList.toggle('active',x.dataset.tabTarget===id)); if(id==='calendario')renderCalendario();}));
+document.querySelectorAll('[data-bs-toggle="pill"]').forEach(b=>b.addEventListener('shown.bs.tab',()=>{const id=b.dataset.bsTarget.replace('#',''); document.querySelectorAll('#sidebar a').forEach(x=>x.classList.toggle('active',x.dataset.tabTarget===id)); if(id==='calendario')renderCalendario(); if(id==='financeiro')carregarFinanceiroEvento();}));
 document.addEventListener('DOMContentLoaded',()=>{if(localStorage.getItem('jp2EventosSidebarCollapsed')==='1')document.body.classList.add('sidebar-collapsed'); buscarMunicipios('GO'); carregarEventos();});
 </script>
 </body>
