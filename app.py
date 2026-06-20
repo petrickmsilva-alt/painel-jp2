@@ -7,16 +7,14 @@ import urllib.request
 import csv
 import io
 import time
-import secrets
 from collections import deque
 from bs4 import BeautifulSoup
-from urllib.parse import quote, quote_plus, urljoin, urlparse
+from urllib.parse import quote_plus, urljoin, urlparse
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory, send_file, g
 from database import get_db_connection
 from storage import enviar_arquivo_r2, gerar_url_temporaria_r2, r2_configurado
 from werkzeug.security import check_password_hash, generate_password_hash
-import pyotp
 
 app = Flask(__name__)
 
@@ -35,7 +33,6 @@ app.config.update(
 )
 INDICES_PERFORMANCE_VERIFICADOS = False
 COLUNA_PERFIL_USUARIOS_VERIFICADA = False
-COLUNAS_2FA_USUARIOS_VERIFICADAS = False
 COLUNAS_AGENDA_VERIFICADAS = False
 TABELA_CONTATOS_VERIFICADA = False
 USUARIOS_ADMIN_CACHE = None
@@ -84,29 +81,6 @@ def registrar_log(acao):
         conn.close()
     except Exception as e:
         print(f"ERRO AO REGISTRAR LOG: {e}")
-
-def registrar_alerta_seguranca(acao):
-    try:
-        registrar_log(f"ALERTA DE SEGURANCA: {acao}")
-    except Exception:
-        print(f"ALERTA DE SEGURANCA: {acao}", flush=True)
-
-def obter_csrf_token():
-    token = session.get("_csrf_token")
-    if not token:
-        token = secrets.token_urlsafe(32)
-        session["_csrf_token"] = token
-    return token
-
-def validar_csrf_token():
-    esperado = session.get("_csrf_token")
-    recebido = (
-        request.headers.get("X-CSRFToken")
-        or request.headers.get("X-CSRF-Token")
-        or request.form.get("_csrf_token")
-        or request.form.get("csrf_token")
-    )
-    return bool(esperado and recebido and secrets.compare_digest(str(esperado), str(recebido)))
 
 def criptografar_sha256(senha_pura):
     return hashlib.sha256(senha_pura.encode('utf-8')).hexdigest()
@@ -219,60 +193,6 @@ def garantir_coluna_perfil_usuarios():
                 for usuario in usuarios_admin():
                     cur.execute("UPDATE usuarios SET perfil = 'admin' WHERE usuario = %s", (usuario,))
         COLUNA_PERFIL_USUARIOS_VERIFICADA = True
-    finally:
-        conn.close()
-
-def garantir_colunas_2fa_usuarios():
-    global COLUNAS_2FA_USUARIOS_VERIFICADAS
-    if COLUNAS_2FA_USUARIOS_VERIFICADAS:
-        return
-
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SHOW COLUMNS FROM usuarios LIKE 'otp_secret'")
-            if not cur.fetchone():
-                cur.execute("ALTER TABLE usuarios ADD COLUMN otp_secret VARCHAR(64) NULL")
-            cur.execute("SHOW COLUMNS FROM usuarios LIKE 'otp_enabled'")
-            if not cur.fetchone():
-                cur.execute("ALTER TABLE usuarios ADD COLUMN otp_enabled TINYINT(1) NOT NULL DEFAULT 0")
-        COLUNAS_2FA_USUARIOS_VERIFICADAS = True
-    finally:
-        conn.close()
-
-def usuario_login_e_admin(user):
-    if not user:
-        return False
-    usuario = str(user.get("usuario") or "").lower()
-    return usuario in usuarios_admin() or (user.get("perfil") == "admin")
-
-def finalizar_login_usuario(user):
-    session.pop("2fa_pending_user", None)
-    session.pop("2fa_pending_nome", None)
-    session.pop("2fa_pending_perfil", None)
-    session.pop("2fa_temp_secret", None)
-    session['usuario_logado'] = user['usuario']
-    session['nome_exibicao'] = user.get('nome_exibicao', user['usuario'])
-    session['perfil_usuario'] = user.get('perfil') or obter_perfil_usuario(user['usuario']) or 'socio'
-    session.permanent = True
-    limpar_falhas_login(user['usuario'])
-    registrar_log("Realizou login no sistema")
-
-def iniciar_fluxo_2fa(user):
-    session['2fa_pending_user'] = user['usuario']
-    session['2fa_pending_nome'] = user.get('nome_exibicao', user['usuario'])
-    session['2fa_pending_perfil'] = user.get('perfil') or 'admin'
-
-def usuario_2fa_pendente():
-    usuario = session.get("2fa_pending_user")
-    if not usuario:
-        return None
-    garantir_colunas_2fa_usuarios()
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM usuarios WHERE usuario = %s", (usuario,))
-            return cur.fetchone()
     finally:
         conn.close()
 
@@ -449,86 +369,12 @@ def proteger_requisicoes_de_escrita():
         return
 
     origem = request.headers.get("Origin") or request.headers.get("Referer")
-    if origem:
-        host_origem = urlparse(origem).netloc
-        if host_origem and host_origem != request.host:
-            registrar_alerta_seguranca(f"Origem externa bloqueada em {request.path}: {host_origem}")
-            return jsonify({"status": "erro", "mensagem": "Origem da requisicao nao autorizada."}), 403
+    if not origem:
+        return
 
-    if not validar_csrf_token():
-        registrar_alerta_seguranca(f"CSRF invalido em {request.path}")
-        return jsonify({"status": "erro", "mensagem": "Sessao expirada ou token de seguranca invalido. Atualize a pagina e tente novamente."}), 403
-
-def script_csrf_html():
-    token = obter_csrf_token()
-    return f'''<meta name="csrf-token" content="{token}">
-<script>
-(function() {{
-  const meta = document.querySelector('meta[name="csrf-token"]');
-  const token = meta ? meta.getAttribute('content') : '';
-  if (!token) return;
-  const unsafe = new Set(['POST','PUT','PATCH','DELETE']);
-  function sameOrigin(url) {{
-    try {{ return new URL(url, window.location.href).origin === window.location.origin; }}
-    catch (e) {{ return true; }}
-  }}
-  function addTokenToForms() {{
-    document.querySelectorAll('form').forEach(form => {{
-      const method = (form.getAttribute('method') || 'GET').toUpperCase();
-      if (!unsafe.has(method)) return;
-      if (!form.querySelector('input[name="_csrf_token"]')) {{
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = '_csrf_token';
-        input.value = token;
-        form.appendChild(input);
-      }}
-    }});
-  }}
-  const originalFetch = window.fetch;
-  window.fetch = function(input, init) {{
-    init = init || {{}};
-    const method = (init.method || (input && input.method) || 'GET').toUpperCase();
-    const url = typeof input === 'string' ? input : (input && input.url) || window.location.href;
-    if (unsafe.has(method) && sameOrigin(url)) {{
-      const headers = new Headers(init.headers || (input && input.headers) || {{}});
-      headers.set('X-CSRFToken', token);
-      init.headers = headers;
-    }}
-    return originalFetch(input, init);
-  }};
-  const open = XMLHttpRequest.prototype.open;
-  const send = XMLHttpRequest.prototype.send;
-  XMLHttpRequest.prototype.open = function(method, url) {{
-    this.__csrfMethod = (method || 'GET').toUpperCase();
-    this.__csrfUrl = url;
-    return open.apply(this, arguments);
-  }};
-  XMLHttpRequest.prototype.send = function() {{
-    if (unsafe.has(this.__csrfMethod || 'GET') && sameOrigin(this.__csrfUrl || window.location.href)) {{
-      this.setRequestHeader('X-CSRFToken', token);
-    }}
-    return send.apply(this, arguments);
-  }};
-  document.addEventListener('DOMContentLoaded', addTokenToForms);
-  document.addEventListener('submit', addTokenToForms, true);
-}})();
-</script>'''
-
-@app.after_request
-def injetar_csrf_em_html(response):
-    tipo = response.headers.get("Content-Type", "")
-    if response.direct_passthrough or "text/html" not in tipo:
-        return response
-    try:
-        html = response.get_data(as_text=True)
-        if 'name="csrf-token"' not in html and "</head>" in html:
-            html = html.replace("</head>", script_csrf_html() + "\n</head>", 1)
-            response.set_data(html)
-            response.headers["Content-Length"] = str(len(response.get_data()))
-    except Exception as e:
-        print(f"AVISO: nao foi possivel injetar CSRF: {e}", flush=True)
-    return response
+    host_origem = urlparse(origem).netloc
+    if host_origem and host_origem != request.host:
+        return jsonify({"status": "erro", "mensagem": "Origem da requisicao nao autorizada."}), 403
 
 @app.after_request
 def finalizar_medicao_performance(response):
@@ -559,10 +405,6 @@ def finalizar_medicao_performance(response):
 
 def nome_base_imagem_site(nome):
     return "".join(x for x in str(nome or "") if x.isalnum())
-
-def arquivo_office(nome_arquivo):
-    extensao = os.path.splitext(str(nome_arquivo or "").lower())[1]
-    return extensao in {".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx"}
 
 def imagem_site_existente(nome):
     nome_limpo = nome_base_imagem_site(nome)
@@ -731,14 +573,12 @@ def tela_login():
                             (gerar_hash_senha(s), user['usuario'])
                         )
 
-                    if usuario_login_e_admin(user):
-                        garantir_colunas_2fa_usuarios()
-                        iniciar_fluxo_2fa(user)
-                        if user.get("otp_enabled") and user.get("otp_secret"):
-                            return redirect(url_for('verificar_2fa'))
-                        return redirect(url_for('configurar_2fa'))
-
-                    finalizar_login_usuario(user)
+                    session['usuario_logado'] = user['usuario']
+                    session['nome_exibicao'] = user.get('nome_exibicao', user['usuario'])
+                    session['perfil_usuario'] = user.get('perfil') or obter_perfil_usuario(user['usuario']) or 'socio'
+                    session.permanent = True
+                    limpar_falhas_login(u)
+                    registrar_log("Realizou login no sistema")
                     return redirect(url_for('home'))
 
                 registrar_falha_login(u)
@@ -752,58 +592,6 @@ def tela_login():
                 conn.close()
 
     return render_template('login.html')
-
-@app.route('/2fa/configurar', methods=['GET', 'POST'])
-def configurar_2fa():
-    user = usuario_2fa_pendente()
-    if not user:
-        return redirect(url_for('tela_login'))
-
-    secret = session.get("2fa_temp_secret") or pyotp.random_base32()
-    session["2fa_temp_secret"] = secret
-    totp = pyotp.TOTP(secret)
-    otpauth_uri = totp.provisioning_uri(
-        name=user.get("usuario"),
-        issuer_name="JP2 Business"
-    )
-
-    if request.method == 'POST':
-        codigo = request.form.get("codigo", "").strip().replace(" ", "")
-        if totp.verify(codigo, valid_window=1):
-            conn = get_db_connection()
-            try:
-                with conn.cursor() as cur:
-                    cur.execute(
-                        "UPDATE usuarios SET otp_secret = %s, otp_enabled = 1 WHERE usuario = %s",
-                        (secret, user["usuario"])
-                    )
-                conn.commit()
-            finally:
-                conn.close()
-            finalizar_login_usuario(user)
-            registrar_log("Configurou autenticacao em duas etapas")
-            return redirect(url_for('home'))
-        flash("Codigo 2FA invalido. Confira o aplicativo autenticador e tente novamente.")
-
-    return render_template("2fa.html", modo="configurar", secret=secret, otpauth_uri=otpauth_uri)
-
-@app.route('/2fa/verificar', methods=['GET', 'POST'])
-def verificar_2fa():
-    user = usuario_2fa_pendente()
-    if not user:
-        return redirect(url_for('tela_login'))
-
-    if request.method == 'POST':
-        codigo = request.form.get("codigo", "").strip().replace(" ", "")
-        secret = user.get("otp_secret")
-        if secret and pyotp.TOTP(secret).verify(codigo, valid_window=1):
-            finalizar_login_usuario(user)
-            registrar_log("Validou autenticacao em duas etapas")
-            return redirect(url_for('home'))
-        registrar_alerta_seguranca(f"Codigo 2FA invalido para usuario {user.get('usuario')}")
-        flash("Codigo 2FA invalido.")
-
-    return render_template("2fa.html", modo="verificar", secret=None, otpauth_uri=None)
 
 @app.route('/logout')
 def logout():
@@ -1421,8 +1209,6 @@ def baixar_recurso_corporativo(arquivo_id):
                     force_download=force_download,
                     expires_in=300
                 )
-                if not force_download and arquivo_office(dados['nome_original']):
-                    return redirect("https://view.officeapps.live.com/op/view.aspx?src=" + quote(url_temporaria, safe=""))
                 return redirect(url_temporaria)
 
             nome_arquivo_fisico = dados['caminho_sistema'].split('/')[-1]
