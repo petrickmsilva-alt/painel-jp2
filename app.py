@@ -468,6 +468,65 @@ def script_csrf_html():
   const token = meta ? meta.getAttribute('content') : '';
   if (!token) return;
   const unsafe = new Set(['POST','PUT','PATCH','DELETE']);
+  function isPainelSearchField(input) {{
+    if (!input || input.tagName !== 'INPUT') return false;
+    const type = (input.getAttribute('type') || 'text').toLowerCase();
+    if (!['search','text',''].includes(type)) return false;
+    const metaBusca = [
+      input.id || '',
+      input.name || '',
+      input.placeholder || '',
+      input.className || '',
+      input.getAttribute('aria-label') || ''
+    ].join(' ').toLowerCase();
+    return type === 'search'
+      || !!input.closest('.dataTables_filter')
+      || /(busca|buscar|pesquisa|pesquisar|search|filtro|procurar)/i.test(metaBusca);
+  }}
+  function hardenSearchField(input) {{
+    if (!isPainelSearchField(input)) return;
+    input.setAttribute('autocomplete', 'new-password');
+    input.setAttribute('autocorrect', 'off');
+    input.setAttribute('autocapitalize', 'off');
+    input.setAttribute('spellcheck', 'false');
+    input.setAttribute('data-lpignore', 'true');
+    input.setAttribute('data-form-type', 'other');
+    if (!input.dataset.jp2SearchGuard) {{
+      input.dataset.jp2SearchGuard = '1';
+      input.addEventListener('input', function() {{
+        if (input.dataset.jp2Clearing !== '1') input.dataset.jp2SearchTouched = '1';
+      }});
+      input.addEventListener('focus', function() {{
+        input.dataset.jp2SearchTouched = '1';
+      }});
+    }}
+  }}
+  function clearSearchField(input, force) {{
+    if (!isPainelSearchField(input)) return;
+    hardenSearchField(input);
+    if (!force && (document.activeElement === input || input.dataset.jp2SearchTouched === '1')) return;
+    if (input.value || input.defaultValue || input.getAttribute('value')) {{
+      input.dataset.jp2Clearing = '1';
+      input.value = '';
+      input.defaultValue = '';
+      input.removeAttribute('value');
+      input.dispatchEvent(new Event('input', {{ bubbles: true }}));
+      input.dispatchEvent(new Event('change', {{ bubbles: true }}));
+      setTimeout(function() {{ delete input.dataset.jp2Clearing; }}, 0);
+    }}
+  }}
+  function protectAndClearSearchFields(force) {{
+    document.querySelectorAll('input').forEach(function(input) {{
+      hardenSearchField(input);
+      clearSearchField(input, !!force);
+    }});
+  }}
+  function scheduleSearchCleanup() {{
+    protectAndClearSearchFields(true);
+    [80, 250, 700, 1500, 3000, 6000].forEach(function(ms) {{
+      setTimeout(function() {{ protectAndClearSearchFields(false); }}, ms);
+    }});
+  }}
   function sameOrigin(url) {{
     try {{ return new URL(url, window.location.href).origin === window.location.origin; }}
     catch (e) {{ return true; }}
@@ -511,7 +570,18 @@ def script_csrf_html():
     return send.apply(this, arguments);
   }};
   document.addEventListener('DOMContentLoaded', addTokenToForms);
+  document.addEventListener('DOMContentLoaded', scheduleSearchCleanup);
   document.addEventListener('submit', addTokenToForms, true);
+  window.addEventListener('pageshow', scheduleSearchCleanup);
+  new MutationObserver(function(mutations) {{
+    mutations.forEach(function(mutation) {{
+      mutation.addedNodes.forEach(function(node) {{
+        if (!node || node.nodeType !== 1) return;
+        if (node.matches && node.matches('input')) clearSearchField(node, true);
+        if (node.querySelectorAll) node.querySelectorAll('input').forEach(function(input) {{ clearSearchField(input, true); }});
+      }});
+    }});
+  }}).observe(document.documentElement, {{ childList: true, subtree: true }});
 }})();
 </script>'''
 
