@@ -657,6 +657,30 @@
       padding: 12px 14px;
     }
 
+    .menu-item .menu-mark {
+      align-items: center;
+      background: rgba(255, 255, 255, .045);
+      border: 1px solid rgba(203, 213, 225, .20);
+      border-radius: 6px;
+      color: #cbd5e1;
+      display: inline-flex;
+      flex: 0 0 26px;
+      font-size: 9px;
+      font-weight: 900;
+      height: 24px;
+      justify-content: center;
+      letter-spacing: .04em;
+      margin-right: 12px;
+      text-transform: uppercase;
+    }
+
+    .menu-item:hover .menu-mark,
+    .menu-item.active .menu-mark {
+      background: rgba(255, 255, 255, .10);
+      border-color: rgba(147, 197, 253, .46);
+      color: #ffffff;
+    }
+
     .menu-item.active {
       background: rgba(21, 94, 239, .18);
       color: #ffffff;
@@ -1044,41 +1068,41 @@
             </div>
         </div>
         <div class="sidebar-menu">
-            <a href="/" class="menu-item"><i class="bi bi-house"></i> Voltar ao Painel</a>
+            <a href="/" class="menu-item"><span class="menu-mark">IN</span> Voltar ao Painel</a>
                                   
             <div class="menu-header">Modulos de Arquivo</div>
             <a class="menu-item" id="menu-bloco-instituto" onclick="clicarBlocoMestre('instituto', this)">
-                <i class="bi bi-building-fill text-warning"></i> Instituto (IBDTEC)
+                <span class="menu-mark">IB</span> Instituto (IBDTEC)
             </a>
             <a class="menu-item" id="menu-bloco-jp2" onclick="clicarBlocoMestre('jp2_business', this)">
-                <i class="bi bi-briefcase-fill text-info"></i> JP2 Business
+                <span class="menu-mark">JP</span> JP2 Business
             </a>
             
             <div class="menu-header mt-3">GESTAO</div>
             <a href="/compromissos" class="menu-item">
-                 <i class="bi bi-calendar-plus-fill text-primary"></i> Agendar Compromisso
+                 <span class="menu-mark">CP</span> Agendar Compromisso
             </a>
             <a href="/eventos" class="menu-item">
-                 <i class="bi bi-calendar2-week-fill text-info"></i> Cadastro de Eventos
+                 <span class="menu-mark">EV</span> Cadastro de Eventos
             </a>
             <a href="/contatos" class="menu-item">
-                 <i class="bi bi-person-lines-fill text-success"></i> Agenda Telefonica
+                 <span class="menu-mark">CT</span> Agenda Telefonica
             </a>
             <a href="/financeiro" class="menu-item">
-               <i class="bi bi-plus-circle text-primary"></i> Painel de Investimento
+               <span class="menu-mark">FI</span> Painel de Investimento
             </a>
             {% if usuario_e_admin %}
                 <a href="/admin/usuarios" class="menu-item">
-                    <i class="bi bi-people-fill text-warning"></i> Gestão de Sócios
+                    <span class="menu-mark">SO</span> Gestão de Sócios
                 </a>
                 <a href="/admin/logs" class="menu-item">
-                    <i class="bi bi-clipboard-data text-secondary"></i> Auditoria (Logs)
+                    <span class="menu-mark">AU</span> Auditoria (Logs)
                 </a>
             {% endif %}
 
             <div class="menu-header mt-3">Ecossistema Digital</div>
             <a class="menu-item" id="menu-bloco-sites" onclick="clicarBlocoMestre('sites_jp2', this)">
-                <i class="bi bi-globe2 text-success"></i> Sites JP2 Business
+                <span class="menu-mark">WB</span> Sites JP2 Business
             </a>
         </div>    
     </aside>
@@ -1146,7 +1170,7 @@
                         </button>
                         <div class="folder-search">
                             <i class="bi bi-search"></i>
-                            <input type="search" id="inputBuscaPasta" value="" autocomplete="off" placeholder="Buscar nesta pasta" oninput="filtrarItensDaGrade(this.value)">
+                            <input type="search" id="inputBuscaPasta" name="jp2_busca_pasta_desativada" value="" autocomplete="new-password" autocapitalize="off" spellcheck="false" data-lpignore="true" data-form-type="other" placeholder="Buscar nesta pasta" oninput="filtrarItensDaGrade(this.value)">
                         </div>
                         
                         <select id="selectView" class="form-select form-select-sm ms-auto" style="width: 158px;" onchange="alterarVisualizacao(this.value)">
@@ -1498,11 +1522,7 @@
         if (localStorage.getItem('jp2SidebarCollapsed') === '1') {
             document.body.classList.add('sidebar-collapsed');
         }
-        const buscaInicial = document.getElementById('inputBuscaPasta');
-        if (buscaInicial) {
-            buscaInicial.value = '';
-            setTimeout(() => { buscaInicial.value = ''; filtrarItensDaGrade(''); }, 120);
-        }
+        limparBuscaPastaPersistente();
         console.log("Sistema carregado. Tentando carregar Instituto...");
         let el = document.getElementById('menu-bloco-instituto');
         if(el) {
@@ -1511,6 +1531,8 @@
             console.error("Erro: Elemento 'menu-bloco-instituto' not found mestre!");
         }
     });
+
+    window.addEventListener('pageshow', limparBuscaPastaPersistente);
 
     function clicarBlocoMestre(bloco, elementoDom) {
         document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
@@ -1567,7 +1589,19 @@
 
     function limparBuscaPasta() {
         const input = document.getElementById('inputBuscaPasta');
-        if (input) input.value = '';
+        if (input) {
+            input.value = '';
+            input.defaultValue = '';
+            input.removeAttribute('value');
+        }
+        filtrarItensDaGrade('');
+    }
+
+    function limparBuscaPastaPersistente() {
+        limparBuscaPasta();
+        [80, 250, 700, 1500, 3000].forEach(tempo => {
+            setTimeout(limparBuscaPasta, tempo);
+        });
     }
 
     function removerMensagemGradeVazia() {
