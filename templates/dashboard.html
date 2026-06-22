@@ -2220,22 +2220,27 @@
         overlay.innerHTML = `
             <div style="background:white; padding:30px; border-radius:12px; width:450px; box-shadow:0 10px 25px rgba(0,0,0,0.15); font-family: 'Segoe UI', sans-serif;">
                 <h4 style="margin-bottom:20px; color:#1e293b; font-weight:600; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">
-                    <i class="bi bi-cloud-arrow-up"></i> Upload de Arquivo
+                    <i class="bi bi-cloud-arrow-up"></i> Upload de Arquivos e Pastas
                 </h4>
                 <div style="margin-bottom:15px;">
                     <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">BLOCO</label>
                     <input type="text" value="${estadoDoPainel.bloco.charAt(0).toUpperCase() + estadoDoPainel.bloco.slice(1)}" readonly style="width:100%; margin-bottom:10px; padding:5px;">
                 </div>
+                <div style="margin-bottom:14px;">
+                    <label style="font-size:12px; font-weight:700; color:#64748b; margin-bottom:5px; display:block;">ARQUIVOS SOLTOS</label>
+                    <input type="file" id="arquivo_temp" multiple style="width:100%; padding:8px; border:1px dashed #cbd5e1; border-radius:6px;">
+                </div>
                 <div style="margin-bottom:20px;">
-                    <label style="font-size:12px; font-weight:600; color:#64748b; margin-bottom:5px; display:block;">SELECIONE O ARQUIVO</label>
-                    <input type="file" id="arquivo_temp" style="width:100%; padding:8px; border:1px dashed #cbd5e1; border-radius:6px;">
+                    <label style="font-size:12px; font-weight:700; color:#64748b; margin-bottom:5px; display:block;">PASTA COMPLETA</label>
+                    <input type="file" id="pasta_temp" webkitdirectory directory multiple style="width:100%; padding:8px; border:1px dashed #cbd5e1; border-radius:6px;">
+                    <div style="font-size:12px; color:#64748b; margin-top:6px;">A estrutura de subpastas sera recriada automaticamente no painel.</div>
                 </div>
                 <div style="background:#f8fafc; padding:12px; border-radius:6px; margin-bottom:20px; font-size:13px; color:#334155;">
                     Destino: <strong style="color:#2563eb;">${estadoDoPainel.string_caminho}</strong>
                 </div>
                 <div style="display:flex; gap:10px; justify-content:flex-end;">
                     <button id="btn_fechar_temp" style="padding:10px 20px; border:1px solid #cbd5e1; background:white; border-radius:6px; font-weight:600; cursor:pointer;">Cancelar</button>
-                    <button id="btn_enviar_temp" style="padding:10px 20px; background:#16a34a; color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Enviar Arquivo</button>
+                    <button id="btn_enviar_temp" style="padding:10px 20px; background:#16a34a; color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;">Enviar</button>
                 </div>
             </div>`;
         
@@ -2243,13 +2248,15 @@
 
         overlay.querySelector('#btn_enviar_temp').onclick = function() {
             let fileInput = overlay.querySelector('#arquivo_temp');
-            if(fileInput.files.length === 0) return mostrarToast("Arquivo obrigatorio", "Selecione um arquivo para enviar.", "erro");
+            let folderInput = overlay.querySelector('#pasta_temp');
+            let inputSelecionado = folderInput && folderInput.files.length ? folderInput : fileInput;
+            if(!inputSelecionado || inputSelecionado.files.length === 0) return mostrarToast("Arquivo obrigatorio", "Selecione arquivos ou uma pasta para enviar.", "erro");
             
             // Fecha a caixa cinza na hora para liberar a visão da faixa azul no topo.
             overlay.remove();
             
             // Repassa o arquivo selecionado diretamente para o fatiador mestre acelerado
-            dispararUploadAvancado(fileInput);
+            dispararUploadAvancado(inputSelecionado);
         };
 
         overlay.querySelector('#btn_fechar_temp').onclick = () => overlay.remove();
@@ -2267,6 +2274,7 @@
         let arquivosParaSubir = Array.from(filesInput.files);
         let indiceArquivoAtual = 0;
         let itensEnviados = [];
+        let uploadDePasta = arquivosParaSubir.some(arquivo => arquivo.webkitRelativePath);
 
         // Mini-fatias de 1 MB para evitar limite 413 ou estouro de memória.
         const CHUNK_SIZE = 1 * 1024 * 1024;
@@ -2287,7 +2295,14 @@
 
                 mostrarToast("Upload concluido", "Todos os arquivos foram enviados com sucesso.");
                 invalidarCacheListagem();
-                itensEnviados.forEach(item => inserirItemNaGrade(item));
+                if (uploadDePasta) {
+                    sincronizarGrade();
+                } else {
+                    const pastaAtual = estadoDoPainel.pasta_pai_id || null;
+                    itensEnviados
+                        .filter(item => (item.pasta_pai_id || null) === pastaAtual)
+                        .forEach(item => inserirItemNaGrade(item));
+                }
                 return;
             }
 
@@ -2314,6 +2329,7 @@
                 formData.append('totalChunks', totalChunks);
                 formData.append('guid', guidUnico);
                 formData.append('nome_original', arquivo.name);
+                formData.append('caminho_relativo', arquivo.webkitRelativePath || arquivo.name);
 
                 let xhr = new XMLHttpRequest();
                 xhr.open('POST', '/upload-avancado', true);
