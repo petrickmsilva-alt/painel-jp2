@@ -18,12 +18,12 @@ CSV_EVENTOS = os.path.join(BASE_DIR, "data", "dados_eventos.csv")
 CSV_MUNICIPIOS = os.path.join(BASE_DIR, "data", "municipios.csv")
 MUNICIPIOS_CACHE = None
 
-STATUS_OPCOES = ["Autorizado", "Em Andamento", "Pendente", "Em Análise", "Encerrado"]
-ORIGEM_OPCOES = ["Emenda Direta", "Fomento", "Emenda Pós", "Privado"]
+STATUS_OPCOES = ["Autorizado", "Em Andamento", "Pendente", "Em AnÃ¡lise", "Encerrado"]
+ORIGEM_OPCOES = ["Emenda Direta", "Fomento", "Emenda PÃ³s", "Privado"]
 MESES = {
     1: "janeiro",
     2: "fevereiro",
-    3: "março",
+    3: "marÃ§o",
     4: "abril",
     5: "maio",
     6: "junho",
@@ -38,7 +38,7 @@ MESES = {
 
 def login_obrigatorio_json():
     if "usuario_logado" not in session:
-        return jsonify({"status": "erro", "msg": "Não autorizado"}), 401
+        return jsonify({"status": "erro", "msg": "NÃ£o autorizado"}), 401
     return None
 
 
@@ -46,7 +46,7 @@ def reparar_texto(valor):
     texto = str(valor or "").strip()
     if not texto:
         return ""
-    if any(marca in texto for marca in ("Ã", "Â", "â")):
+    if any(marca in texto for marca in ("Ãƒ", "Ã‚", "Ã¢")):
         try:
             texto = texto.encode("latin1").decode("utf-8")
         except UnicodeError:
@@ -59,6 +59,17 @@ def normalizar_busca(valor):
     texto = reparar_texto(valor).upper()
     texto = unicodedata.normalize("NFKD", texto)
     return "".join(ch for ch in texto if not unicodedata.combining(ch))
+
+
+def normalizar_status_evento(valor):
+    texto = reparar_texto(valor)
+    if texto.lower() in {"", "undefined", "null", "none"}:
+        return "Pendente"
+    texto_normalizado = normalizar_busca(texto)
+    for opcao in STATUS_OPCOES:
+        if normalizar_busca(opcao) == texto_normalizado:
+            return opcao
+    return "Pendente"
 
 
 def decimal_ou_zero(valor):
@@ -109,7 +120,7 @@ def normalizar_evento(row):
         "valor_verba": float(decimal_ou_zero(row.get("valor_verba"))),
         "valor_verba_formatado": dinheiro(row.get("valor_verba")),
         "origem": row.get("origem") or "",
-        "status": row.get("status") or "",
+        "status": normalizar_status_evento(row.get("status")),
         "observacoes": row.get("observacoes") or "",
         "criado_por": row.get("criado_por") or "",
     }
@@ -188,18 +199,34 @@ def garantir_schema_eventos():
             criar_indice(cur, "eventos_cadastro", "idx_eventos_periodo", "data_inicio, data_fim")
             criar_indice(cur, "eventos_cadastro", "idx_eventos_filtros", "uf, regiao(40), status, origem")
             criar_indice(cur, "eventos_custos", "idx_eventos_custos_evento", "evento_id")
-            cur.execute("SELECT COUNT(1) AS total FROM eventos_cadastro")
-            if int((cur.fetchone() or {}).get("total") or 0) == 0:
-                importar_eventos_csv(cur)
+            importar_eventos_csv(cur)
         EVENTOS_SCHEMA_VERIFICADO = True
     finally:
         conn.close()
 
 
+def evento_csv_existe(cur, cidade, uf, nome, inicio, fim):
+    cur.execute(
+        """
+        SELECT id
+        FROM eventos_cadastro
+        WHERE cidade = %s
+          AND uf = %s
+          AND nome_evento = %s
+          AND data_inicio = %s
+          AND data_fim = %s
+        LIMIT 1
+        """,
+        (cidade, uf, nome, inicio, fim),
+    )
+    return cur.fetchone()
+
+
 def importar_eventos_csv(cur):
     if not os.path.exists(CSV_EVENTOS):
-        return
+        return 0
 
+    importados = 0
     with open(CSV_EVENTOS, "r", encoding="utf-8-sig", newline="") as arquivo:
         leitor = csv.reader(arquivo)
         next(leitor, None)
@@ -217,6 +244,10 @@ def importar_eventos_csv(cur):
             if fim < inicio:
                 fim = inicio
             mes = MESES.get(inicio.month, "")
+
+            if evento_csv_existe(cur, cidade, uf, nome, inicio, fim):
+                continue
+
             cur.execute(
                 """
                 INSERT INTO eventos_cadastro
@@ -240,6 +271,9 @@ def importar_eventos_csv(cur):
                     "Carga inicial CSV",
                 ),
             )
+            importados += 1
+
+    return importados
 
 
 def carregar_municipios():
@@ -254,7 +288,7 @@ def carregar_municipios():
             for row in leitor:
                 cidade = reparar_texto(row.get("CIDADE")).upper()
                 uf = reparar_texto(row.get("UF")).upper()[:2]
-                regiao = reparar_texto(row.get("REGIAO") or row.get("REGIÃO")).upper()
+                regiao = reparar_texto(row.get("REGIAO") or row.get("REGIÃƒO")).upper()
                 if cidade and uf:
                     municipios.append({
                         "label": f"{cidade} - {uf}",
@@ -361,7 +395,7 @@ def pagina_eventos():
     if "usuario_logado" not in session:
         return redirect(url_for("tela_login"))
     garantir_schema_eventos()
-    return render_template("eventos.html", nome_socio=session.get("nome_exibicao", "Sócio"))
+    return render_template("eventos.html", nome_socio=session.get("nome_exibicao", "SÃ³cio"))
 
 
 @bp_eventos.route("/api/eventos", methods=["GET"])
@@ -371,6 +405,22 @@ def api_eventos():
         return erro
     dados = [normalizar_evento(row) for row in listar_eventos(request.args)]
     return jsonify({"status": "sucesso", "dados": dados})
+
+
+@bp_eventos.route("/api/eventos/sincronizar-csv", methods=["POST"])
+def api_sincronizar_eventos_csv():
+    erro = login_obrigatorio_json()
+    if erro:
+        return erro
+    garantir_schema_eventos()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            importados = importar_eventos_csv(cur)
+        conn.commit()
+        return jsonify({"status": "sucesso", "importados": importados})
+    finally:
+        conn.close()
 
 
 @bp_eventos.route("/api/eventos", methods=["POST"])
@@ -399,13 +449,13 @@ def salvar_evento(evento_id=None):
     fim = data_ou_none(request.form.get("data_fim"))
     valor = decimal_ou_zero(request.form.get("valor_verba"))
     origem = reparar_texto(request.form.get("origem"))
-    status = reparar_texto(request.form.get("status"))
+    status = normalizar_status_evento(request.form.get("status"))
     observacoes = reparar_texto(request.form.get("observacoes"))
 
     if not all([cidade, uf, nome, inicio, fim, origem, status]) or valor <= 0:
-        return jsonify({"status": "erro", "msg": "Preencha todos os campos obrigatórios."}), 400
+        return jsonify({"status": "erro", "msg": "Preencha todos os campos obrigatÃ³rios."}), 400
     if fim < inicio:
-        return jsonify({"status": "erro", "msg": "A data final precisa ser igual ou posterior à data inicial."}), 400
+        return jsonify({"status": "erro", "msg": "A data final precisa ser igual ou posterior Ã  data inicial."}), 400
 
     conn = get_db_connection()
     try:
@@ -498,7 +548,7 @@ def api_evento_financeiro(evento_id):
             )
             evento = cur.fetchone()
             if not evento:
-                return jsonify({"status": "erro", "msg": "Evento não encontrado."}), 404
+                return jsonify({"status": "erro", "msg": "Evento nÃ£o encontrado."}), 404
             cur.execute("SELECT percentual_parlamentar, observacoes FROM eventos_financeiro WHERE evento_id = %s", (evento_id,))
             financeiro = cur.fetchone() or {}
             cur.execute(
@@ -531,7 +581,7 @@ def api_salvar_evento_financeiro(evento_id):
         with conn.cursor() as cur:
             cur.execute("SELECT id FROM eventos_cadastro WHERE id = %s", (evento_id,))
             if not cur.fetchone():
-                return jsonify({"status": "erro", "msg": "Evento não encontrado."}), 404
+                return jsonify({"status": "erro", "msg": "Evento nÃ£o encontrado."}), 404
             cur.execute(
                 """
                 INSERT INTO eventos_financeiro
@@ -566,7 +616,7 @@ def api_adicionar_custo_evento(evento_id):
         with conn.cursor() as cur:
             cur.execute("SELECT id FROM eventos_cadastro WHERE id = %s", (evento_id,))
             if not cur.fetchone():
-                return jsonify({"status": "erro", "msg": "Evento não encontrado."}), 404
+                return jsonify({"status": "erro", "msg": "Evento nÃ£o encontrado."}), 404
             cur.execute(
                 """
                 INSERT INTO eventos_custos
@@ -605,7 +655,7 @@ def api_editar_custo_evento(custo_id):
     fornecedor = reparar_texto(request.form.get("fornecedor"))
     valor = decimal_ou_zero(request.form.get("valor"))
     if not categoria or valor < 0:
-        return jsonify({"status": "erro", "msg": "Informe a categoria e um valor válido."}), 400
+        return jsonify({"status": "erro", "msg": "Informe a categoria e um valor vÃ¡lido."}), 400
     garantir_schema_eventos()
     conn = get_db_connection()
     try:
@@ -629,7 +679,7 @@ def exportar_eventos():
         return redirect(url_for("tela_login"))
     rows = [normalizar_evento(row) for row in listar_eventos(request.args)]
     output = []
-    output.append(["Cidade", "UF", "Região", "Evento", "Início", "Fim", "Mês", "Dias", "Valor", "Origem", "Status", "Observações"])
+    output.append(["Cidade", "UF", "RegiÃ£o", "Evento", "InÃ­cio", "Fim", "MÃªs", "Dias", "Valor", "Origem", "Status", "ObservaÃ§Ãµes"])
     for item in rows:
         output.append([
             item["cidade"],
