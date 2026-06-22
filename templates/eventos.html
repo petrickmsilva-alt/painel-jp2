@@ -42,7 +42,7 @@
 </button>
 <aside id="sidebar">
     <div class="sidebar-kicker">Painel de eventos</div>
-    <div class="sidebar-title">Gestão de eventos</div>
+    <div class="sidebar-title">GestÃ£o de eventos</div>
     <div class="sidebar-divider"></div>
     <a href="/"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
     <a href="#cadastro" class="active" data-tab-target="cadastro"><i class="bi bi-plus-square"></i> Cadastro</a>
@@ -59,10 +59,11 @@
             <div>
                 <div class="kicker">Cadastro de eventos</div>
                 <h1 class="title">Painel de eventos JP2</h1>
-                <div class="subtitle">Cadastro, acompanhamento, agenda visual e exportação dos eventos do ecossistema.</div>
+                <div class="subtitle">Cadastro, acompanhamento, agenda visual e exportaÃ§Ã£o dos eventos do ecossistema.</div>
             </div>
         </div>
         <div class="d-flex gap-2 no-print">
+            <button class="btn btn-outline-primary" onclick="sincronizarEventosCSV()"><i class="bi bi-arrow-repeat"></i> Sincronizar CSV</button>
             <button class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
             <button class="btn btn-primary" onclick="exportarEventos()"><i class="bi bi-download"></i> Exportar CSV</button>
         </div>
@@ -71,7 +72,7 @@
     <section class="summary">
         <div class="metric"><span>Total de eventos</span><strong id="mTotal">0</strong></div>
         <div class="metric"><span>Valor total</span><strong id="mValor">R$ 0</strong></div>
-        <div class="metric"><span>Próximo evento</span><strong id="mProximo">-</strong></div>
+        <div class="metric"><span>PrÃ³ximo evento</span><strong id="mProximo">-</strong></div>
         <div class="metric"><span>Em andamento</span><strong id="mAndamento">0</strong></div>
     </section>
 
@@ -86,7 +87,7 @@
     <div class="tab-content">
         <section class="tab-pane fade show active" id="cadastro">
             <div class="panel">
-                <div class="panel-head"><div><h2>Novo evento</h2><p>Selecione a cidade para preencher UF e região automaticamente.</p></div></div>
+                <div class="panel-head"><div><h2>Novo evento</h2><p>Selecione a cidade para preencher UF e regiÃ£o automaticamente.</p></div></div>
                 <div class="panel-body">
                     <form id="formEvento" class="row g-3">
                         <input type="hidden" id="eventoId">
@@ -99,14 +100,14 @@
                             <datalist id="listaMunicipios"></datalist>
                         </div>
                         <div class="col-lg-2"><label>UF</label><input class="form-control" id="ufView" readonly></div>
-                        <div class="col-lg-3"><label>Região</label><input class="form-control" id="regiaoView" readonly></div>
+                        <div class="col-lg-3"><label>RegiÃ£o</label><input class="form-control" id="regiaoView" readonly></div>
                         <div class="col-lg-3"><label>Valor da verba</label><input class="form-control" id="valorVerba" placeholder="R$ 0" oninput="formatarMoedaEvento(this)" required></div>
                         <div class="col-lg-6"><label>Nome do evento</label><input class="form-control" id="nomeEvento" placeholder="Ex: Expo Fashion Brasil" required></div>
                         <div class="col-lg-3"><label>Data inicial</label><input type="date" class="form-control" id="dataInicio" required></div>
                         <div class="col-lg-3"><label>Data final</label><input type="date" class="form-control" id="dataFim" required></div>
-                        <div class="col-lg-3"><label>Origem do recurso</label><select class="form-select" id="origem" required><option value="">Selecione</option><option>Emenda Direta</option><option>Fomento</option><option>Emenda Pós</option><option>Privado</option></select></div>
-                        <div class="col-lg-3"><label>Status</label><select class="form-select" id="status" required><option value="">Selecione</option><option>Autorizado</option><option>Em Andamento</option><option>Pendente</option><option>Em Análise</option><option>Encerrado</option></select></div>
-                        <div class="col-lg-6"><label>Observações</label><input class="form-control" id="observacoes" placeholder="Anotações relevantes do evento"></div>
+                        <div class="col-lg-3"><label>Origem do recurso</label><select class="form-select" id="origem" required><option value="">Selecione</option><option>Emenda Direta</option><option>Fomento</option><option>Emenda PÃ³s</option><option>Privado</option></select></div>
+                        <div class="col-lg-3"><label>Status</label><select class="form-select" id="status" required><option value="">Selecione</option><option>Autorizado</option><option>Em Andamento</option><option>Pendente</option><option>Em AnÃ¡lise</option><option>Encerrado</option></select></div>
+                        <div class="col-lg-6"><label>ObservaÃ§Ãµes</label><input class="form-control" id="observacoes" placeholder="AnotaÃ§Ãµes relevantes do evento"></div>
                         <div class="col-12 d-flex justify-content-end gap-2">
                             <button type="button" class="btn btn-outline-secondary" onclick="limparFormulario()">Limpar</button>
                             <button class="btn btn-primary px-4"><i class="bi bi-save"></i> Salvar evento</button>
@@ -121,13 +122,13 @@
                 <div class="panel-body">
                     <div class="row g-2 align-items-end">
                         <div class="col-lg-2"><label>UF</label><select class="form-select" id="fUf"></select></div>
-                        <div class="col-lg-2"><label>Região</label><select class="form-select" id="fRegiao"></select></div>
-                        <div class="col-lg-2"><label>Mês</label><select class="form-select" id="fMes"></select></div>
+                        <div class="col-lg-2"><label>RegiÃ£o</label><select class="form-select" id="fRegiao"></select></div>
+                        <div class="col-lg-2"><label>MÃªs</label><select class="form-select" id="fMes"></select></div>
                         <div class="col-lg-2"><label>Origem</label><select class="form-select" id="fOrigem"></select></div>
                         <div class="col-lg-2"><label>Status</label><select class="form-select" id="fStatus"></select></div>
                         <div class="col-lg-2"><label>Buscar</label><input class="form-control" id="fBusca" placeholder="Evento, cidade, obs."></div>
-                        <div class="col-lg-3"><label>Início a partir de</label><input type="date" class="form-control" id="fInicio"></div>
-                        <div class="col-lg-3"><label>Até</label><input type="date" class="form-control" id="fFim"></div>
+                        <div class="col-lg-3"><label>InÃ­cio a partir de</label><input type="date" class="form-control" id="fInicio"></div>
+                        <div class="col-lg-3"><label>AtÃ©</label><input type="date" class="form-control" id="fFim"></div>
                         <div class="col-lg-6 d-flex gap-2"><button class="btn btn-primary flex-fill" onclick="aplicarFiltros()">Filtrar</button><button class="btn btn-outline-secondary" onclick="limparFiltros()">Limpar</button></div>
                     </div>
                 </div>
@@ -136,7 +137,7 @@
                 <div class="panel-head"><div><h2>Resumo geral</h2><p>Edite, exclua e acompanhe todos os eventos cadastrados.</p></div></div>
                 <div class="table-responsive panel-body">
                     <table class="table table-hover align-middle" id="tabelaEventos">
-                        <thead><tr><th>Evento</th><th>Cidade</th><th>Período</th><th>Dias</th><th>Valor</th><th>Origem</th><th>Status</th><th>Ações</th></tr></thead>
+                        <thead><tr><th>Evento</th><th>Cidade</th><th>PerÃ­odo</th><th>Dias</th><th>Valor</th><th>Origem</th><th>Status</th><th>AÃ§Ãµes</th></tr></thead>
                         <tbody id="corpoEventos"></tbody>
                     </table>
                 </div>
@@ -158,7 +159,7 @@
                             <select class="form-select" id="financeiroEventoSelect" onchange="carregarFinanceiroEvento()"></select>
                         </div>
                         <div class="col-lg-4">
-                            <button class="btn btn-outline-secondary w-100" onclick="carregarFinanceiroEvento()"><i class="bi bi-arrow-clockwise"></i> Atualizar cálculo</button>
+                            <button class="btn btn-outline-secondary w-100" onclick="carregarFinanceiroEvento()"><i class="bi bi-arrow-clockwise"></i> Atualizar cÃ¡lculo</button>
                         </div>
                     </div>
                 </div>
@@ -174,7 +175,7 @@
             <div class="row g-3 mt-1">
                 <div class="col-lg-12">
                     <div class="panel h-100">
-                        <div class="panel-head"><div><h2>Parâmetros do repasse</h2><p>Informe o percentual acordado para este evento.</p></div></div>
+                        <div class="panel-head"><div><h2>ParÃ¢metros do repasse</h2><p>Informe o percentual acordado para este evento.</p></div></div>
                         <div class="panel-body">
                             <form id="formEventoFinanceiro" class="row g-3">
                                 <div class="col-12">
@@ -182,11 +183,11 @@
                                     <input class="form-control" id="finPercentual" placeholder="Ex: 20" inputmode="decimal">
                                 </div>
                                 <div class="col-12">
-                                    <label>Observações</label>
-                                    <textarea class="form-control" id="finObservacoes" rows="3" placeholder="Condições, responsáveis, observações de conferência"></textarea>
+                                    <label>ObservaÃ§Ãµes</label>
+                                    <textarea class="form-control" id="finObservacoes" rows="3" placeholder="CondiÃ§Ãµes, responsÃ¡veis, observaÃ§Ãµes de conferÃªncia"></textarea>
                                 </div>
                                 <div class="col-12 d-flex justify-content-end">
-                                    <button class="btn btn-primary"><i class="bi bi-save"></i> Salvar parâmetros</button>
+                                    <button class="btn btn-primary"><i class="bi bi-save"></i> Salvar parÃ¢metros</button>
                                 </div>
                             </form>
                         </div>
@@ -194,11 +195,11 @@
                 </div>
                 <div class="col-lg-7 d-none">
                     <div class="panel h-100">
-                        <div class="panel-head"><div><h2>Custos do evento</h2><p>Cadastre som, iluminação, segurança, equipe, estrutura e demais despesas.</p></div></div>
+                        <div class="panel-head"><div><h2>Custos do evento</h2><p>Cadastre som, iluminaÃ§Ã£o, seguranÃ§a, equipe, estrutura e demais despesas.</p></div></div>
                         <div class="panel-body">
                             <form id="formCustoEventoLegacy" class="row g-2 align-items-end mb-3">
-                                <div class="col-md-3"><label>Categoria</label><select class="form-select" id="custoCategoriaLegacy"><option>Som</option><option>Iluminação</option><option>Segurança</option><option>Palco/Estrutura</option><option>Equipe</option><option>Marketing</option><option>Transporte</option><option>Alimentação</option><option>Outros</option></select></div>
-                                <div class="col-md-3"><label>Descrição</label><input class="form-control" id="custoDescricaoLegacy" placeholder="Ex: sonorização"></div>
+                                <div class="col-md-3"><label>Categoria</label><select class="form-select" id="custoCategoriaLegacy"><option>Som</option><option>IluminaÃ§Ã£o</option><option>SeguranÃ§a</option><option>Palco/Estrutura</option><option>Equipe</option><option>Marketing</option><option>Transporte</option><option>AlimentaÃ§Ã£o</option><option>Outros</option></select></div>
+                                <div class="col-md-3"><label>DescriÃ§Ã£o</label><input class="form-control" id="custoDescricaoLegacy" placeholder="Ex: sonorizaÃ§Ã£o"></div>
                                 <div class="col-md-3"><label>Fornecedor</label><input class="form-control" id="custoFornecedorLegacy" placeholder="Opcional"></div>
                                 <div class="col-md-2"><label>Valor</label><input class="form-control" id="custoValorLegacy" oninput="formatarMoedaEvento(this)" placeholder="R$ 0"></div>
                                 <div class="col-md-1 d-grid"><button class="btn btn-success" title="Adicionar custo"><i class="bi bi-plus-lg"></i></button></div>
@@ -231,12 +232,12 @@
                 </div>
             </div>
             <div class="panel">
-                <div class="panel-head"><div><h2>Cadastro de custo</h2><p>Use o mesmo formulário para incluir ou alterar uma despesa.</p></div></div>
+                <div class="panel-head"><div><h2>Cadastro de custo</h2><p>Use o mesmo formulÃ¡rio para incluir ou alterar uma despesa.</p></div></div>
                 <div class="panel-body">
                     <form id="formCustoEvento" class="row g-3 align-items-end">
                         <input type="hidden" id="custoId">
                         <div class="col-lg-2"><label>Categoria</label><input class="form-control" id="custoCategoria" placeholder="Ex: Som"></div>
-                        <div class="col-lg-3"><label>Descrição</label><input class="form-control" id="custoDescricao" placeholder="Ex: sonorização"></div>
+                        <div class="col-lg-3"><label>DescriÃ§Ã£o</label><input class="form-control" id="custoDescricao" placeholder="Ex: sonorizaÃ§Ã£o"></div>
                         <div class="col-lg-3"><label>Fornecedor</label><input class="form-control" id="custoFornecedor" placeholder="Opcional"></div>
                         <div class="col-lg-2"><label>Valor</label><input class="form-control" id="custoValor" oninput="formatarMoedaEvento(this)" placeholder="R$ 0"></div>
                         <div class="col-lg-2 d-flex gap-2"><button class="btn btn-success flex-fill"><i class="bi bi-save"></i> Salvar</button><button type="button" class="btn btn-outline-secondary" onclick="limparCustoEvento()">Limpar</button></div>
@@ -244,11 +245,11 @@
                 </div>
             </div>
             <div class="panel">
-                <div class="panel-head"><div><h2>Despesas cadastradas</h2><p>Visualização por evento com ações rápidas.</p></div><strong id="totalCustosAba">R$ 0</strong></div>
+                <div class="panel-head"><div><h2>Despesas cadastradas</h2><p>VisualizaÃ§Ã£o por evento com aÃ§Ãµes rÃ¡pidas.</p></div><strong id="totalCustosAba">R$ 0</strong></div>
                 <div class="table-responsive panel-body">
                     <div class="cost-table-wrap">
                         <table class="table table-hover align-middle cost-table">
-                            <thead><tr><th>Categoria</th><th>Descrição</th><th>Fornecedor</th><th>Valor</th><th class="text-end">Ações</th></tr></thead>
+                            <thead><tr><th>Categoria</th><th>DescriÃ§Ã£o</th><th>Fornecedor</th><th>Valor</th><th class="text-end">AÃ§Ãµes</th></tr></thead>
                             <tbody id="corpoCustosEvento"></tbody>
                         </table>
                     </div>
@@ -259,12 +260,12 @@
         <section class="tab-pane fade" id="calendario">
             <div class="panel">
                 <div class="panel-head">
-                    <div><h2>Agenda de eventos</h2><p>Visualização mensal e anual por status.</p></div>
+                    <div><h2>Agenda de eventos</h2><p>VisualizaÃ§Ã£o mensal e anual por status.</p></div>
                     <div class="d-flex gap-2 no-print">
                         <button class="btn btn-outline-secondary" onclick="mudarPeriodo(-1)"><i class="bi bi-chevron-left"></i></button>
                         <button class="btn btn-outline-secondary" onclick="irHoje()">Hoje</button>
                         <button class="btn btn-outline-secondary" onclick="mudarPeriodo(1)"><i class="bi bi-chevron-right"></i></button>
-                        <button class="btn btn-primary" onclick="alternarCalendario()"><span id="modoCalendario">Mês</span></button>
+                        <button class="btn btn-primary" onclick="alternarCalendario()"><span id="modoCalendario">MÃªs</span></button>
                     </div>
                 </div>
                 <div class="panel-body">
@@ -291,10 +292,11 @@
 <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 <script>
 let eventos=[], filtrados=[], tabela=null, municipioMap={}, calendarioData=new Date(), calendarioAno=false, financeiroAtual=null;
-const meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-const mesesTitulo=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const statusCores={'Autorizado':'#16a34a','Em Andamento':'#2563eb','Pendente':'#d97706','Em Análise':'#ea580c','Encerrado':'#64748b'};
-function alternarMenuLateral(){const r=document.body.classList.toggle('sidebar-collapsed');localStorage.setItem('jp2EventosSidebarCollapsed',r?'1':'0');}
+const meses=['janeiro','fevereiro','marÃ§o','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const mesesTitulo=['Janeiro','Fevereiro','MarÃ§o','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const statusCores={'Autorizado':'#16a34a','Em Andamento':'#2563eb','Pendente':'#d97706','Em AnÃ¡lise':'#ea580c','Encerrado':'#64748b'};
+
+const statusEventoSelect=document.getElementById('status');function alternarMenuLateral(){const r=document.body.classList.toggle('sidebar-collapsed');localStorage.setItem('jp2EventosSidebarCollapsed',r?'1':'0');}
 function h(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
 function dinheiro(v){return (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});}
 function dataBR(v){if(!v)return '-'; const p=String(v).split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:'-';}
@@ -320,6 +322,18 @@ function carregarEventos(){
         montarSelectFinanceiro(); renderTabela(); atualizarMetricas(); renderCalendario();
     });
 }
+function sincronizarEventosCSV(){
+    if(!confirm('Sincronizar os novos registros do arquivo CSV de eventos?')) return;
+    fetch('/api/eventos/sincronizar-csv',{method:'POST'})
+    .then(r=>r.json())
+    .then(d=>{
+        if(d.status!=='sucesso'){alert(d.msg||'Nao foi possivel sincronizar.');return;}
+        alert(`${d.importados||0} novo(s) registro(s) importado(s).`);
+        eventos=[];
+        carregarEventos();
+    })
+    .catch(()=>alert('Nao foi possivel falar com o servidor.'));
+}
 function montarSelectFinanceiro(){
     const atual=financeiroEventoSelect.value;
     const atualCusto=custoEventoSelect.value;
@@ -336,7 +350,7 @@ function limparFiltros(){['fUf','fRegiao','fMes','fOrigem','fStatus','fBusca','f
 function renderTabela(){
     if(tabela){tabela.destroy(); tabela=null;}
     corpoEventos.innerHTML=filtrados.map(e=>`<tr><td><div class="money">${h(e.nome_evento)}</div><div class="muted">${h(e.observacoes||'')}</div></td><td>${h(e.cidade)}<div class="muted">${h(e.uf)} - ${h(e.regiao)}</div></td><td>${dataBR(e.data_inicio)} a ${dataBR(e.data_fim)}</td><td>${e.dias_evento}</td><td class="money">${dinheiro(e.valor_verba)}</td><td>${h(e.origem)}</td><td><span class="pill ${statusClass(e.status)}">${h(e.status)}</span></td><td><div class="actions"><button class="btn btn-sm btn-outline-primary" title="Editar" onclick='editarEvento(${JSON.stringify(e).replace(/'/g,"&#039;")})'><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-outline-danger" title="Excluir" onclick="excluirEvento(${e.id})"><i class="bi bi-trash"></i></button></div></td></tr>`).join('');
-    if(filtrados.length){tabela=$('#tabelaEventos').DataTable({pageLength:25,language:{sSearch:'Buscar:',sLengthMenu:'Mostrar _MENU_ linhas',sInfo:'Mostrando _START_ até _END_ de _TOTAL_',sInfoEmpty:'Nenhum evento encontrado',sZeroRecords:'Nenhum evento encontrado',oPaginate:{sNext:'Próximo',sPrevious:'Anterior'}}});}
+    if(filtrados.length){tabela=$('#tabelaEventos').DataTable({pageLength:25,language:{sSearch:'Buscar:',sLengthMenu:'Mostrar _MENU_ linhas',sInfo:'Mostrando _START_ atÃ© _END_ de _TOTAL_',sInfoEmpty:'Nenhum evento encontrado',sZeroRecords:'Nenhum evento encontrado',oPaginate:{sNext:'PrÃ³ximo',sPrevious:'Anterior'}}});}
 }
 function buscarMunicipios(q){if((q||'').length<2)return; fetch('/api/eventos/municipios?q='+encodeURIComponent(q)).then(r=>r.json()).then(d=>{listaMunicipios.innerHTML=''; municipioMap={}; (d.dados||[]).forEach(m=>{municipioMap[m.label]=m; listaMunicipios.innerHTML+=`<option value="${h(m.label)}"></option>`;});});}
 cidadeBusca.addEventListener('input',e=>{buscarMunicipios(e.target.value); const m=municipioMap[e.target.value]; if(m){cidade.value=m.cidade; uf.value=m.uf; regiao.value=m.regiao; ufView.value=m.uf; regiaoView.value=m.regiao;}});
@@ -346,11 +360,11 @@ formEvento.addEventListener('submit',e=>{
     e.preventDefault();
     if(!cidade.value){alert('Selecione uma cidade da lista.'); return;}
     const fd=new FormData(); ['cidade','uf','regiao','nomeEvento','dataInicio','dataFim','valorVerba','origem','status','observacoes'].forEach(id=>{});
-    fd.append('cidade',cidade.value); fd.append('uf',uf.value); fd.append('regiao',regiao.value); fd.append('nome_evento',nomeEvento.value); fd.append('data_inicio',dataInicio.value); fd.append('data_fim',dataFim.value); fd.append('valor_verba',numeroBR(valorVerba.value)); fd.append('origem',origem.value); fd.append('status',status.value); fd.append('observacoes',observacoes.value);
+    fd.append('cidade',cidade.value); fd.append('uf',uf.value); fd.append('regiao',regiao.value); fd.append('nome_evento',nomeEvento.value); fd.append('data_inicio',dataInicio.value); fd.append('data_fim',dataFim.value); fd.append('valor_verba',numeroBR(valorVerba.value)); fd.append('origem',origem.value); fd.append('status',statusEventoSelect.value); fd.append('observacoes',observacoes.value);
     const id=eventoId.value; fetch(id?'/api/eventos/'+id:'/api/eventos',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.status!=='sucesso'){alert(d.msg||'Erro ao salvar evento.');return;} limparFormulario(); eventos=[]; carregarEventos(); bootstrap.Tab.getOrCreateInstance(document.querySelector('[data-bs-target="#resumo"]')).show();});
 });
 function editarEvento(e){
-    eventoId.value=e.id; cidade.value=e.cidade; uf.value=e.uf; regiao.value=e.regiao; cidadeBusca.value=`${e.cidade} - ${e.uf}`; ufView.value=e.uf; regiaoView.value=e.regiao; nomeEvento.value=e.nome_evento; dataInicio.value=e.data_inicio; dataFim.value=e.data_fim; dataFim.min=e.data_inicio; valorVerba.value=dinheiro(e.valor_verba); origem.value=e.origem; status.value=e.status; observacoes.value=e.observacoes||''; bootstrap.Tab.getOrCreateInstance(document.querySelector('[data-bs-target="#cadastro"]')).show();
+    eventoId.value=e.id; cidade.value=e.cidade; uf.value=e.uf; regiao.value=e.regiao; cidadeBusca.value=`${e.cidade} - ${e.uf}`; ufView.value=e.uf; regiaoView.value=e.regiao; nomeEvento.value=e.nome_evento; dataInicio.value=e.data_inicio; dataFim.value=e.data_fim; dataFim.min=e.data_inicio; valorVerba.value=dinheiro(e.valor_verba); origem.value=e.origem; statusEventoSelect.value=e.status||'Pendente'; observacoes.value=e.observacoes||''; bootstrap.Tab.getOrCreateInstance(document.querySelector('[data-bs-target="#cadastro"]')).show();
 }
 function excluirEvento(id){if(!confirm('Excluir este evento?'))return; fetch('/api/eventos/'+id,{method:'DELETE'}).then(r=>r.json()).then(d=>{if(d.status==='sucesso'){eventos=[]; carregarEventos();}});}
 function exportarEventos(){window.location='/eventos/exportar?'+qs();}
@@ -362,11 +376,11 @@ function carregarCustosEvento(){
         return;
     }
     fetch('/api/eventos/financeiro/'+id).then(r=>r.json()).then(d=>{
-        if(d.status!=='sucesso'){alert(d.msg||'Não foi possível carregar os custos.');return;}
+        if(d.status!=='sucesso'){alert(d.msg||'NÃ£o foi possÃ­vel carregar os custos.');return;}
         const dados=d.dados||{};
         const custos=Array.isArray(dados.custos)?dados.custos:[];
         totalCustosAba.innerText=dinheiro(dados.total_custos);
-        corpoCustosEvento.innerHTML=custos.length?custos.map(c=>`<tr data-custo-id="${c.id}"><td><input class="form-control form-control-sm custo-categoria" value="${h(c.categoria)}" disabled></td><td><input class="form-control form-control-sm custo-descricao" value="${h(c.descricao||'')}" disabled></td><td><input class="form-control form-control-sm custo-fornecedor" value="${h(c.fornecedor||'')}" disabled></td><td><input class="form-control form-control-sm custo-valor money" value="${dinheiro(c.valor).replace('R$ ','')}" oninput="formatarMoedaEvento(this)" disabled></td><td><div class="cost-actions"><button class="btn btn-sm btn-outline-primary" title="Alterar campos" onclick="habilitarEdicaoCusto(${c.id})"><i class="bi bi-pencil-square"></i></button><button class="btn btn-sm btn-outline-success" title="Salvar alteração" onclick="salvarCustoLinha(${c.id})"><i class="bi bi-save"></i></button><button class="btn btn-sm btn-outline-danger" title="Excluir custo" onclick="excluirCustoEvento(${c.id})"><i class="bi bi-trash"></i></button></div></td></tr>`).join(''):'<tr><td colspan="5" class="text-center text-secondary py-4">Nenhum custo cadastrado para este evento.</td></tr>';
+        corpoCustosEvento.innerHTML=custos.length?custos.map(c=>`<tr data-custo-id="${c.id}"><td><input class="form-control form-control-sm custo-categoria" value="${h(c.categoria)}" disabled></td><td><input class="form-control form-control-sm custo-descricao" value="${h(c.descricao||'')}" disabled></td><td><input class="form-control form-control-sm custo-fornecedor" value="${h(c.fornecedor||'')}" disabled></td><td><input class="form-control form-control-sm custo-valor money" value="${dinheiro(c.valor).replace('R$ ','')}" oninput="formatarMoedaEvento(this)" disabled></td><td><div class="cost-actions"><button class="btn btn-sm btn-outline-primary" title="Alterar campos" onclick="habilitarEdicaoCusto(${c.id})"><i class="bi bi-pencil-square"></i></button><button class="btn btn-sm btn-outline-success" title="Salvar alteraÃ§Ã£o" onclick="salvarCustoLinha(${c.id})"><i class="bi bi-save"></i></button><button class="btn btn-sm btn-outline-danger" title="Excluir custo" onclick="excluirCustoEvento(${c.id})"><i class="bi bi-trash"></i></button></div></td></tr>`).join(''):'<tr><td colspan="5" class="text-center text-secondary py-4">Nenhum custo cadastrado para este evento.</td></tr>';
     });
 }
 function editarCustoEvento(c){
@@ -409,7 +423,7 @@ function carregarFinanceiroEvento(){
     const id=financeiroEventoSelect.value;
     if(!id){return;}
     fetch('/api/eventos/financeiro/'+id).then(r=>r.json()).then(d=>{
-        if(d.status!=='sucesso'){alert(d.msg||'Não foi possível carregar o financeiro.');return;}
+        if(d.status!=='sucesso'){alert(d.msg||'NÃ£o foi possÃ­vel carregar o financeiro.');return;}
         financeiroAtual=d.dados;
         const item=financeiroAtual.evento||{};
         finValorEmenda.innerText=dinheiro(item.valor_verba);
@@ -461,7 +475,7 @@ function renderCalendario(){
 function renderMesPrincipal(){
     const ano=calendarioData.getFullYear(), mes=calendarioData.getMonth();
     tituloCalendario.innerText=`${mesesTitulo[mes]} ${ano}`;
-    let html='<div class="calendar-grid">'+['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d=>`<div class="weekday">${d}</div>`).join('');
+    let html='<div class="calendar-grid">'+['Dom','Seg','Ter','Qua','Qui','Sex','SÃ¡b'].map(d=>`<div class="weekday">${d}</div>`).join('');
     const first=new Date(ano,mes,1).getDay(), total=new Date(ano,mes+1,0).getDate();
     for(let i=0;i<first;i++)html+='<div class="day other"></div>';
     for(let d=1;d<=total;d++){const evs=eventosNoDia(ano,mes,d).slice(0,3); html+=`<div class="day"><span class="day-number">${d}</span>${evs.map(e=>`<span class="event-chip ${chipClass(e.status)}" title="${h(e.nome_evento)}">${h(e.cidade)} - ${h(e.nome_evento)}</span>`).join('')}</div>`;}
@@ -477,7 +491,7 @@ function renderMiniAno(){
 }
 function mudarPeriodo(dir){calendarioAno?calendarioData.setFullYear(calendarioData.getFullYear()+dir):calendarioData.setMonth(calendarioData.getMonth()+dir); renderCalendario();}
 function irHoje(){calendarioData=new Date(); renderCalendario();}
-function alternarCalendario(){calendarioAno=!calendarioAno; modoCalendario.innerText=calendarioAno?'Ano':'Mês'; renderCalendario();}
+function alternarCalendario(){calendarioAno=!calendarioAno; modoCalendario.innerText=calendarioAno?'Ano':'MÃªs'; renderCalendario();}
 document.querySelectorAll('[data-tab-target]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault(); bootstrap.Tab.getOrCreateInstance(document.querySelector(`[data-bs-target="#${a.dataset.tabTarget}"]`)).show(); document.querySelectorAll('#sidebar a').forEach(x=>x.classList.remove('active')); a.classList.add('active');}));
 document.querySelectorAll('[data-bs-toggle="pill"]').forEach(b=>b.addEventListener('shown.bs.tab',()=>{const id=b.dataset.bsTarget.replace('#',''); document.querySelectorAll('#sidebar a').forEach(x=>x.classList.toggle('active',x.dataset.tabTarget===id)); if(id==='calendario')renderCalendario(); if(id==='financeiro')carregarFinanceiroEvento(); if(id==='custos')carregarCustosEvento();}));
 document.addEventListener('DOMContentLoaded',()=>{if(localStorage.getItem('jp2EventosSidebarCollapsed')==='1')document.body.classList.add('sidebar-collapsed'); buscarMunicipios('GO'); carregarEventos();});
