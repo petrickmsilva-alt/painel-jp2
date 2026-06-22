@@ -773,6 +773,20 @@ def home():
 
     return render_template('home.html', nome_socio=session.get('nome_exibicao', 'Sócio'))
 
+@app.route('/carteira-investimentos')
+def carteira_investimentos():
+    if 'usuario_logado' not in session:
+        return redirect(url_for('tela_login'))
+
+    url_modulo = os.environ.get("CARTEIRA_INVESTIMENTOS_URL", "").strip()
+    if url_modulo:
+        return redirect(url_modulo)
+
+    return render_template(
+        'carteira_investimentos.html',
+        nome_socio=session.get('nome_exibicao', 'Sócio')
+    )
+
 @app.route('/login', methods=['GET', 'POST'])
 def tela_login():
     if request.method == 'GET' and 'usuario_logado' in session:
