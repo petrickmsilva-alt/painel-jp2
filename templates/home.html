@@ -87,9 +87,13 @@
             <div class="modal-body">
                 <form id="formUploadAvancado">
                     <div class="mb-3">
-                        <label class="form-label text-muted">Selecione um arquivo para upload:</label>        
-                        <!-- Correção: adicionado name="arquivos", necessário para o app.py -->
-                        <input type="file" class="form-control" id="inputArquivosAvancado" name="arquivos" required>
+                        <label class="form-label text-muted">Selecione arquivos para upload:</label>
+                        <input type="file" class="form-control" id="inputArquivosAvancado" name="arquivos" multiple>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Ou selecione uma pasta completa:</label>
+                        <input type="file" class="form-control" id="inputPastaAvancado" webkitdirectory directory multiple>
+                        <div class="form-text">As subpastas serao recriadas automaticamente no painel.</div>
                     </div>
                     <button type="submit" class="btn btn-success w-100 fw-bold">Iniciar Upload</button>
                 </form>
@@ -102,25 +106,28 @@
     document.getElementById('formUploadAvancado').addEventListener('submit', function(e) {
     e.preventDefault();
     const input = document.getElementById('inputArquivosAvancado');
-    if (input.files.length === 0) return;
+    const inputPasta = document.getElementById('inputPastaAvancado');
+    const selecionado = inputPasta.files.length ? inputPasta : input;
+    if (selecionado.files.length === 0) return;
 
-    const formData = new FormData();
-    formData.append('arquivos', input.files[0]);
-    formData.append('bloco', estadoDoPainel.bloco);
-    
-    // Envia o ID da pasta pai que está armazenado no estado global do dashboard
-    formData.append('pasta_pai_id', estadoDoPainel.pasta_pai_id || '');
-    
-    // Lógica correta de categoria para o app.py
     const catFinal = (estadoDoPainel.pasta_pai_id === null || estadoDoPainel.pasta_pai_id === '') ? estadoDoPainel.bloco : 'raiz';
-    formData.append('categoria', catFinal);
+    const arquivos = Array.from(selecionado.files);
 
-    fetch('/upload-avancado', { method: 'POST', body: formData })
-    .then(res => res.json())
-    .then(data => {
+    Promise.all(arquivos.map(arquivo => {
+        const formData = new FormData();
+        formData.append('arquivos', arquivo, arquivo.name);
+        formData.append('bloco', estadoDoPainel.bloco);
+        formData.append('pasta_pai_id', estadoDoPainel.pasta_pai_id || '');
+        formData.append('categoria', catFinal);
+        formData.append('nome_original', arquivo.name);
+        formData.append('caminho_relativo', arquivo.webkitRelativePath || arquivo.name);
+        return fetch('/upload-avancado', { method: 'POST', body: formData }).then(res => res.json());
+    }))
+    .then(() => {
         alert('Upload concluído!');
         bootstrap.Modal.getInstance(document.getElementById('modalUploadArquivo')).hide();
         input.value = '';
+        inputPasta.value = '';
         sincronizarGrade();
     })
     .catch(() => alert('Erro no upload.'));
