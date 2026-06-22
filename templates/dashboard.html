@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
   <meta charset="utf-8" />
@@ -1173,7 +1173,7 @@
                         </button>
                         <div class="folder-search">
                             <i class="bi bi-search"></i>
-                            <input type="search" id="inputBuscaPasta" name="jp2_busca_pasta_desativada" value="" autocomplete="new-password" autocapitalize="off" spellcheck="false" data-lpignore="true" data-form-type="other" placeholder="Buscar nesta pasta" oninput="filtrarItensDaGrade(this.value)">
+                            <input type="text" id="inputBuscaPasta" name="jp2_filtro_arquivos_{{ range(100000, 999999) | random }}" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="search" readonly data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-ddg-inputtype="unknown" aria-autocomplete="none" placeholder="Buscar nesta pasta" onfocus="this.removeAttribute('readonly'); this.setAttribute('autocomplete','off');" onmousedown="this.removeAttribute('readonly')" oninput="filtrarItensDaGrade(this.value)">
                         </div>
                         
                         <select id="selectView" class="form-select form-select-sm ms-auto" style="width: 158px;" onchange="alterarVisualizacao(this.value)">
