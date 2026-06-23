@@ -64,6 +64,10 @@ app.register_blueprint(bp_financeiro)
 from eventos import bp_eventos
 app.register_blueprint(bp_eventos)
 
+# Registro do módulo interno de carteira de investimentos
+from carteira import bp_carteira
+app.register_blueprint(bp_carteira)
+
 # DIRETÃ“RIO LOCAL DE ARMAZENAMENTO
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
@@ -779,17 +783,8 @@ def home():
 def carteira_investimentos():
     if 'usuario_logado' not in session:
         return redirect(url_for('tela_login'))
+    return redirect('/carteira')
 
-    url_modulo = os.environ.get(
-        "CARTEIRA_INVESTIMENTOS_URL",
-        "https://carteira-investimentos-jp2business-1.onrender.com"
-    ).strip().rstrip("/")
-
-    return render_template(
-        'carteira_investimentos.html',
-        nome_socio=session.get('nome_exibicao', 'Sócio'),
-        url_modulo=url_modulo,
-    )
 @app.route('/login', methods=['GET', 'POST'])
 def tela_login():
     if request.method == 'GET' and 'usuario_logado' in session:

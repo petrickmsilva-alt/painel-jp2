@@ -1,0 +1,28 @@
+PENTE FINO SEGURO - PERFORMANCE, ORTOGRAFIA E AUTOFILL
+
+Arquivos para subir no repositorio principal painel-jp2:
+- app.py
+- requirements.txt
+- templates/  (pasta completa deste pacote)
+
+O que foi ajustado:
+1. Campo Buscar nesta pasta:
+   - Reforço contra preenchimento automatico do Chrome/Google Password Manager.
+   - O campo nao deve mais sugerir petrick/senha.
+   - Adicionadas flags para gerenciadores como LastPass, 1Password e Bitwarden.
+
+2. Pesquisas de tabelas:
+   - Protecao global para campos de busca criados automaticamente por DataTables.
+
+3. Delay percebido:
+   - Busca local da grade agora usa debounce de 180ms.
+   - Evita redesenhar a grade a cada milissegundo enquanto digita.
+
+4. Ortografia segura:
+   - Corrigidos textos visiveis pontuais: Ícones Médios, reunião, horário, ação, obrigatório etc.
+   - Nao foram alterados IDs, names, rotas ou nomes tecnicos internos.
+
+Depois do deploy:
+- Abra o painel e pressione Ctrl+F5.
+- Clique no campo Buscar nesta pasta.
+- Se o Chrome ainda exibir a credencial, remova o login salvo em: Configurações do Chrome > Gerenciador de senhas > app.ibdtec.ong.br.

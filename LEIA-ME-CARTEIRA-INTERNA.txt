@@ -1,0 +1,39 @@
+﻿CARTEIRA DE INVESTIMENTOS INTERNA - FLASK / HTML / CSS / MYSQL
+
+Suba no repositorio principal painel-jp2:
+- app.py
+- carteira.py
+- requirements.txt
+- pasta templates completa deste pacote
+
+O que entra nesta rodada:
+- Carteira de Investimentos passa a ser um modulo interno em /carteira.
+- O link antigo /carteira-investimentos redireciona para /carteira.
+- Remove a necessidade visual do iframe/app separado no painel principal.
+- Cria automaticamente no MySQL:
+  - carteira_ativos
+  - carteira_aportes
+  - carteira_politica
+- Telas incluidas:
+  - Comando
+  - Onde aportar
+  - Resumo
+  - Ativos
+  - Aportes
+  - Politica da carteira
+- Motor inicial de decisao:
+  - calcula score do ativo
+  - aponta Aportar / Observar / Nao aportar
+  - distribui um valor de aporte por classe abaixo da meta
+  - prioriza ativos com melhor score
+
+Como testar depois do deploy:
+1. Abra https://app.ibdtec.ong.br
+2. Clique em Carteira de Investimentos
+3. Cadastre alguns ativos em /carteira/ativos
+4. Ajuste metas em /carteira/configuracoes
+5. Simule um aporte em /carteira/onde-aportar
+
+Importante:
+Esta e a fase 1 nativa. Ela ja deixa o modulo dentro da arquitetura do JP2Business.
+Depois fazemos a fase 2: importacao de planilhas, cotacoes automaticas, fontes de mercado e relatorios mais profundos.
