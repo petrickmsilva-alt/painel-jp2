@@ -1404,6 +1404,60 @@ def criar_pasta():
         print(f"Erro ao criar pasta: {e}")
         return jsonify({'status': 'erro', 'mensagem': 'Nao foi possivel criar a pasta.'}), 500
 
+def limpar_nome_pasta_upload(nome):
+    nome = str(nome or "").strip()
+    nome = re.sub(r'[\\/:*?"<>|]+', '-', nome)
+    nome = re.sub(r'\s+', ' ', nome).strip(" .")
+    return nome[:180]
+
+def obter_ou_criar_pasta_upload(cur, nome, bloco, categoria, pasta_pai_id):
+    nome_limpo = limpar_nome_pasta_upload(nome)
+    if not nome_limpo:
+        return pasta_pai_id
+
+    if pasta_pai_id is None:
+        cur.execute("""
+            SELECT id FROM arquivos_painel
+            WHERE bloco = %s
+              AND nome_original = %s
+              AND tipo = 'pasta'
+              AND pasta_pai_id IS NULL
+              AND deletado = 0
+            LIMIT 1
+        """, (bloco, nome_limpo))
+    else:
+        cur.execute("""
+            SELECT id FROM arquivos_painel
+            WHERE bloco = %s
+              AND nome_original = %s
+              AND tipo = 'pasta'
+              AND pasta_pai_id = %s
+              AND deletado = 0
+            LIMIT 1
+        """, (bloco, nome_limpo, pasta_pai_id))
+
+    pasta = cur.fetchone()
+    if pasta:
+        return pasta["id"]
+
+    cur.execute("""
+        INSERT INTO arquivos_painel (nome_original, bloco, categoria, tipo, pasta_pai_id, criado_por, deletado)
+        VALUES (%s, %s, %s, 'pasta', %s, %s, 0)
+    """, (nome_limpo, bloco, categoria or 'raiz', pasta_pai_id, session.get('nome_exibicao', 'Sistema')))
+    return cur.lastrowid
+
+def resolver_destino_upload_pasta(cur, caminho_relativo, bloco, categoria, pasta_pai_id):
+    caminho = str(caminho_relativo or "").replace("\\", "/").strip("/")
+    if not caminho or "/" not in caminho:
+        return pasta_pai_id
+
+    partes = [limpar_nome_pasta_upload(parte) for parte in caminho.split("/")[:-1]]
+    partes = [parte for parte in partes if parte]
+    destino_id = pasta_pai_id
+    for parte in partes:
+        destino_id = obter_ou_criar_pasta_upload(cur, parte, bloco, categoria, destino_id)
+    return destino_id
+
 # ðŸš€ 1. INSTALAÃ‡ÃƒO DO MOTOR FATIADOR COMPATÃVEL COM ALTA VELOCIDADE (Mini-fatias)
 @app.route('/upload-avancado', methods=['POST'])
 def upload_avancado():
@@ -1419,6 +1473,7 @@ def upload_avancado():
     total_chunks = int(request.form.get('totalChunks', 1))
     guid_uuid = request.form.get('guid', uuid.uuid4().hex)
     nome_original = request.form.get('nome_original', file.filename if file else 'arquivo')
+    caminho_relativo = request.form.get('caminho_relativo') or nome_original
     
     conn = None
     try:
@@ -1446,10 +1501,11 @@ def upload_avancado():
 
             conn = get_db_connection()
             with conn.cursor() as cur:
+                pasta_destino_id = resolver_destino_upload_pasta(cur, caminho_relativo, bloco, cat, p_id)
                 cur.execute("""
                     INSERT INTO arquivos_painel (nome_original, caminho_sistema, bloco, categoria, tipo, criado_por, pasta_pai_id, deletado)
                     VALUES (%s, %s, %s, %s, 'arquivo', %s, %s, 0)
-                """, (nome_original, caminho_sistema, bloco, cat, session.get('nome_exibicao', 'Sistema'), p_id))
+                """, (nome_original, caminho_sistema, bloco, cat, session.get('nome_exibicao', 'Sistema'), pasta_destino_id))
                 novo_id = cur.lastrowid
 
             try:
@@ -1471,7 +1527,7 @@ def upload_avancado():
                     'autor': session.get('nome_exibicao', 'Sistema'),
                     'bloco': bloco,
                     'categoria': cat,
-                    'pasta_pai_id': p_id
+                    'pasta_pai_id': pasta_destino_id
                 }
             })
             
