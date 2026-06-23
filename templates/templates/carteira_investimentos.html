@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carteira de Investimentos | JP2 Business</title>
+    <style>
+        :root {
+            --ink: #071426;
+            --muted: #617089;
+            --line: #d8e2ef;
+            --bg: #eef3f9;
+            --card: #ffffff;
+            --blue: #1769f5;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            height: 72px;
+            padding: 0 18px;
+            background: var(--card);
+            border-bottom: 1px solid var(--line);
+            box-shadow: 0 10px 28px rgba(15, 23, 42, .05);
+        }
+        .title {
+            min-width: 0;
+        }
+        .kicker {
+            display: block;
+            color: #526985;
+            font-size: 11px;
+            font-weight: 850;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+        }
+        .title strong {
+            display: block;
+            margin-top: 3px;
+            overflow: hidden;
+            font-size: 20px;
+            line-height: 1.1;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .actions {
+            display: flex;
+            flex: 0 0 auto;
+            gap: 10px;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 38px;
+            padding: 0 14px;
+            border: 1px solid #9fb2ca;
+            border-radius: 7px;
+            background: #fff;
+            color: #172033;
+            font-size: 14px;
+            font-weight: 800;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .btn.primary {
+            border-color: var(--blue);
+            background: var(--blue);
+            color: #fff;
+        }
+        .frame-wrap {
+            height: calc(100vh - 72px);
+            padding: 0;
+        }
+        iframe {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: #fff;
+        }
+        .empty {
+            display: grid;
+            height: 100%;
+            place-items: center;
+            padding: 32px;
+            text-align: center;
+        }
+        .empty strong { display: block; margin-bottom: 8px; font-size: 22px; }
+        .empty span { color: var(--muted); }
+        @media (max-width: 700px) {
+            .topbar { height: auto; min-height: 72px; align-items: flex-start; flex-direction: column; padding: 14px; }
+            .actions { width: 100%; }
+            .btn { flex: 1; }
+            .frame-wrap { height: calc(100vh - 126px); }
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="title">
+            <span class="kicker">Carteira de investimentos</span>
+            <strong>Gestão de ativos JP2Business</strong>
+        </div>
+        <nav class="actions" aria-label="Ações da carteira">
+            <a class="btn" href="/">Voltar ao Painel</a>
+            {% if url_modulo %}
+            <a class="btn primary" href="{{ url_modulo }}" target="_blank" rel="noopener">Abrir em tela cheia</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="frame-wrap">
+        {% if url_modulo %}
+            <iframe src="{{ url_modulo }}" title="Carteira de Investimentos JP2"></iframe>
+        {% else %}
+            <div class="empty">
+                <div>
+                    <strong>Carteira ainda sem URL configurada</strong>
+                    <span>Configure CARTEIRA_INVESTIMENTOS_URL no Render do painel principal.</span>
+                </div>
+            </div>
+        {% endif %}
+    </main>
+</body>
+</html>

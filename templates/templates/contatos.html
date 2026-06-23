@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <title>Agenda Telefônica | JP2 Business</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --jp2-bg: #f4f7fb;
+            --jp2-ink: #101828;
+            --jp2-muted: #667085;
+            --jp2-line: #d9e2ef;
+            --jp2-blue: #155eef;
+            --jp2-green: #078c55;
+        }
+
+        body {
+            background: var(--jp2-bg);
+            color: var(--jp2-ink);
+            font-family: "Segoe UI", system-ui, sans-serif;
+            min-height: 100vh;
+        }
+
+        .page-shell {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 28px 18px 46px;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .page-kicker {
+            color: var(--jp2-muted);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .page-title {
+            font-size: 1.55rem;
+            font-weight: 850;
+            margin: 3px 0 0;
+        }
+
+        .panel {
+            background: #fff;
+            border: 1px solid var(--jp2-line);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, .06);
+        }
+
+        .toolbar-panel {
+            padding: 16px;
+            margin-bottom: 18px;
+        }
+
+        .form-control, .form-select {
+            border-color: #d5deeb;
+            min-height: 42px;
+        }
+
+        .btn {
+            border-radius: 7px;
+            font-weight: 700;
+        }
+
+        .contacts-list {
+            overflow: hidden;
+        }
+
+        .contacts-list-header,
+        .contact-row {
+            display: grid;
+            grid-template-columns: minmax(220px, 1.25fr) minmax(130px, .7fr) minmax(130px, .75fr) minmax(170px, .85fr) 170px;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .contacts-list-header {
+            background: #f8fafc;
+            border-bottom: 1px solid #edf1f7;
+            color: var(--jp2-muted);
+            font-size: 11px;
+            font-weight: 850;
+            letter-spacing: .06em;
+            padding: 12px 16px;
+            text-transform: uppercase;
+        }
+
+        .contact-row {
+            border-bottom: 1px solid #edf1f7;
+            min-height: 72px;
+            padding: 13px 16px;
+        }
+
+        .contact-row:last-child {
+            border-bottom: 0;
+        }
+
+        .contact-row:hover {
+            background: #fbfdff;
+        }
+
+        .contact-main {
+            min-width: 0;
+        }
+
+        .contact-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .contact-name {
+            font-size: 15px;
+            font-weight: 850;
+            line-height: 1.15;
+            margin: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .contact-meta {
+            color: var(--jp2-muted);
+            font-size: 12px;
+            margin-top: 3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .category-pill {
+            align-self: flex-start;
+            background: #eef4ff;
+            color: #155eef;
+            border: 1px solid #d7e4ff;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 5px 9px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .contact-lines {
+            display: grid;
+            gap: 8px;
+        }
+
+        .contact-line {
+            align-items: center;
+            color: #344054;
+            display: flex;
+            font-size: 13px;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .contact-line span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .contact-owner {
+            color: var(--jp2-muted);
+            font-size: 11px;
+        }
+
+        .contact-count {
+            color: var(--jp2-muted);
+            font-size: 12px;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+
+        .empty-state {
+            padding: 46px 20px;
+            text-align: center;
+        }
+
+        .empty-state i {
+            color: #98a2b3;
+            font-size: 42px;
+        }
+
+        .copy-toast {
+            background: #101828;
+            border-radius: 8px;
+            bottom: 22px;
+            box-shadow: 0 18px 42px rgba(15, 23, 42, .22);
+            color: #fff;
+            display: none;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 12px 14px;
+            position: fixed;
+            right: 22px;
+            z-index: 2000;
+        }
+
+        .copy-toast.show {
+            display: block;
+        }
+
+        .modal-content {
+            border: 0;
+            border-radius: 10px;
+            box-shadow: 0 22px 60px rgba(15, 23, 42, .22);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #edf1f7;
+            padding: 20px 24px;
+        }
+
+        .modal-body {
+            padding: 22px 24px;
+        }
+
+        .modal-footer {
+            border-top: 0;
+            padding: 0 24px 24px;
+        }
+
+        @media (max-width: 720px) {
+            .page-header { align-items: flex-start; flex-direction: column; }
+            .contacts-list-header { display: none; }
+            .contact-row {
+                grid-template-columns: 1fr;
+                gap: 9px;
+                align-items: flex-start;
+            }
+            .contact-actions { justify-content: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <main class="page-shell">
+        <header class="page-header">
+            <div>
+                <div class="page-kicker">Central de Relacionamento</div>
+                <h1 class="page-title">Agenda Telefônica</h1>
+                <div class="text-secondary">Contatos compartilhados entre sócios, empresas, eventos e parceiros.</div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="/" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Voltar ao Painel
+                </a>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovoContato">
+                    <i class="bi bi-person-plus"></i> Novo Contato
+                </button>
+            </div>
+        </header>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info border-0 shadow-sm">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <section class="panel toolbar-panel">
+            <form method="GET" action="{{ url_for('pagina_contatos') }}" class="row g-3 align-items-end">
+                <div class="col-lg-6">
+                    <label class="form-label small fw-bold text-secondary">Buscar contato</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input class="form-control" type="search" name="q" value="{{ busca }}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-search-field="true" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" placeholder="Nome, empresa, telefone, e-mail ou cargo">
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <label class="form-label small fw-bold text-secondary">Categoria</label>
+                    <select class="form-select" name="categoria">
+                        <option value="">Todas</option>
+                        {% for cat in categorias %}
+                            <option value="{{ cat }}" {% if categoria_atual == cat %}selected{% endif %}>{{ cat|capitalize }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-3 d-flex gap-2">
+                    <button class="btn btn-primary flex-fill" type="submit">Filtrar</button>
+                    <a class="btn btn-outline-secondary" href="{{ url_for('pagina_contatos') }}">Limpar</a>
+                </div>
+            </form>
+        </section>
+
+        {% if contatos %}
+            <section class="panel contacts-list">
+                <div class="contacts-list-header">
+                    <span>Contato</span>
+                    <span>Categoria</span>
+                    <span>Telefone</span>
+                    <span>E-mail</span>
+                    <span class="text-end">Ações</span>
+                </div>
+                {% for contato in contatos %}
+                    <article class="contact-row">
+                        <div class="contact-main">
+                            <h2 class="contact-name">{{ contato.nome }}</h2>
+                            <div class="contact-meta">
+                                {{ contato.empresa or 'Sem empresa informada' }}
+                                {% if contato.cargo %} - {{ contato.cargo }}{% endif %}
+                            </div>
+                            <div class="contact-owner">
+                                Cadastrado por {{ contato.criado_por or 'Sistema' }}
+                                {% if contato.observacoes %} - {{ contato.observacoes }}{% endif %}
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="category-pill">{{ contato.categoria }}</span>
+                        </div>
+
+                        <div class="contact-lines">
+                            <div class="contact-line">
+                                <i class="bi bi-telephone text-primary"></i>
+                                <span>{{ contato.telefone or 'Telefone não informado' }}</span>
+                            </div>
+                            <div class="contact-line">
+                                <i class="bi bi-whatsapp text-success"></i>
+                                <span>{{ contato.whatsapp or 'WhatsApp não informado' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="contact-line">
+                            <i class="bi bi-envelope text-danger"></i>
+                            <span>{{ contato.email or 'E-mail nao informado' }}</span>
+                        </div>
+
+                        <div class="contact-actions">
+                            {% if contato.telefone_link %}
+                                <a class="btn btn-sm btn-outline-primary" href="tel:{{ contato.telefone_link }}" title="Ligar">
+                                    <i class="bi bi-telephone-outbound"></i>
+                                </a>
+                            {% endif %}
+                            {% if contato.whatsapp_link %}
+                                <a class="btn btn-sm btn-outline-success" href="https://wa.me/{{ contato.whatsapp_link }}" target="_blank" title="Abrir WhatsApp">
+                                    <i class="bi bi-whatsapp"></i>
+                                </a>
+                            {% endif %}
+                            {% if contato.email %}
+                                <a class="btn btn-sm btn-outline-danger" href="mailto:{{ contato.email }}" title="Enviar e-mail">
+                                    <i class="bi bi-envelope"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-email="{{ contato.email }}" onclick="copiarEmailContato(this.dataset.email)" title="Copiar e-mail">
+                                    <i class="bi bi-copy"></i>
+                                </button>
+                            {% endif %}
+                            <button class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalEditarContato"
+                                    data-id="{{ contato.id }}"
+                                    data-nome="{{ contato.nome }}"
+                                    data-empresa="{{ contato.empresa or '' }}"
+                                    data-cargo="{{ contato.cargo or '' }}"
+                                    data-telefone="{{ contato.telefone or '' }}"
+                                    data-whatsapp="{{ contato.whatsapp or '' }}"
+                                    data-email="{{ contato.email or '' }}"
+                                    data-categoria="{{ contato.categoria }}"
+                                    data-observacoes="{{ contato.observacoes or '' }}"
+                                    onclick="prepararEdicaoContato(this)"
+                                    title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalExcluirContato"
+                                    data-id="{{ contato.id }}"
+                                    data-nome="{{ contato.nome }}"
+                                    onclick="prepararExclusaoContato(this)"
+                                    title="Excluir">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </article>
+                {% endfor %}
+            </section>
+            <div class="contact-count">
+                {{ contatos|length }} contatos exibidos.
+                {% if contatos|length >= limite_contatos %}
+                    Use a busca ou a categoria para refinar a lista.
+                {% endif %}
+            </div>
+        {% else %}
+            <section class="panel empty-state">
+                <i class="bi bi-person-rolodex"></i>
+                <h2 class="h5 fw-bold mt-3">Nenhum contato encontrado</h2>
+                <p class="text-secondary mb-3">Cadastre contatos importantes para que todos os sócios encontrem rapidamente.</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovoContato">
+                    <i class="bi bi-person-plus"></i> Cadastrar primeiro contato
+                </button>
+            </section>
+        {% endif %}
+    </main>
+
+    <div class="copy-toast" id="copyToastContato">E-mail copiado.</div>
+
+    <div class="modal fade" id="modalNovoContato" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <form class="modal-content" method="POST" action="{{ url_for('adicionar_contato') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-person-plus text-primary"></i> Novo Contato</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Nome</label>
+                            <input class="form-control" name="nome" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Empresa</label>
+                            <input class="form-control" name="empresa">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Cargo / Função</label>
+                            <input class="form-control" name="cargo">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Categoria</label>
+                            <select class="form-select" name="categoria">
+                                {% for cat in categorias %}
+                                    <option value="{{ cat }}">{{ cat|capitalize }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary">Telefone</label>
+                            <input class="form-control telefone-br" name="telefone" inputmode="tel" autocomplete="tel" maxlength="18" placeholder="+55 62 9688-0762">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary">WhatsApp</label>
+                            <input class="form-control telefone-br" name="whatsapp" inputmode="tel" autocomplete="tel" maxlength="18" placeholder="+55 62 9688-0762">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary">E-mail</label>
+                            <input class="form-control" type="email" name="email">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary">Observações</label>
+                            <textarea class="form-control" name="observacoes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar contato</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalEditarContato" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <form class="modal-content" method="POST" id="formEditarContato">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square text-primary"></i> Editar Contato</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Nome</label>
+                            <input class="form-control" name="nome" id="editNome" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Empresa</label>
+                            <input class="form-control" name="empresa" id="editEmpresa">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Cargo / Função</label>
+                            <input class="form-control" name="cargo" id="editCargo">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Categoria</label>
+                            <select class="form-select" name="categoria" id="editCategoria">
+                                {% for cat in categorias %}
+                                    <option value="{{ cat }}">{{ cat|capitalize }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary">Telefone</label>
+                            <input class="form-control telefone-br" name="telefone" id="editTelefone" inputmode="tel" autocomplete="tel" maxlength="18" placeholder="+55 62 9688-0762">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary">WhatsApp</label>
+                            <input class="form-control telefone-br" name="whatsapp" id="editWhatsapp" inputmode="tel" autocomplete="tel" maxlength="18" placeholder="+55 62 9688-0762">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-secondary">E-mail</label>
+                            <input class="form-control" type="email" name="email" id="editEmail">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary">Observações</label>
+                            <textarea class="form-control" name="observacoes" id="editObservacoes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalExcluirContato" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content" method="POST" id="formExcluirContato">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger"><i class="bi bi-trash3"></i> Excluir contato</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Deseja remover <strong id="nomeContatoExcluir">este contato</strong> da agenda telefônica?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function digitosTelefoneBR(valor) {
+            const texto = String(valor || '').trim();
+            let digitos = texto.replace(/\D/g, '');
+            if (!digitos) return '';
+
+            const temCodigoPais = texto.startsWith('+55') || digitos.length > 11;
+            if (temCodigoPais && digitos.startsWith('55')) {
+                digitos = digitos.slice(2);
+            }
+
+            return digitos.slice(0, 11);
+        }
+
+        function formatarTelefoneBR(valor) {
+            const digitos = digitosTelefoneBR(valor);
+            if (!digitos) return '';
+
+            const ddd = digitos.slice(0, 2);
+            const numero = digitos.slice(2);
+
+            if (digitos.length <= 2) {
+                return `+55 ${ddd}`;
+            }
+            if (numero.length <= 4) {
+                return `+55 ${ddd} ${numero}`;
+            }
+            if (numero.length <= 8) {
+                return `+55 ${ddd} ${numero.slice(0, 4)}-${numero.slice(4)}`;
+            }
+            return `+55 ${ddd} ${numero.slice(0, 5)}-${numero.slice(5, 9)}`;
+        }
+
+        document.querySelectorAll('.telefone-br').forEach((campo) => {
+            campo.addEventListener('input', () => {
+                const valorFormatado = formatarTelefoneBR(campo.value);
+                campo.value = valorFormatado;
+                campo.setSelectionRange(valorFormatado.length, valorFormatado.length);
+            });
+            campo.addEventListener('blur', () => {
+                campo.value = formatarTelefoneBR(campo.value);
+            });
+        });
+
+        function prepararEdicaoContato(botao) {
+            const id = botao.dataset.id;
+            document.getElementById('formEditarContato').action = `/contatos/editar/${id}`;
+            document.getElementById('editNome').value = botao.dataset.nome || '';
+            document.getElementById('editEmpresa').value = botao.dataset.empresa || '';
+            document.getElementById('editCargo').value = botao.dataset.cargo || '';
+            document.getElementById('editTelefone').value = formatarTelefoneBR(botao.dataset.telefone || '');
+            document.getElementById('editWhatsapp').value = formatarTelefoneBR(botao.dataset.whatsapp || '');
+            document.getElementById('editEmail').value = botao.dataset.email || '';
+            document.getElementById('editCategoria').value = botao.dataset.categoria || 'geral';
+            document.getElementById('editObservacoes').value = botao.dataset.observacoes || '';
+        }
+
+        function prepararExclusaoContato(botao) {
+            const id = botao.dataset.id;
+            document.getElementById('formExcluirContato').action = `/contatos/excluir/${id}`;
+            document.getElementById('nomeContatoExcluir').innerText = botao.dataset.nome || 'este contato';
+        }
+
+        function mostrarToastContato(texto) {
+            const toast = document.getElementById('copyToastContato');
+            toast.innerText = texto;
+            toast.classList.add('show');
+            clearTimeout(window.toastContatoTimer);
+            window.toastContatoTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+        }
+
+        function copiarEmailContato(email) {
+            if (!email) return;
+            navigator.clipboard.writeText(email)
+                .then(() => mostrarToastContato('E-mail copiado.'))
+                .catch(() => mostrarToastContato('Não foi possível copiar.'));
+        }
+    </script>
+</body>
+</html>

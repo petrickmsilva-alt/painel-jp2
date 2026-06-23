@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <title>Agenda | JP2 Business</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+    <style>
+        :root {
+            --jp2-bg: #f4f7fb;
+            --jp2-text: #111827;
+            --jp2-muted: #667085;
+            --jp2-line: #d9e2ef;
+            --jp2-blue: #155eef;
+            --jp2-green: #078c55;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--jp2-bg);
+            color: var(--jp2-text);
+            font-family: "Segoe UI", Arial, sans-serif;
+            padding: 24px;
+        }
+
+        .agenda-shell {
+            max-width: 1240px;
+            margin: 0 auto;
+        }
+
+        .agenda-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .agenda-eyebrow {
+            color: var(--jp2-muted);
+            font-size: .76rem;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 4px 0 0;
+            font-size: 1.55rem;
+            font-weight: 800;
+            letter-spacing: 0;
+        }
+
+        .agenda-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-agenda {
+            border-radius: 7px;
+            font-size: .9rem;
+            font-weight: 700;
+            padding: 9px 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .agenda-card {
+            background: #fff;
+            border: 1px solid var(--jp2-line);
+            border-radius: 8px;
+            box-shadow: 0 14px 34px rgba(15, 23, 42, .08);
+            padding: 18px;
+        }
+
+        .agenda-legend {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            color: var(--jp2-muted);
+            font-size: .86rem;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+        .fc {
+            font-size: .9rem;
+        }
+
+        .fc .fc-toolbar {
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .fc-toolbar-title {
+            color: #0f172a;
+            font-size: 1.28rem !important;
+            font-weight: 800;
+            text-transform: capitalize;
+        }
+
+        .fc .fc-button-primary {
+            background: #fff !important;
+            border-color: #cfd8e6 !important;
+            color: #344054 !important;
+            border-radius: 7px !important;
+            box-shadow: none !important;
+            font-size: .84rem;
+            font-weight: 700;
+            padding: 8px 13px;
+        }
+
+        .fc .fc-button-primary:hover {
+            background: #f8fafc !important;
+        }
+
+        .fc .fc-daygrid-day {
+            background: #fff;
+        }
+
+        .fc .fc-day-today {
+            background: #eef6ff !important;
+        }
+
+        .fc .fc-event {
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+            padding: 4px 7px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .12);
+        }
+
+        .fc-event-title {
+            white-space: normal;
+            line-height: 1.25;
+        }
+
+        .modal-content {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 24px 70px rgba(15, 23, 42, .24);
+        }
+
+        .jp2-modal-header {
+            padding: 24px 28px 12px;
+            border-bottom: 1px solid #e5eaf2;
+        }
+
+        .jp2-modal-title {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #1f2937;
+            font-size: 1.24rem;
+            font-weight: 800;
+        }
+
+        .jp2-modal-body {
+            padding: 20px 28px;
+            color: #475467;
+        }
+
+        .jp2-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 0 28px 24px;
+        }
+
+        .agenda-detail {
+            border: 1px solid #e5eaf2;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            background: #f8fafc;
+        }
+
+        .agenda-detail span {
+            display: block;
+            color: var(--jp2-muted);
+            font-size: .72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+
+        .agenda-toast {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            width: min(390px, calc(100vw - 48px));
+            background: #fff;
+            border: 1px solid #d9e2ef;
+            border-left: 4px solid var(--jp2-green);
+            border-radius: 8px;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, .15);
+            padding: 14px 16px;
+            display: none;
+            z-index: 2000;
+        }
+
+        .agenda-toast.show {
+            display: block;
+        }
+
+        .agenda-toast.error {
+            border-left-color: #dc2626;
+        }
+
+        .agenda-toast strong {
+            display: block;
+            color: #111827;
+            font-size: .95rem;
+        }
+
+        .agenda-toast span {
+            color: #667085;
+            font-size: .86rem;
+        }
+
+        @media (max-width: 720px) {
+            body {
+                padding: 14px;
+            }
+
+            .agenda-topbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .agenda-card {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="agenda-shell">
+        <section class="agenda-topbar">
+            <div>
+                <div class="agenda-eyebrow">Gestão de compromissos</div>
+                <h1>Agenda JP2 Business</h1>
+            </div>
+            <div class="agenda-actions">
+                <a href="/" class="btn btn-outline-secondary btn-agenda">
+                    <i class="bi bi-arrow-left"></i> Voltar ao Painel
+                </a>
+            </div>
+        </section>
+
+        <section class="agenda-card">
+            <div class="agenda-legend">
+                <span><i class="legend-dot" style="background: var(--jp2-blue);"></i>Reuniao</span>
+                <span><i class="legend-dot" style="background: var(--jp2-green);"></i>Evento</span>
+                <span><i class="bi bi-info-circle"></i> Clique em um compromisso para ver detalhes ou remover.</span>
+            </div>
+            <div id="calendar"></div>
+        </section>
+    </main>
+
+    <div class="modal fade" id="modalDetalheAgenda" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="jp2-modal-header">
+                    <h5 class="jp2-modal-title">
+                        <i class="bi bi-calendar-check text-primary"></i>
+                        <span id="agendaDetalheTitulo">Compromisso</span>
+                    </h5>
+                </div>
+                <div class="jp2-modal-body">
+                    <div class="agenda-detail">
+                        <span>Tipo</span>
+                        <strong id="agendaDetalheTipo">-</strong>
+                    </div>
+                    <div class="agenda-detail">
+                        <span>Local ou link</span>
+                        <strong id="agendaDetalheLocal">-</strong>
+                    </div>
+                    <div class="agenda-detail">
+                        <span>Horario</span>
+                        <strong id="agendaDetalheHorario">-</strong>
+                    </div>
+                    <label class="form-label fw-bold mt-2" for="senhaExcluirEvento">Confirme sua senha para excluir</label>
+                    <input type="password" id="senhaExcluirEvento" class="form-control" placeholder="Senha do usuário">
+                </div>
+                <div class="jp2-modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmarExclusaoEvento()">Excluir compromisso</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="agendaToast" class="agenda-toast">
+        <strong id="agendaToastTitulo">Mensagem</strong>
+        <span id="agendaToastMensagem"></span>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let eventoSelecionadoAgenda = null;
+        let calendarioAgenda = null;
+
+        function mostrarAgendaToast(titulo, mensagem, tipo = 'sucesso') {
+            const toast = document.getElementById('agendaToast');
+            document.getElementById('agendaToastTitulo').innerText = titulo;
+            document.getElementById('agendaToastMensagem').innerText = mensagem || '';
+            toast.classList.toggle('error', tipo === 'erro');
+            toast.classList.add('show');
+            clearTimeout(window.agendaToastTimer);
+            window.agendaToastTimer = setTimeout(() => toast.classList.remove('show'), 3600);
+        }
+
+        function textoTipoAgenda(tipo) {
+            return tipo === 'evento' ? 'Evento' : 'Reuniao';
+        }
+
+        function abrirDetalheEvento(info) {
+            eventoSelecionadoAgenda = info.event;
+            const props = info.event.extendedProps || {};
+            document.getElementById('agendaDetalheTitulo').innerText = props.titulo_original || info.event.title;
+            document.getElementById('agendaDetalheTipo').innerText = textoTipoAgenda(props.tipo);
+            document.getElementById('agendaDetalheLocal').innerText = props.local || 'Não informado';
+            document.getElementById('agendaDetalheHorario').innerText = props.horario || 'Dia inteiro';
+            document.getElementById('senhaExcluirEvento').value = '';
+            new bootstrap.Modal(document.getElementById('modalDetalheAgenda')).show();
+        }
+
+        function confirmarExclusaoEvento() {
+            const senha = document.getElementById('senhaExcluirEvento').value.trim();
+            if (!eventoSelecionadoAgenda || !senha) {
+                mostrarAgendaToast('Senha obrigatoria', 'Informe sua senha para remover o compromisso.', 'erro');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('id', eventoSelecionadoAgenda.id);
+            formData.append('titulo', eventoSelecionadoAgenda.extendedProps.titulo_original || eventoSelecionadoAgenda.title);
+            formData.append('senha', senha);
+
+            fetch('/excluir-evento', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'sucesso') {
+                    bootstrap.Modal.getInstance(document.getElementById('modalDetalheAgenda')).hide();
+                    if (calendarioAgenda) calendarioAgenda.refetchEvents();
+                    mostrarAgendaToast('Compromisso removido', 'A agenda foi atualizada com sucesso.');
+                } else {
+                    mostrarAgendaToast('Não foi possível excluir', data.mensagem || 'Verifique a senha e tente novamente.', 'erro');
+                }
+            })
+            .catch(() => mostrarAgendaToast('Erro de conexão', 'Não foi possível falar com o servidor.', 'erro'));
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendarEl = document.getElementById('calendar');
+            calendarioAgenda = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'pt-br',
+                height: 690,
+                events: {
+                    url: '/api/listar-eventos',
+                    cache: false
+                },
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: ''
+                },
+                eventDidMount: function(info) {
+                    const props = info.event.extendedProps || {};
+                    const cor = info.event.color || (props.tipo === 'evento' ? '#078c55' : '#155eef');
+                    info.el.style.backgroundColor = cor;
+                    info.el.style.borderColor = cor;
+
+                    const detalhes = [
+                        props.tipo ? `Tipo: ${textoTipoAgenda(props.tipo)}` : '',
+                        props.horario ? `Horario: ${props.horario}` : '',
+                        props.local ? `Local: ${props.local}` : ''
+                    ].filter(Boolean).join('\n');
+                    if (detalhes) info.el.title = `${info.event.title}\n${detalhes}`;
+                },
+                eventClick: abrirDetalheEvento
+            });
+
+            calendarioAgenda.render();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+﻿{% extends 'layout_base.html' %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <h2 class="mb-4">Racional de Investimentos</h2>
+
+    <div class="card p-4 mb-4 shadow-sm">
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="form-label fw-bold">Empresa</label>
+                <input type="text" id="filtroEmpresa" class="form-control" placeholder="Digite o nome da empresa...">
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Credor</label>
+                <input type="text" id="filtroCredor" class="form-control" placeholder="Nome do credor">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Mês/Ano</label>
+                <input type="text" id="filtroMes" class="form-control" placeholder="06/2026">
+            </div>
+
+            <div class="col-12 mt-3">
+                <button class="btn btn-primary px-5" onclick="carregarResumo()">Filtrar</button>
+            </div>
+            
+            <div class="col-12">
+                <label class="form-label fw-bold">Subtotal do Investimento</label>
+                <div class="alert alert-info p-3" id="subtotalGeral">R$ 0,00</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-3 mb-4 shadow-sm">
+        <h5>Dados Filtrados</h5>
+        <div class="table-responsive">
+            <table class="table table-hover" id="tabelaDados">
+                <thead class="table-dark">
+                    <tr><th>Empresa</th><th>Credor</th><th>Valor</th><th>Saldo Devedor</th></tr>
+                </thead>
+                <tbody id="corpoTabelaDados"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card p-3 shadow-sm">
+        <h5>Correlação de investimentos</h5>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr><th>Credor</th><th>Participação (%)</th><th>ROI Projetado</th><th>Status</th></tr>
+                </thead>
+                <tbody id="corpoTabelaCorrelacao"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function carregarResumo() {
+        try {
+            const response = await fetch('/api/resumo-investimentos');
+            const data = await response.json();
+            
+            if (data.status === 'sucesso') {
+                const tbodyDados = document.getElementById('corpoTabelaDados');
+                const tbodyCorrelacao = document.getElementById('corpoTabelaCorrelacao');
+                
+                tbodyDados.innerHTML = '';
+                tbodyCorrelacao.innerHTML = '';
+                let totalValor = 0;
+
+                data.dados.forEach(item => {
+                    const val = parseFloat(item.valor_investido) || 0;
+                    const final = parseFloat(item.valor_final) || 0;
+                    totalValor += val;
+
+                    tbodyDados.innerHTML += `<tr>
+                        <td>${item.empresa || '-'}</td>
+                        <td>${item.credor}</td>
+                        <td>R$ ${val.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td>R$ ${parseFloat(item.saldo_devedor || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    </tr>`;
+
+                    const roi = val > 0 ? ((final - val) / val * 100).toFixed(2) : 0;
+                    tbodyCorrelacao.innerHTML += `<tr>
+                        <td>${item.credor}</td>
+                        <td>-</td>
+                        <td>${roi}%</td>
+                        <td><span class="badge bg-success">Ativo</span></td>
+                    </tr>`;
+                });
+
+                document.getElementById('subtotalGeral').innerText = `R$ ${totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            }
+        } catch (error) {
+            console.error("Erro ao carregar:", error);
+        }
+    }
+    document.addEventListener('DOMContentLoaded', carregarResumo);
+</script>
+{% endblock %}
+
