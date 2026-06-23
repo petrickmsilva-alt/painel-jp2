@@ -1173,7 +1173,7 @@
                         </button>
                         <div class="folder-search">
                             <i class="bi bi-search"></i>
-                            <input type="text" id="inputBuscaPasta" name="jp2_filtro_arquivos_{{ range(100000, 999999) | random }}" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="search" readonly data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-ddg-inputtype="unknown" aria-autocomplete="none" placeholder="Buscar nesta pasta" onfocus="this.removeAttribute('readonly'); this.setAttribute('autocomplete','off');" onmousedown="this.removeAttribute('readonly')" oninput="filtrarItensDaGrade(this.value)">
+                            <input type="search" id="inputBuscaPasta" name="jp2_busca_pasta_desativada" value="" autocomplete="new-password" autocapitalize="off" spellcheck="false" data-lpignore="true" data-form-type="other" placeholder="Buscar nesta pasta" oninput="filtrarItensDaGrade(this.value)">
                         </div>
                         
                         <select id="selectView" class="form-select form-select-sm ms-auto" style="width: 158px;" onchange="alterarVisualizacao(this.value)">
@@ -1654,6 +1654,12 @@
         if (item.tipo === 'pasta') {
             cliqueCorpoCard = `entrarSubpastaReal(${item.id}, '${nomeSeguro}')`;
             botoesAcaoHtml = `
+                <button class="btn btn-sm btn-light border py-0 px-1 text-secondary" title="Mover para cima" onclick="moverItemNaLista(event, ${item.id}, 'cima')">
+                    <i class="bi bi-arrow-up"></i>
+                </button>
+                <button class="btn btn-sm btn-light border py-0 px-1 text-secondary" title="Mover para baixo" onclick="moverItemNaLista(event, ${item.id}, 'baixo')">
+                    <i class="bi bi-arrow-down"></i>
+                </button>
                 <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="abrirModalRenomear(event, ${item.id}, '${nomeSeguro}')">
                     <i class="bi bi-pencil"></i>
                 </button>
@@ -2213,6 +2219,24 @@
         });
     }
 
+    function moverItemNaLista(event, id, direcao) {
+        if (event) event.stopPropagation();
+        const formData = new FormData();
+        formData.append('id', id);
+        formData.append('direcao', direcao);
+
+        fetch('/reordenar-item', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status !== 'sucesso') {
+                    mostrarToast('Nao foi possivel mover', data.mensagem || 'Tente novamente.', 'erro');
+                    return;
+                }
+                invalidarCacheListagem();
+                sincronizarGrade();
+            })
+            .catch(() => mostrarToast('Erro de conexao', 'Nao foi possivel mover este item.', 'erro'));
+    }
     function abrirModalUploadComContexto() {
         let overlay = document.createElement('div');
         overlay.id = 'modal-global-overlay';
@@ -2275,6 +2299,7 @@
         let indiceArquivoAtual = 0;
         let itensEnviados = [];
         let uploadDePasta = arquivosParaSubir.some(arquivo => arquivo.webkitRelativePath);
+        let pastaRaizUpload = uploadDePasta ? String(arquivosParaSubir[0].webkitRelativePath || '').split('/')[0] : '';
 
         // Mini-fatias de 1 MB para evitar limite 413 ou estouro de memória.
         const CHUNK_SIZE = 1 * 1024 * 1024;
@@ -2330,6 +2355,7 @@
                 formData.append('guid', guidUnico);
                 formData.append('nome_original', arquivo.name);
                 formData.append('caminho_relativo', arquivo.webkitRelativePath || arquivo.name);
+                formData.append('pasta_raiz_upload', pastaRaizUpload);
 
                 let xhr = new XMLHttpRequest();
                 xhr.open('POST', '/upload-avancado', true);

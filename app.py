@@ -1,4 +1,4 @@
-﻿import os
+import os
 import uuid
 import re
 import hashlib
@@ -20,7 +20,7 @@ import pyotp
 
 app = Flask(__name__)
 
-# ConfiguraÃ§Ãµes iniciais
+# ConfiguraÃƒÂ§ÃƒÂµes iniciais
 SECRET_KEY = os.environ.get("FLASK_SECRET_KEY")
 if not SECRET_KEY:
     raise RuntimeError("Defina a variavel FLASK_SECRET_KEY antes de iniciar o painel.")
@@ -38,6 +38,7 @@ COLUNA_PERFIL_USUARIOS_VERIFICADA = False
 COLUNAS_2FA_USUARIOS_VERIFICADAS = False
 COLUNAS_AGENDA_VERIFICADAS = False
 TABELA_CONTATOS_VERIFICADA = False
+COLUNA_ORDEM_ARQUIVOS_VERIFICADA = False
 USUARIOS_ADMIN_CACHE = None
 RESUMO_DASHBOARD_CACHE = {"expira_em": None, "dados": None}
 LISTAR_CACHE = {}
@@ -55,20 +56,20 @@ ROTAS_MONITORADAS = (
     "/salvar-site",
 )
 
-# Registro do mÃ³dulo financeiro
+# Registro do mÃƒÂ³dulo financeiro
 from financeiro import bp_financeiro
 app.register_blueprint(bp_financeiro)
 
-# Registro do módulo de cadastro de eventos
+# Registro do mÃ³dulo de cadastro de eventos
 from eventos import bp_eventos
 app.register_blueprint(bp_eventos)
 
-# DIRETÃ“RIO LOCAL DE ARMAZENAMENTO
+# DIRETÃƒâ€œRIO LOCAL DE ARMAZENAMENTO
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-# ConexÃ£o otimizada com o banco
+# ConexÃƒÂ£o otimizada com o banco
 def registrar_log(acao):
     try:
         usuario = session.get('nome_exibicao', 'Sistema / Desconhecido')
@@ -239,6 +240,41 @@ def garantir_colunas_2fa_usuarios():
         COLUNAS_2FA_USUARIOS_VERIFICADAS = True
     finally:
         conn.close()
+def garantir_coluna_ordem_arquivos():
+    global COLUNA_ORDEM_ARQUIVOS_VERIFICADA
+    if COLUNA_ORDEM_ARQUIVOS_VERIFICADA:
+        return
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SHOW COLUMNS FROM arquivos_painel LIKE 'ordem_exibicao'")
+            if not cur.fetchone():
+                cur.execute("ALTER TABLE arquivos_painel ADD COLUMN ordem_exibicao INT NULL")
+            cur.execute("""
+                UPDATE arquivos_painel
+                SET ordem_exibicao = id * 10
+                WHERE ordem_exibicao IS NULL
+            """)
+        COLUNA_ORDEM_ARQUIVOS_VERIFICADA = True
+    finally:
+        conn.close()
+
+
+def proxima_ordem_arquivo(cur, bloco, pasta_pai_id):
+    if pasta_pai_id is None:
+        cur.execute("""
+            SELECT COALESCE(MAX(ordem_exibicao), 0) + 10 AS proxima
+            FROM arquivos_painel
+            WHERE bloco = %s AND pasta_pai_id IS NULL AND deletado = 0
+        """, (bloco,))
+    else:
+        cur.execute("""
+            SELECT COALESCE(MAX(ordem_exibicao), 0) + 10 AS proxima
+            FROM arquivos_painel
+            WHERE bloco = %s AND pasta_pai_id = %s AND deletado = 0
+        """, (bloco, pasta_pai_id))
+    return int((cur.fetchone() or {}).get("proxima") or 10)
 
 def usuario_login_e_admin(user):
     if not user:
@@ -771,7 +807,7 @@ def home():
     if 'usuario_logado' not in session: 
         return redirect(url_for('tela_login'))
 
-    return render_template('home.html', nome_socio=session.get('nome_exibicao', 'Sócio'))
+    return render_template('home.html', nome_socio=session.get('nome_exibicao', 'SÃ³cio'))
 
 @app.route('/carteira-investimentos')
 def carteira_investimentos():
@@ -784,7 +820,7 @@ def carteira_investimentos():
 
     return render_template(
         'carteira_investimentos.html',
-        nome_socio=session.get('nome_exibicao', 'Sócio')
+        nome_socio=session.get('nome_exibicao', 'SÃ³cio')
     )
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -829,7 +865,7 @@ def tela_login():
                 flash("Usuario ou senha incorretos.")
         except Exception as e:
             print(f"Erro no Login: {e}")
-            flash(f"Erro de conexão com o banco: {str(e)}")
+            flash(f"Erro de conexÃ£o com o banco: {str(e)}")
             return redirect(url_for('tela_login'))
         finally:
             if conn:
@@ -1093,7 +1129,7 @@ def admin_usuarios():
             conn.commit()
             conn.close()
             invalidar_cache_resumo_dashboard()
-            registrar_log(f"Cadastrou um novo usuário no painel: {novo_user}")
+            registrar_log(f"Cadastrou um novo usuÃ¡rio no painel: {novo_user}")
         except Exception as e:
             print(f"Erro cadastro: {e}")
             
@@ -1116,17 +1152,17 @@ def excluir_usuario(usuario_id):
             cur.execute("SELECT usuario, perfil FROM usuarios WHERE id = %s", (usuario_id,))
             usuario_alvo = cur.fetchone()
             if usuario_alvo and usuario_alvo.get('usuario') == session.get('usuario_logado'):
-                flash("Você não pode excluir seu próprio usuário.")
+                flash("VocÃª nÃ£o pode excluir seu prÃ³prio usuÃ¡rio.")
                 conn.close()
                 return redirect(url_for('admin_usuarios'))
             cur.execute("DELETE FROM usuarios WHERE id = %s", (usuario_id,))
         conn.commit()
         conn.close()
         invalidar_cache_resumo_dashboard()
-        registrar_log(f"Removeu o usuário ID: {usuario_id} do sistema")
-        flash("Sócio removido com sucesso!")
+        registrar_log(f"Removeu o usuÃ¡rio ID: {usuario_id} do sistema")
+        flash("SÃ³cio removido com sucesso!")
     except Exception as e:
-        print(f"Erro ao deletar usuário: {e}")
+        print(f"Erro ao deletar usuÃ¡rio: {e}")
     return redirect(url_for('admin_usuarios'))
 
 @app.route('/admin/alterar_perfil/<int:usuario_id>', methods=['POST'])
@@ -1137,7 +1173,7 @@ def alterar_perfil_usuario(usuario_id):
 
     novo_perfil = request.form.get('perfil', 'socio')
     if novo_perfil not in ['admin', 'socio', 'leitura']:
-        flash("Perfil inválido.")
+        flash("Perfil invÃ¡lido.")
         return redirect(url_for('admin_usuarios'))
 
     try:
@@ -1147,22 +1183,22 @@ def alterar_perfil_usuario(usuario_id):
             cur.execute("SELECT usuario, perfil FROM usuarios WHERE id = %s", (usuario_id,))
             usuario_alvo = cur.fetchone()
             if not usuario_alvo:
-                flash("Usuário não encontrado.")
+                flash("UsuÃ¡rio nÃ£o encontrado.")
                 conn.close()
                 return redirect(url_for('admin_usuarios'))
 
             if usuario_alvo.get('usuario') == session.get('usuario_logado') and novo_perfil != 'admin':
-                flash("Você não pode remover seu próprio perfil de administrador.")
+                flash("VocÃª nÃ£o pode remover seu prÃ³prio perfil de administrador.")
                 conn.close()
                 return redirect(url_for('admin_usuarios'))
 
             cur.execute("UPDATE usuarios SET perfil = %s WHERE id = %s", (novo_perfil, usuario_id))
         conn.close()
-        registrar_log(f"Alterou perfil do usuário {usuario_alvo.get('usuario')} para {novo_perfil}")
+        registrar_log(f"Alterou perfil do usuÃ¡rio {usuario_alvo.get('usuario')} para {novo_perfil}")
         flash("Perfil atualizado com sucesso.")
     except Exception as e:
         print(f"Erro ao alterar perfil: {e}")
-        flash("Não foi possível atualizar o perfil.")
+        flash("NÃ£o foi possÃ­vel atualizar o perfil.")
 
     return redirect(url_for('admin_usuarios'))
 
@@ -1180,7 +1216,7 @@ def alterar_senha_usuario(usuario_id):
         return redirect(url_for('admin_usuarios'))
 
     if nova_senha != confirmar_senha:
-        flash("A confirmação da senha não confere.")
+        flash("A confirmaÃ§Ã£o da senha nÃ£o confere.")
         return redirect(url_for('admin_usuarios'))
 
     try:
@@ -1189,7 +1225,7 @@ def alterar_senha_usuario(usuario_id):
             cur.execute("SELECT usuario FROM usuarios WHERE id = %s", (usuario_id,))
             usuario_alvo = cur.fetchone()
             if not usuario_alvo:
-                flash("Usuário não encontrado.")
+                flash("UsuÃ¡rio nÃ£o encontrado.")
                 conn.close()
                 return redirect(url_for('admin_usuarios'))
 
@@ -1198,11 +1234,11 @@ def alterar_senha_usuario(usuario_id):
                 (gerar_hash_senha(nova_senha), usuario_id)
             )
         conn.close()
-        registrar_log(f"Alterou a senha do usuário {usuario_alvo.get('usuario')}")
+        registrar_log(f"Alterou a senha do usuÃ¡rio {usuario_alvo.get('usuario')}")
         flash("Senha atualizada com sucesso.")
     except Exception as e:
         print(f"Erro ao alterar senha: {e}")
-        flash("Não foi possível alterar a senha.")
+        flash("NÃ£o foi possÃ­vel alterar a senha.")
 
     return redirect(url_for('admin_usuarios'))
 
@@ -1291,7 +1327,8 @@ def exportar_logs_auditoria():
 
 @app.route('/listar')
 def listar_arquivos():
-    if 'usuario_logado' not in session: return jsonify({'erro': 'NÃ£o autorizado'}), 401
+    if 'usuario_logado' not in session: return jsonify({'erro': 'NÃƒÂ£o autorizado'}), 401
+    garantir_coluna_ordem_arquivos()
     bloco = request.args.get('bloco')
     pasta_pai_id = request.args.get('pasta_pai_id')
     cache_key = chave_listagem_cache(bloco, pasta_pai_id)
@@ -1309,17 +1346,17 @@ def listar_arquivos():
         with conn.cursor() as cur:
             if pasta_pai_id and str(pasta_pai_id).strip() not in ["null", "undefined", ""]:
                 cur.execute("""
-                    SELECT id, nome_original, tipo, caminho_sistema, criado_por, bloco, categoria, pasta_pai_id
+                    SELECT id, nome_original, tipo, caminho_sistema, criado_por, bloco, categoria, pasta_pai_id, ordem_exibicao
                     FROM arquivos_painel
                     WHERE bloco = %s AND pasta_pai_id = %s AND deletado = 0
-                    ORDER BY tipo DESC, nome_original ASC
+                    ORDER BY tipo DESC, COALESCE(ordem_exibicao, id * 10) ASC, nome_original ASC
                 """, (bloco, int(pasta_pai_id)))
             else:
                 cur.execute("""
-                    SELECT id, nome_original, tipo, caminho_sistema, criado_por, bloco, categoria, pasta_pai_id
+                    SELECT id, nome_original, tipo, caminho_sistema, criado_por, bloco, categoria, pasta_pai_id, ordem_exibicao
                     FROM arquivos_painel
                     WHERE bloco = %s AND pasta_pai_id IS NULL AND deletado = 0
-                    ORDER BY tipo DESC, nome_original ASC
+                    ORDER BY tipo DESC, COALESCE(ordem_exibicao, id * 10) ASC, nome_original ASC
                 """, (bloco,))
             linhas = cur.fetchall()
         
@@ -1342,8 +1379,66 @@ def listar_arquivos():
         return jsonify({'itens': []})
     
     finally:
-        if conn: conn.close() # Garantia absoluta de que a conexÃ£o fecharÃ¡
+        if conn: conn.close() # Garantia absoluta de que a conexÃƒÂ£o fecharÃƒÂ¡
         
+@app.route('/reordenar-item', methods=['POST'])
+def reordenar_item():
+    if 'usuario_logado' not in session:
+        return jsonify({'status': 'erro', 'mensagem': 'Nao autorizado'}), 401
+    garantir_coluna_ordem_arquivos()
+
+    try:
+        item_id = int(request.form.get('id'))
+    except (TypeError, ValueError):
+        return jsonify({'status': 'erro', 'mensagem': 'Item invalido.'}), 400
+
+    direcao = request.form.get('direcao')
+    if direcao not in ('cima', 'baixo'):
+        return jsonify({'status': 'erro', 'mensagem': 'Direcao invalida.'}), 400
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT id, bloco, pasta_pai_id, tipo, ordem_exibicao
+                FROM arquivos_painel
+                WHERE id = %s AND deletado = 0
+            """, (item_id,))
+            atual = cur.fetchone()
+            if not atual:
+                return jsonify({'status': 'erro', 'mensagem': 'Item nao encontrado.'}), 404
+
+            parent_sql = "pasta_pai_id IS NULL" if atual.get('pasta_pai_id') is None else "pasta_pai_id = %s"
+            params = [atual['bloco'], atual['tipo']]
+            if atual.get('pasta_pai_id') is not None:
+                params.append(atual['pasta_pai_id'])
+            cur.execute(f"""
+                SELECT id
+                FROM arquivos_painel
+                WHERE bloco = %s AND tipo = %s AND {parent_sql} AND deletado = 0
+                ORDER BY COALESCE(ordem_exibicao, id * 10) ASC, nome_original ASC, id ASC
+            """, tuple(params))
+            ids = [row['id'] for row in cur.fetchall()]
+            if item_id not in ids:
+                return jsonify({'status': 'erro', 'mensagem': 'Item fora da lista.'}), 400
+
+            posicao = ids.index(item_id)
+            nova_posicao = posicao - 1 if direcao == 'cima' else posicao + 1
+            if nova_posicao < 0 or nova_posicao >= len(ids):
+                return jsonify({'status': 'sucesso', 'alterou': False})
+
+            ids[posicao], ids[nova_posicao] = ids[nova_posicao], ids[posicao]
+            for ordem, registro_id in enumerate(ids, start=1):
+                cur.execute("UPDATE arquivos_painel SET ordem_exibicao = %s WHERE id = %s", (ordem * 10, registro_id))
+        conn.commit()
+        invalidar_cache_listagem()
+        registrar_log(f"Reordenou item {item_id} para {direcao} no painel de arquivos")
+        return jsonify({'status': 'sucesso', 'alterou': True})
+    except Exception as e:
+        print(f"Erro ao reordenar item: {e}", flush=True)
+        return jsonify({'status': 'erro', 'mensagem': 'Nao foi possivel reordenar.'}), 500
+    finally:
+        conn.close()
 @app.route('/obter-pai-id')
 def obter_pai_id():
     if 'usuario_logado' not in session: return jsonify({'pasta_pai_id': None}), 401
@@ -1370,6 +1465,7 @@ def obter_pai_id():
 @app.route('/criar-pasta', methods=['POST'])
 def criar_pasta():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
+    garantir_coluna_ordem_arquivos()
     nome, bloco = request.form.get('nome'), request.form.get('bloco')
     cat = request.form.get('categoria') or 'raiz'
     pai = request.form.get('pasta_pai_id')
@@ -1378,9 +1474,9 @@ def criar_pasta():
         conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO arquivos_painel (nome_original, bloco, categoria, tipo, pasta_pai_id, criado_por, deletado)
-                VALUES (%s, %s, %s, 'pasta', %s, %s, 0)
-            """, (nome, bloco, cat, p_id, session.get('nome_exibicao', 'Sistema')))
+                INSERT INTO arquivos_painel (nome_original, bloco, categoria, tipo, pasta_pai_id, criado_por, deletado, ordem_exibicao)
+                VALUES (%s, %s, %s, 'pasta', %s, %s, 0, %s)
+            """, (nome, bloco, cat, p_id, session.get('nome_exibicao', 'Sistema'), proxima_ordem_arquivo(cur, bloco, p_id)))
             novo_id = cur.lastrowid
         conn.commit()
         conn.close()
@@ -1441,9 +1537,9 @@ def obter_ou_criar_pasta_upload(cur, nome, bloco, categoria, pasta_pai_id):
         return pasta["id"]
 
     cur.execute("""
-        INSERT INTO arquivos_painel (nome_original, bloco, categoria, tipo, pasta_pai_id, criado_por, deletado)
-        VALUES (%s, %s, %s, 'pasta', %s, %s, 0)
-    """, (nome_limpo, bloco, categoria or 'raiz', pasta_pai_id, session.get('nome_exibicao', 'Sistema')))
+        INSERT INTO arquivos_painel (nome_original, bloco, categoria, tipo, pasta_pai_id, criado_por, deletado, ordem_exibicao)
+        VALUES (%s, %s, %s, 'pasta', %s, %s, 0, %s)
+    """, (nome_limpo, bloco, categoria or 'raiz', pasta_pai_id, session.get('nome_exibicao', 'Sistema'), proxima_ordem_arquivo(cur, bloco, pasta_pai_id)))
     return cur.lastrowid
 
 def resolver_destino_upload_pasta(cur, caminho_relativo, bloco, categoria, pasta_pai_id):
@@ -1458,10 +1554,11 @@ def resolver_destino_upload_pasta(cur, caminho_relativo, bloco, categoria, pasta
         destino_id = obter_ou_criar_pasta_upload(cur, parte, bloco, categoria, destino_id)
     return destino_id
 
-# ðŸš€ 1. INSTALAÃ‡ÃƒO DO MOTOR FATIADOR COMPATÃVEL COM ALTA VELOCIDADE (Mini-fatias)
+# Ã°Å¸Å¡â‚¬ 1. INSTALAÃƒâ€¡ÃƒÆ’O DO MOTOR FATIADOR COMPATÃƒÂVEL COM ALTA VELOCIDADE (Mini-fatias)
 @app.route('/upload-avancado', methods=['POST'])
 def upload_avancado():
     if 'usuario_logado' not in session: return jsonify({'status': 'erro'}), 401
+    garantir_coluna_ordem_arquivos()
     
     file = request.files.get('arquivos')
     bloco = request.form.get('bloco')
@@ -1539,10 +1636,10 @@ def upload_avancado():
     finally:
         if conn: conn.close()
             
-# ðŸŸ¢ 2. REMOÃ‡ÃƒO DE DUPLICIDADE: UNIFICAÃ‡ÃƒO DA ROTA INTELIGENTE DE VISUALIZAÃ‡ÃƒO E DOWNLOAD
+# Ã°Å¸Å¸Â¢ 2. REMOÃƒâ€¡ÃƒÆ’O DE DUPLICIDADE: UNIFICAÃƒâ€¡ÃƒÆ’O DA ROTA INTELIGENTE DE VISUALIZAÃƒâ€¡ÃƒÆ’O E DOWNLOAD
 @app.route('/baixar_recurso/<int:arquivo_id>')
 def baixar_recurso_corporativo(arquivo_id):
-    if 'usuario_logado' not in session: return "NÃ£o autorizado", 401
+    if 'usuario_logado' not in session: return "NÃƒÂ£o autorizado", 401
     force_download = request.args.get('download', 'false') == 'true'
     try:
         conn = get_db_connection()
@@ -1570,24 +1667,24 @@ def baixar_recurso_corporativo(arquivo_id):
             
             if os.path.exists(arquivo_path):
                 registrar_log(f"Acessou o arquivo: {dados['nome_original']} (Download={force_download})")
-                # ðŸŸ¢ CORREÃ‡ÃƒO CIRÃšRGICA: caminho_absoluto com "o" no final
+                # Ã°Å¸Å¸Â¢ CORREÃƒâ€¡ÃƒÆ’O CIRÃƒÅ¡RGICA: caminho_absoluto com "o" no final
                 return send_file(arquivo_path, download_name=dados['nome_original'], as_attachment=force_download)
             
     except Exception as e:
         print(f"ERRO DE FLUXO NO DOWNLOAD: {e}")
-    return "Este arquivo fÃ­sico antigo foi removido pelo deploy temporÃ¡rio do servidor da Render. Por favor, exclua-o na lixeira e faÃ§a o upload novamente para registrar o link persistente rÃ¡pido.", 404
+    return "Este arquivo fÃƒÂ­sico antigo foi removido pelo deploy temporÃƒÂ¡rio do servidor da Render. Por favor, exclua-o na lixeira e faÃƒÂ§a o upload novamente para registrar o link persistente rÃƒÂ¡pido.", 404
 
-# ðŸ”’ 3. ROTA DE SEGURANÃ‡A PARA ALTERAÃ‡ÃƒO DE NOMES
+# Ã°Å¸â€â€™ 3. ROTA DE SEGURANÃƒâ€¡A PARA ALTERAÃƒâ€¡ÃƒÆ’O DE NOMES
 @app.route('/renomear', methods=['POST'])
 def renomear_item():
-    if 'usuario_logado' not in session: return jsonify({'status': 'erro', 'mensagem': 'NÃ£o autorizado'}), 401
+    if 'usuario_logado' not in session: return jsonify({'status': 'erro', 'mensagem': 'NÃƒÂ£o autorizado'}), 401
     
     id_item = request.form.get('id')
     novo_nome = request.form.get('novo_nome', '').strip()
     senha = request.form.get('senha', '').strip()
     
     if not id_item or not novo_nome or not senha:
-        return jsonify({'status': 'erro', 'mensagem': 'Preencha todos os campos obrigatÃ³rios!'}), 400
+        return jsonify({'status': 'erro', 'mensagem': 'Preencha todos os campos obrigatÃƒÂ³rios!'}), 400
         
     try:
         conn = get_db_connection()
@@ -1598,14 +1695,14 @@ def renomear_item():
             
             if not senha_confere(user_senha, senha):
                 conn.close()
-                return jsonify({'status': 'erro', 'mensagem': 'Senha de validaÃ§Ã£o incorreta!'}), 401
+                return jsonify({'status': 'erro', 'mensagem': 'Senha de validaÃƒÂ§ÃƒÂ£o incorreta!'}), 401
             
             cur.execute("SELECT nome_original, tipo FROM arquivos_painel WHERE id = %s AND deletado = 0", (id_item,))
             item_antigo = cur.fetchone()
             
             if not item_antigo:
                 conn.close()
-                return jsonify({'status': 'erro', 'mensagem': 'Item nÃ£o localizado no servidor!'}), 404
+                return jsonify({'status': 'erro', 'mensagem': 'Item nÃƒÂ£o localizado no servidor!'}), 404
                 
             cur.execute("UPDATE arquivos_painel SET nome_original = %s WHERE id = %s", (novo_nome, id_item))
             
@@ -1632,7 +1729,7 @@ def excluir_arquivo():
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
-            # 1. ValidaÃ§Ã£o rÃ¡pida da senha
+            # 1. ValidaÃƒÂ§ÃƒÂ£o rÃƒÂ¡pida da senha
             cur.execute("SELECT senha FROM usuarios WHERE usuario = %s", (session.get('usuario_logado'),))
             dados_u = cur.fetchone()
             user_senha = str(dados_u['senha']) if dados_u else ""
@@ -1640,7 +1737,7 @@ def excluir_arquivo():
             if senha_confere(user_senha, senha):
                 lista_ids = [int(x.strip()) for x in str(ids_enviados).split(',') if x.strip().isdigit()]
                 
-                # 2. ExclusÃ£o direta
+                # 2. ExclusÃƒÂ£o direta
                 format_strings = ','.join(['%s'] * len(lista_ids))
                 cur.execute(f"""
                     UPDATE arquivos_painel 
@@ -1654,10 +1751,10 @@ def excluir_arquivo():
         
         return jsonify({'status': 'erro', 'mensagem': 'Senha incorreta!'})
     except Exception as e:
-        print(f"ERRO NA EXCLUSÃƒO: {e}")
+        print(f"ERRO NA EXCLUSÃƒÆ’O: {e}")
         return jsonify({'status': 'erro', 'mensagem': 'Erro interno'}), 500
     finally:
-        if conn: conn.close() # Garantia que a conexÃ£o sempre fecha
+        if conn: conn.close() # Garantia que a conexÃƒÂ£o sempre fecha
         
 @app.route('/salvar-site', methods=['POST'])
 def salvar_site():
