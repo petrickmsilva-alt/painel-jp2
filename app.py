@@ -774,10 +774,9 @@ def home():
 
     return render_template('home.html', nome_socio=session.get('nome_exibicao', 'Sócio'))
 
-@app.route('/carteira-investimentos', methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'])
-@app.route('/carteira-investimentos/', methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'])
-@app.route('/carteira-investimentos/<path:caminho>', methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'])
-def carteira_investimentos(caminho=''):
+@app.route('/carteira-investimentos')
+@app.route('/carteira-investimentos/')
+def carteira_investimentos():
     if 'usuario_logado' not in session:
         return redirect(url_for('tela_login'))
 
@@ -786,84 +785,11 @@ def carteira_investimentos(caminho=''):
         "https://carteira-investimentos-jp2business-1.onrender.com"
     ).strip().rstrip("/")
 
-    if not url_modulo:
-        return render_template(
-            'carteira_investimentos.html',
-            nome_socio=session.get('nome_exibicao', 'Sócio')
-        )
-
-    destino = urljoin(f"{url_modulo}/", caminho.lstrip("/"))
-    if request.query_string:
-        destino = f"{destino}?{request.query_string.decode('utf-8', errors='ignore')}"
-
-    headers = {
-        chave: valor
-        for chave, valor in request.headers.items()
-        if chave.lower() not in {
-            "host",
-            "content-length",
-            "accept-encoding",
-            "connection",
-        }
-    }
-    headers["Host"] = urlparse(url_modulo).netloc
-
-    corpo = request.get_data()
-    if request.method in {"GET", "HEAD", "OPTIONS"} and not corpo:
-        corpo = None
-
-    try:
-        requisicao_origem = urllib.request.Request(
-            destino,
-            data=corpo,
-            headers=headers,
-            method=request.method,
-        )
-        resposta_origem = urllib.request.urlopen(requisicao_origem, timeout=90)
-        status_code = resposta_origem.getcode()
-        cabecalhos_origem = resposta_origem.headers
-        conteudo = resposta_origem.read()
-    except urllib.error.HTTPError as erro_http:
-        status_code = erro_http.code
-        cabecalhos_origem = erro_http.headers
-        conteudo = erro_http.read()
-    except (urllib.error.URLError, TimeoutError, OSError):
-        registrar_alerta_seguranca("Falha ao acessar o modulo Carteira de Investimentos")
-        return render_template(
-            'carteira_investimentos.html',
-            nome_socio=session.get('nome_exibicao', 'Sócio')
-        ), 502
-
-    tipo_conteudo = cabecalhos_origem.get("content-type", "")
-    if "text/html" in tipo_conteudo:
-        html = conteudo.decode("utf-8", errors="replace")
-        html = html.replace('href="/', 'href="/carteira-investimentos/')
-        html = html.replace('src="/', 'src="/carteira-investimentos/')
-        html = html.replace('action="/', 'action="/carteira-investimentos/')
-        html = html.replace("url(/", "url(/carteira-investimentos/")
-        html = html.replace("/carteira-investimentos/carteira-investimentos/", "/carteira-investimentos/")
-        conteudo = html.encode("utf-8")
-
-    resposta = make_response(conteudo, status_code)
-    cabecalhos_ignorados = {
-        "content-encoding",
-        "content-length",
-        "transfer-encoding",
-        "connection",
-    }
-    for chave, valor in cabecalhos_origem.items():
-        chave_lower = chave.lower()
-        if chave_lower in cabecalhos_ignorados:
-            continue
-        if chave_lower == "location":
-            if valor.startswith(url_modulo):
-                valor = valor.replace(url_modulo, "/carteira-investimentos", 1)
-            elif valor.startswith("/"):
-                valor = f"/carteira-investimentos{valor}"
-        resposta.headers[chave] = valor
-    if "text/html" in tipo_conteudo:
-        resposta.headers["Content-Type"] = "text/html; charset=utf-8"
-    return resposta
+    return render_template(
+        'carteira_investimentos.html',
+        nome_socio=session.get('nome_exibicao', 'Sócio'),
+        url_modulo=url_modulo,
+    )
 @app.route('/login', methods=['GET', 'POST'])
 def tela_login():
     if request.method == 'GET' and 'usuario_logado' in session:

@@ -1,0 +1,18 @@
+HOTFIX 502 - INTEGRACAO CARTEIRA SEM DEPENDENCIA REQUESTS
+
+Arquivos para subir no repositorio principal painel-jp2:
+- app.py
+- requirements.txt
+
+Por que este hotfix existe:
+- A versao anterior adicionava a biblioteca requests.
+- Se o Render nao instalasse essa dependencia corretamente, o painel principal podia cair com 502.
+- Esta versao usa apenas biblioteca interna do Python e remove requests do requirements.txt.
+
+Variavel no Render do painel principal:
+CARTEIRA_INVESTIMENTOS_URL=https://carteira-investimentos-jp2business-1.onrender.com
+
+Depois do deploy:
+- Acesse https://app.ibdtec.ong.br
+- Clique em Carteira de Investimentos
+- O endereco esperado sera https://app.ibdtec.ong.br/carteira-investimentos
