@@ -1,0 +1,17 @@
+INTEGRACAO CARTEIRA DE INVESTIMENTOS DENTRO DO PAINEL PRINCIPAL
+
+Arquivos para subir no repositorio principal painel-jp2:
+- app.py
+- requirements.txt
+
+O que muda:
+- A rota /carteira-investimentos deixa de redirecionar para o Render separado.
+- O painel principal passa a servir a carteira por dentro do proprio dominio app.ibdtec.ong.br/carteira-investimentos.
+- Mantem protecao de login: se nao estiver logado, volta para /login.
+
+Variavel no Render do painel principal:
+CARTEIRA_INVESTIMENTOS_URL=https://carteira-investimentos-jp2business-1.onrender.com
+
+Importante:
+- A carteira continua hospedada no servico separado, mas o usuario entra pelo dominio principal.
+- Se o servico separado estiver dormindo no plano gratuito, o primeiro acesso ainda pode demorar. Para eliminar isso de vez, precisa plano pago/always-on ou migracao completa do Next.js para dentro do Flask.
