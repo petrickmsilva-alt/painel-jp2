@@ -105,8 +105,8 @@
                         <div class="col-lg-6"><label>Nome do evento</label><input class="form-control" id="nomeEvento" placeholder="Ex: Expo Fashion Brasil" required></div>
                         <div class="col-lg-3"><label>Data inicial</label><input type="date" class="form-control" id="dataInicio" required></div>
                         <div class="col-lg-3"><label>Data final</label><input type="date" class="form-control" id="dataFim" required></div>
-                        <div class="col-lg-3"><label>Origem do recurso</label><select class="form-select" id="origem" required><option value="">Selecione</option><option>Emenda Direta</option><option>Fomento</option><option>Emenda PÃ³s</option><option>Privado</option></select></div>
-                        <div class="col-lg-3"><label>Status</label><select class="form-select" id="status" required><option value="">Selecione</option><option>Autorizado</option><option>Em Andamento</option><option>Pendente</option><option>Em AnÃ¡lise</option><option>Encerrado</option></select></div>
+                        <div class="col-lg-3"><label>Origem do recurso</label><select class="form-select" id="origem" required><option value="">Selecione</option><option>Emenda Direta</option><option>Fomento</option><option>Emenda Pós</option><option>Privado</option></select></div>
+                        <div class="col-lg-3"><label>Status</label><select class="form-select" id="status" required><option value="">Selecione</option><option>Autorizado</option><option>Em Andamento</option><option>Pendente</option><option>Em Análise</option><option>Encerrado</option></select></div>
                         <div class="col-lg-6"><label>Observações</label><input class="form-control" id="observacoes" placeholder="Anotações relevantes do evento"></div>
                         <div class="col-12 d-flex justify-content-end gap-2">
                             <button type="button" class="btn btn-outline-secondary" onclick="limparFormulario()">Limpar</button>
@@ -127,8 +127,8 @@
                         <div class="col-lg-2"><label>Origem</label><select class="form-select" id="fOrigem"></select></div>
                         <div class="col-lg-2"><label>Status</label><select class="form-select" id="fStatus"></select></div>
                         <div class="col-lg-2"><label>Buscar</label><input class="form-control" id="fBusca" placeholder="Evento, cidade, obs."></div>
-                        <div class="col-lg-3"><label>Inicio a partir de</label><input type="date" class="form-control" id="fInicio"></div>
-                        <div class="col-lg-3"><label>Data</label><input type="date" class="form-control" id="fFim"></div>
+                        <div class="col-lg-3"><label>Início a partir de</label><input type="date" class="form-control" id="fInicio"></div>
+                        <div class="col-lg-3"><label>Até</label><input type="date" class="form-control" id="fFim"></div>
                         <div class="col-lg-6 d-flex gap-2"><button class="btn btn-primary flex-fill" onclick="aplicarFiltros()">Filtrar</button><button class="btn btn-outline-secondary" onclick="limparFiltros()">Limpar</button></div>
                     </div>
                 </div>
@@ -159,7 +159,7 @@
                             <select class="form-select" id="financeiroEventoSelect" onchange="carregarFinanceiroEvento()"></select>
                         </div>
                         <div class="col-lg-4">
-                            <button class="btn btn-outline-secondary w-100" onclick="carregarFinanceiroEvento()"><i class="bi bi-arrow-clockwise"></i> Atualizar cÃ¡lculo</button>
+                            <button class="btn btn-outline-secondary w-100" onclick="carregarFinanceiroEvento()"><i class="bi bi-arrow-clockwise"></i> Atualizar cálculo</button>
                         </div>
                     </div>
                 </div>
@@ -175,7 +175,7 @@
             <div class="row g-3 mt-1">
                 <div class="col-lg-12">
                     <div class="panel h-100">
-                        <div class="panel-head"><div><h2>Parametros do acordo</h2><p>Informe o percentual acordado para este evento.</p></div></div>
+                        <div class="panel-head"><div><h2>Parâmetros do repasse</h2><p>Informe o percentual acordado para este evento.</p></div></div>
                         <div class="panel-body">
                             <form id="formEventoFinanceiro" class="row g-3">
                                 <div class="col-12">
@@ -187,7 +187,7 @@
                                     <textarea class="form-control" id="finObservacoes" rows="3" placeholder="Condições, responsáveis, observações de conferência"></textarea>
                                 </div>
                                 <div class="col-12 d-flex justify-content-end">
-                                    <button class="btn btn-primary"><i class="bi bi-save"></i> Salvar parametros</button>
+                                    <button class="btn btn-primary"><i class="bi bi-save"></i> Salvar parâmetros</button>
                                 </div>
                             </form>
                         </div>
@@ -198,8 +198,8 @@
                         <div class="panel-head"><div><h2>Custos do evento</h2><p>Cadastre som, iluminação, segurança, equipe, estrutura e demais despesas.</p></div></div>
                         <div class="panel-body">
                             <form id="formCustoEventoLegacy" class="row g-2 align-items-end mb-3">
-                                <div class="col-md-3"><label>Categoria</label><select class="form-select" id="custoCategoriaLegacy"><option>Som</option><option>IluminaÃ§Ã£o</option><option>SeguranÃ§a</option><option>Palco/Estrutura</option><option>Equipe</option><option>Marketing</option><option>Transporte</option><option>AlimentaÃ§Ã£o</option><option>Outros</option></select></div>
-                                <div class="col-md-3"><label>Descrição</label><input class="form-control" id="custoDescricaoLegacy" placeholder="Ex: sonorizaÃ§Ã£o"></div>
+                                <div class="col-md-3"><label>Categoria</label><select class="form-select" id="custoCategoriaLegacy"><option>Som</option><option>Iluminação</option><option>Segurança</option><option>Palco/Estrutura</option><option>Equipe</option><option>Marketing</option><option>Transporte</option><option>Alimentação</option><option>Outros</option></select></div>
+                                <div class="col-md-3"><label>Descrição</label><input class="form-control" id="custoDescricaoLegacy" placeholder="Ex: sonorização"></div>
                                 <div class="col-md-3"><label>Fornecedor</label><input class="form-control" id="custoFornecedorLegacy" placeholder="Opcional"></div>
                                 <div class="col-md-2"><label>Valor</label><input class="form-control" id="custoValorLegacy" oninput="formatarMoedaEvento(this)" placeholder="R$ 0"></div>
                                 <div class="col-md-1 d-grid"><button class="btn btn-success" title="Adicionar custo"><i class="bi bi-plus-lg"></i></button></div>
@@ -237,7 +237,7 @@
                     <form id="formCustoEvento" class="row g-3 align-items-end">
                         <input type="hidden" id="custoId">
                         <div class="col-lg-2"><label>Categoria</label><input class="form-control" id="custoCategoria" placeholder="Ex: Som"></div>
-                        <div class="col-lg-3"><label>Descrição</label><input class="form-control" id="custoDescricao" placeholder="Ex: sonorizaÃ§Ã£o"></div>
+                        <div class="col-lg-3"><label>Descrição</label><input class="form-control" id="custoDescricao" placeholder="Ex: sonorização"></div>
                         <div class="col-lg-3"><label>Fornecedor</label><input class="form-control" id="custoFornecedor" placeholder="Opcional"></div>
                         <div class="col-lg-2"><label>Valor</label><input class="form-control" id="custoValor" oninput="formatarMoedaEvento(this)" placeholder="R$ 0"></div>
                         <div class="col-lg-2 d-flex gap-2"><button class="btn btn-success flex-fill"><i class="bi bi-save"></i> Salvar</button><button type="button" class="btn btn-outline-secondary" onclick="limparCustoEvento()">Limpar</button></div>
@@ -245,11 +245,11 @@
                 </div>
             </div>
             <div class="panel">
-                <div class="panel-head"><div><h2>Despesas cadastradas</h2><p>Visualização por evento com ajustes rápidos.</p></div><strong id="totalCustosAba">R$ 0</strong></div>
+                <div class="panel-head"><div><h2>Despesas cadastradas</h2><p>Visualização por evento com ações rápidas.</p></div><strong id="totalCustosAba">R$ 0</strong></div>
                 <div class="table-responsive panel-body">
                     <div class="cost-table-wrap">
                         <table class="table table-hover align-middle cost-table">
-                            <thead><tr><th>Categoria</th><th>Descrição</th><th>Fornecedor</th><th>Valor</th><th class="text-end">Ajustes</th></tr></thead>
+                            <thead><tr><th>Categoria</th><th>Descrição</th><th>Fornecedor</th><th>Valor</th><th class="text-end">Ações</th></tr></thead>
                             <tbody id="corpoCustosEvento"></tbody>
                         </table>
                     </div>
@@ -294,9 +294,8 @@
 let eventos=[], filtrados=[], tabela=null, municipioMap={}, calendarioData=new Date(), calendarioAno=false, financeiroAtual=null;
 const meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const mesesTitulo=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const statusCores={'Autorizado':'#16a34a','Em Andamento':'#2563eb','Pendente':'#d97706','Em AnÃ¡lise':'#ea580c','Encerrado':'#64748b'};
-
-const statusEventoSelect=document.getElementById('status');function alternarMenuLateral(){const r=document.body.classList.toggle('sidebar-collapsed');localStorage.setItem('jp2EventosSidebarCollapsed',r?'1':'0');}
+const statusCores={'Autorizado':'#16a34a','Em Andamento':'#2563eb','Pendente':'#d97706','Em Análise':'#ea580c','Encerrado':'#64748b'};
+function alternarMenuLateral(){const r=document.body.classList.toggle('sidebar-collapsed');localStorage.setItem('jp2EventosSidebarCollapsed',r?'1':'0');}
 function h(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
 function dinheiro(v){return (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});}
 function dataBR(v){if(!v)return '-'; const p=String(v).split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:'-';}
@@ -327,12 +326,12 @@ function sincronizarEventosCSV(){
     fetch('/api/eventos/sincronizar-csv',{method:'POST'})
     .then(r=>r.json())
     .then(d=>{
-        if(d.status!=='sucesso'){alert(d.msg||'Não foi possivel sincronizar.');return;}
+        if(d.status!=='sucesso'){alert(d.msg||'Nao foi possivel sincronizar.');return;}
         alert(`${d.importados||0} novo(s) registro(s) importado(s).`);
         eventos=[];
         carregarEventos();
     })
-    .catch(()=>alert('Não foi possivel falar com o servidor.'));
+    .catch(()=>alert('Nao foi possivel falar com o servidor.'));
 }
 function montarSelectFinanceiro(){
     const atual=financeiroEventoSelect.value;
@@ -350,7 +349,7 @@ function limparFiltros(){['fUf','fRegiao','fMes','fOrigem','fStatus','fBusca','f
 function renderTabela(){
     if(tabela){tabela.destroy(); tabela=null;}
     corpoEventos.innerHTML=filtrados.map(e=>`<tr><td><div class="money">${h(e.nome_evento)}</div><div class="muted">${h(e.observacoes||'')}</div></td><td>${h(e.cidade)}<div class="muted">${h(e.uf)} - ${h(e.regiao)}</div></td><td>${dataBR(e.data_inicio)} a ${dataBR(e.data_fim)}</td><td>${e.dias_evento}</td><td class="money">${dinheiro(e.valor_verba)}</td><td>${h(e.origem)}</td><td><span class="pill ${statusClass(e.status)}">${h(e.status)}</span></td><td><div class="actions"><button class="btn btn-sm btn-outline-primary" title="Editar" onclick='editarEvento(${JSON.stringify(e).replace(/'/g,"&#039;")})'><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-outline-danger" title="Excluir" onclick="excluirEvento(${e.id})"><i class="bi bi-trash"></i></button></div></td></tr>`).join('');
-    if(filtrados.length){tabela=$('#tabelaEventos').DataTable({pageLength:25,language:{sSearch:'Buscar:',sLengthMenu:'Mostrar _MENU_ linhas',sInfo:'Mostrando _START_ atÃ© _END_ de _TOTAL_',sInfoEmpty:'Nenhum evento encontrado',sZeroRecords:'Nenhum evento encontrado',oPaginate:{sNext:'PrÃ³ximo',sPrevious:'Anterior'}}});}
+    if(filtrados.length){tabela=$('#tabelaEventos').DataTable({pageLength:25,deferRender:true,searchDelay:350,language:{sSearch:'Buscar:',sLengthMenu:'Mostrar _MENU_ linhas',sInfo:'Mostrando _START_ até _END_ de _TOTAL_',sInfoEmpty:'Nenhum evento encontrado',sZeroRecords:'Nenhum evento encontrado',oPaginate:{sNext:'Próximo',sPrevious:'Anterior'}}});}
 }
 function buscarMunicipios(q){if((q||'').length<2)return; fetch('/api/eventos/municipios?q='+encodeURIComponent(q)).then(r=>r.json()).then(d=>{listaMunicipios.innerHTML=''; municipioMap={}; (d.dados||[]).forEach(m=>{municipioMap[m.label]=m; listaMunicipios.innerHTML+=`<option value="${h(m.label)}"></option>`;});});}
 cidadeBusca.addEventListener('input',e=>{buscarMunicipios(e.target.value); const m=municipioMap[e.target.value]; if(m){cidade.value=m.cidade; uf.value=m.uf; regiao.value=m.regiao; ufView.value=m.uf; regiaoView.value=m.regiao;}});
@@ -360,11 +359,11 @@ formEvento.addEventListener('submit',e=>{
     e.preventDefault();
     if(!cidade.value){alert('Selecione uma cidade da lista.'); return;}
     const fd=new FormData(); ['cidade','uf','regiao','nomeEvento','dataInicio','dataFim','valorVerba','origem','status','observacoes'].forEach(id=>{});
-    fd.append('cidade',cidade.value); fd.append('uf',uf.value); fd.append('regiao',regiao.value); fd.append('nome_evento',nomeEvento.value); fd.append('data_inicio',dataInicio.value); fd.append('data_fim',dataFim.value); fd.append('valor_verba',numeroBR(valorVerba.value)); fd.append('origem',origem.value); fd.append('status',statusEventoSelect.value); fd.append('observacoes',observacoes.value);
+    fd.append('cidade',cidade.value); fd.append('uf',uf.value); fd.append('regiao',regiao.value); fd.append('nome_evento',nomeEvento.value); fd.append('data_inicio',dataInicio.value); fd.append('data_fim',dataFim.value); fd.append('valor_verba',numeroBR(valorVerba.value)); fd.append('origem',origem.value); fd.append('status',status.value); fd.append('observacoes',observacoes.value);
     const id=eventoId.value; fetch(id?'/api/eventos/'+id:'/api/eventos',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.status!=='sucesso'){alert(d.msg||'Erro ao salvar evento.');return;} limparFormulario(); eventos=[]; carregarEventos(); bootstrap.Tab.getOrCreateInstance(document.querySelector('[data-bs-target="#resumo"]')).show();});
 });
 function editarEvento(e){
-    eventoId.value=e.id; cidade.value=e.cidade; uf.value=e.uf; regiao.value=e.regiao; cidadeBusca.value=`${e.cidade} - ${e.uf}`; ufView.value=e.uf; regiaoView.value=e.regiao; nomeEvento.value=e.nome_evento; dataInicio.value=e.data_inicio; dataFim.value=e.data_fim; dataFim.min=e.data_inicio; valorVerba.value=dinheiro(e.valor_verba); origem.value=e.origem; statusEventoSelect.value=e.status||'Pendente'; observacoes.value=e.observacoes||''; bootstrap.Tab.getOrCreateInstance(document.querySelector('[data-bs-target="#cadastro"]')).show();
+    eventoId.value=e.id; cidade.value=e.cidade; uf.value=e.uf; regiao.value=e.regiao; cidadeBusca.value=`${e.cidade} - ${e.uf}`; ufView.value=e.uf; regiaoView.value=e.regiao; nomeEvento.value=e.nome_evento; dataInicio.value=e.data_inicio; dataFim.value=e.data_fim; dataFim.min=e.data_inicio; valorVerba.value=dinheiro(e.valor_verba); origem.value=e.origem; status.value=e.status; observacoes.value=e.observacoes||''; bootstrap.Tab.getOrCreateInstance(document.querySelector('[data-bs-target="#cadastro"]')).show();
 }
 function excluirEvento(id){if(!confirm('Excluir este evento?'))return; fetch('/api/eventos/'+id,{method:'DELETE'}).then(r=>r.json()).then(d=>{if(d.status==='sucesso'){eventos=[]; carregarEventos();}});}
 function exportarEventos(){window.location='/eventos/exportar?'+qs();}
@@ -376,11 +375,11 @@ function carregarCustosEvento(){
         return;
     }
     fetch('/api/eventos/financeiro/'+id).then(r=>r.json()).then(d=>{
-        if(d.status!=='sucesso'){alert(d.msg||'Não foi possivel carregar os custos.');return;}
+        if(d.status!=='sucesso'){alert(d.msg||'Não foi possível carregar os custos.');return;}
         const dados=d.dados||{};
         const custos=Array.isArray(dados.custos)?dados.custos:[];
         totalCustosAba.innerText=dinheiro(dados.total_custos);
-        corpoCustosEvento.innerHTML=custos.length?custos.map(c=>`<tr data-custo-id="${c.id}"><td><input class="form-control form-control-sm custo-categoria" value="${h(c.categoria)}" disabled></td><td><input class="form-control form-control-sm custo-descricao" value="${h(c.descricao||'')}" disabled></td><td><input class="form-control form-control-sm custo-fornecedor" value="${h(c.fornecedor||'')}" disabled></td><td><input class="form-control form-control-sm custo-valor money" value="${dinheiro(c.valor).replace('R$ ','')}" oninput="formatarMoedaEvento(this)" disabled></td><td><div class="cost-actions"><button class="btn btn-sm btn-outline-primary" title="Alterar campos" onclick="habilitarEdicaoCusto(${c.id})"><i class="bi bi-pencil-square"></i></button><button class="btn btn-sm btn-outline-success" title="Salvar alteraÃ§Ã£o" onclick="salvarCustoLinha(${c.id})"><i class="bi bi-save"></i></button><button class="btn btn-sm btn-outline-danger" title="Excluir custo" onclick="excluirCustoEvento(${c.id})"><i class="bi bi-trash"></i></button></div></td></tr>`).join(''):'<tr><td colspan="5" class="text-center text-secondary py-4">Nenhum custo cadastrado para este evento.</td></tr>';
+        corpoCustosEvento.innerHTML=custos.length?custos.map(c=>`<tr data-custo-id="${c.id}"><td><input class="form-control form-control-sm custo-categoria" value="${h(c.categoria)}" disabled></td><td><input class="form-control form-control-sm custo-descricao" value="${h(c.descricao||'')}" disabled></td><td><input class="form-control form-control-sm custo-fornecedor" value="${h(c.fornecedor||'')}" disabled></td><td><input class="form-control form-control-sm custo-valor money" value="${dinheiro(c.valor).replace('R$ ','')}" oninput="formatarMoedaEvento(this)" disabled></td><td><div class="cost-actions"><button class="btn btn-sm btn-outline-primary" title="Alterar campos" onclick="habilitarEdicaoCusto(${c.id})"><i class="bi bi-pencil-square"></i></button><button class="btn btn-sm btn-outline-success" title="Salvar alteração" onclick="salvarCustoLinha(${c.id})"><i class="bi bi-save"></i></button><button class="btn btn-sm btn-outline-danger" title="Excluir custo" onclick="excluirCustoEvento(${c.id})"><i class="bi bi-trash"></i></button></div></td></tr>`).join(''):'<tr><td colspan="5" class="text-center text-secondary py-4">Nenhum custo cadastrado para este evento.</td></tr>';
     });
 }
 function editarCustoEvento(c){
@@ -423,7 +422,7 @@ function carregarFinanceiroEvento(){
     const id=financeiroEventoSelect.value;
     if(!id){return;}
     fetch('/api/eventos/financeiro/'+id).then(r=>r.json()).then(d=>{
-        if(d.status!=='sucesso'){alert(d.msg||'NÃ£o foi possÃ­vel carregar o financeiro.');return;}
+        if(d.status!=='sucesso'){alert(d.msg||'Não foi possível carregar o financeiro.');return;}
         financeiroAtual=d.dados;
         const item=financeiroAtual.evento||{};
         finValorEmenda.innerText=dinheiro(item.valor_verba);
@@ -475,7 +474,7 @@ function renderCalendario(){
 function renderMesPrincipal(){
     const ano=calendarioData.getFullYear(), mes=calendarioData.getMonth();
     tituloCalendario.innerText=`${mesesTitulo[mes]} ${ano}`;
-    let html='<div class="calendar-grid">'+['Dom','Seg','Ter','Qua','Qui','Sex','SÃ¡b'].map(d=>`<div class="weekday">${d}</div>`).join('');
+    let html='<div class="calendar-grid">'+['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d=>`<div class="weekday">${d}</div>`).join('');
     const first=new Date(ano,mes,1).getDay(), total=new Date(ano,mes+1,0).getDate();
     for(let i=0;i<first;i++)html+='<div class="day other"></div>';
     for(let d=1;d<=total;d++){const evs=eventosNoDia(ano,mes,d).slice(0,3); html+=`<div class="day"><span class="day-number">${d}</span>${evs.map(e=>`<span class="event-chip ${chipClass(e.status)}" title="${h(e.nome_evento)}">${h(e.cidade)} - ${h(e.nome_evento)}</span>`).join('')}</div>`;}
@@ -491,7 +490,7 @@ function renderMiniAno(){
 }
 function mudarPeriodo(dir){calendarioAno?calendarioData.setFullYear(calendarioData.getFullYear()+dir):calendarioData.setMonth(calendarioData.getMonth()+dir); renderCalendario();}
 function irHoje(){calendarioData=new Date(); renderCalendario();}
-function alternarCalendario(){calendarioAno=!calendarioAno; modoCalendario.innerText=calendarioAno?'Ano':'MÃªs'; renderCalendario();}
+function alternarCalendario(){calendarioAno=!calendarioAno; modoCalendario.innerText=calendarioAno?'Ano':'Mês'; renderCalendario();}
 document.querySelectorAll('[data-tab-target]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault(); bootstrap.Tab.getOrCreateInstance(document.querySelector(`[data-bs-target="#${a.dataset.tabTarget}"]`)).show(); document.querySelectorAll('#sidebar a').forEach(x=>x.classList.remove('active')); a.classList.add('active');}));
 document.querySelectorAll('[data-bs-toggle="pill"]').forEach(b=>b.addEventListener('shown.bs.tab',()=>{const id=b.dataset.bsTarget.replace('#',''); document.querySelectorAll('#sidebar a').forEach(x=>x.classList.toggle('active',x.dataset.tabTarget===id)); if(id==='calendario')renderCalendario(); if(id==='financeiro')carregarFinanceiroEvento(); if(id==='custos')carregarCustosEvento();}));
 document.addEventListener('DOMContentLoaded',()=>{if(localStorage.getItem('jp2EventosSidebarCollapsed')==='1')document.body.classList.add('sidebar-collapsed'); buscarMunicipios('GO'); carregarEventos();});

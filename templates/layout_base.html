@@ -230,5 +230,34 @@
             }
         });
     </script>
+<script>
+function jp2BlindarBuscaGlobal(raiz) {
+    const base = raiz || document;
+    base.querySelectorAll('input[type="search"], input[data-search-field="true"], .dataTables_filter input').forEach((campo, indice) => {
+        campo.setAttribute('autocomplete', 'new-password');
+        campo.setAttribute('autocorrect', 'off');
+        campo.setAttribute('autocapitalize', 'off');
+        campo.setAttribute('spellcheck', 'false');
+        campo.setAttribute('aria-autocomplete', 'none');
+        campo.setAttribute('readonly', 'readonly');
+        campo.addEventListener('focus', () => campo.removeAttribute('readonly'), { once: true });
+        campo.setAttribute('data-lpignore', 'true');
+        campo.setAttribute('data-1p-ignore', 'true');
+        campo.setAttribute('data-bwignore', 'true');
+        campo.setAttribute('data-form-type', 'search');
+        if (!campo.name || campo.name.toLowerCase().includes('usuario') || campo.name.toLowerCase().includes('senha')) {
+            campo.name = `jp2_table_search_${Date.now()}_${indice}`;
+        }
+    });
+}
+document.addEventListener('DOMContentLoaded', () => {
+    jp2BlindarBuscaGlobal(document);
+    new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1) jp2BlindarBuscaGlobal(node);
+        }));
+    }).observe(document.body, { childList: true, subtree: true });
+});
+</script>
 </body>
 </html>
