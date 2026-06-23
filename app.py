@@ -4,11 +4,11 @@ import re
 import hashlib
 import traceback
 import urllib.request
+import urllib.error
 import csv
 import io
 import time
 import secrets
-import requests
 from collections import deque
 from bs4 import BeautifulSoup
 from urllib.parse import quote, quote_plus, urljoin, urlparse
@@ -808,26 +808,35 @@ def carteira_investimentos(caminho=''):
     }
     headers["Host"] = urlparse(url_modulo).netloc
 
+    corpo = request.get_data()
+    if request.method in {"GET", "HEAD", "OPTIONS"} and not corpo:
+        corpo = None
+
     try:
-        resposta_origem = requests.request(
-            method=request.method,
-            url=destino,
+        requisicao_origem = urllib.request.Request(
+            destino,
+            data=corpo,
             headers=headers,
-            data=request.get_data(),
-            allow_redirects=False,
-            timeout=90,
+            method=request.method,
         )
-    except requests.RequestException:
+        resposta_origem = urllib.request.urlopen(requisicao_origem, timeout=90)
+        status_code = resposta_origem.getcode()
+        cabecalhos_origem = resposta_origem.headers
+        conteudo = resposta_origem.read()
+    except urllib.error.HTTPError as erro_http:
+        status_code = erro_http.code
+        cabecalhos_origem = erro_http.headers
+        conteudo = erro_http.read()
+    except (urllib.error.URLError, TimeoutError, OSError):
         registrar_alerta_seguranca("Falha ao acessar o modulo Carteira de Investimentos")
         return render_template(
             'carteira_investimentos.html',
             nome_socio=session.get('nome_exibicao', 'Sócio')
         ), 502
 
-    conteudo = resposta_origem.content
-    tipo_conteudo = resposta_origem.headers.get("content-type", "")
+    tipo_conteudo = cabecalhos_origem.get("content-type", "")
     if "text/html" in tipo_conteudo:
-        html = conteudo.decode(resposta_origem.encoding or "utf-8", errors="replace")
+        html = conteudo.decode("utf-8", errors="replace")
         html = html.replace('href="/', 'href="/carteira-investimentos/')
         html = html.replace('src="/', 'src="/carteira-investimentos/')
         html = html.replace('action="/', 'action="/carteira-investimentos/')
@@ -835,14 +844,14 @@ def carteira_investimentos(caminho=''):
         html = html.replace("/carteira-investimentos/carteira-investimentos/", "/carteira-investimentos/")
         conteudo = html.encode("utf-8")
 
-    resposta = make_response(conteudo, resposta_origem.status_code)
+    resposta = make_response(conteudo, status_code)
     cabecalhos_ignorados = {
         "content-encoding",
         "content-length",
         "transfer-encoding",
         "connection",
     }
-    for chave, valor in resposta_origem.headers.items():
+    for chave, valor in cabecalhos_origem.items():
         chave_lower = chave.lower()
         if chave_lower in cabecalhos_ignorados:
             continue
