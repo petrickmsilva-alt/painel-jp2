@@ -1,0 +1,137 @@
+﻿{% extends "dashboard.html" %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card p-3 shadow-sm border-0 text-center">
+            <h6 class="text-muted"><i class="bi bi-folder-fill text-warning"></i> Arquivos Totais</h6>
+            <h3 id="dash-arquivos" style="color: #000 !important; font-size: 24px !important;">0</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3 shadow-sm border-0 text-center">
+            <h6 class="text-muted"><i class="bi bi-people-fill text-primary"></i> Total de Sócios</h6>
+            <h3 id="dash-socios" style="color: #000 !important; font-size: 24px !important;">0</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3 shadow-sm border-0 text-center">
+            <h6 class="text-muted"><i class="bi bi-calendar-check-fill text-danger"></i> Próximo Evento</h6>
+            <h3 id="dash-agenda" style="color: #000 !important; font-size: 18px !important;">Nenhum</h3>
+        </div>
+    </div>
+</div>
+
+<section id="viewport-explorer">
+    <div class="explorer-address-bar mb-3 d-flex justify-content-between align-items-center bg-light p-3 border rounded">
+        <div>
+            <i class="bi bi-pc-display-horizontal"></i>&nbsp;
+            <span id="txtCaminhoWindows" class="fw-bold">INSTITUTO</span>
+        </div>
+        <a href="/" class="btn btn-sm btn-dark" style="display: block !important; visibility: visible !important;">
+            <i class="bi bi-house-door"></i> Voltar ao Painel
+        </a>
+    </div>
+
+    <div id="progresso-container" class="mb-3 d-none">
+        <label class="form-label fw-bold text-success" id="progresso-label">Enviando arquivo: 0%</label>
+        <div class="progress" style="height: 20px;">
+            <div id="barra-progresso-real" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary px-3" onclick="volverDiretorio()">
+                <i class="bi bi-arrow-left"></i> Voltar Pasta
+            </button>
+            <button class="btn btn-sm btn-outline-primary px-3" onclick="abrirModalNovaPasta()">
+                <i class="bi bi-folder-plus"></i> Nova Pasta
+            </button>
+            <button class="btn btn-sm btn-success px-3" onclick="abrirModalUploadComContexto()">
+                <i class="bi bi-cloud-arrow-up-fill"></i> Enviar Arquivo
+            </button>
+        </div>
+    </div>
+
+    <div class="explorer-grid" id="wrapper-explorer-grid"></div>
+</section>
+
+<div class="modal fade" id="modalCriarNovaPasta" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-folder-plus text-primary"></i> Criar Nova Pasta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNovaPastaNativa">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Nome da pasta:</label>
+                        <input type="text" class="form-control" id="inputNomePastaNativa" placeholder="Ex: Relatórios Fiscais" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">Criar Pasta</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalUploadArquivo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-cloud-arrow-up"></i> Enviar Arquivos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formUploadAvancado">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Selecione arquivos para upload:</label>
+                        <input type="file" class="form-control" id="inputArquivosAvancado" name="arquivos" multiple>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Ou selecione uma pasta completa:</label>
+                        <input type="file" class="form-control" id="inputPastaAvancado" webkitdirectory directory multiple>
+                        <div class="form-text">As subpastas serao recriadas automaticamente no painel.</div>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 fw-bold">Iniciar Upload</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('formUploadAvancado').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const input = document.getElementById('inputArquivosAvancado');
+    const inputPasta = document.getElementById('inputPastaAvancado');
+    const selecionado = inputPasta.files.length ? inputPasta : input;
+    if (selecionado.files.length === 0) return;
+
+    const catFinal = (estadoDoPainel.pasta_pai_id === null || estadoDoPainel.pasta_pai_id === '') ? estadoDoPainel.bloco : 'raiz';
+    const arquivos = Array.from(selecionado.files);
+
+    Promise.all(arquivos.map(arquivo => {
+        const formData = new FormData();
+        formData.append('arquivos', arquivo, arquivo.name);
+        formData.append('bloco', estadoDoPainel.bloco);
+        formData.append('pasta_pai_id', estadoDoPainel.pasta_pai_id || '');
+        formData.append('categoria', catFinal);
+        formData.append('nome_original', arquivo.name);
+        formData.append('caminho_relativo', arquivo.webkitRelativePath || arquivo.name);
+        return fetch('/upload-avancado', { method: 'POST', body: formData }).then(res => res.json());
+    }))
+    .then(() => {
+        alert('Upload concluído!');
+        bootstrap.Modal.getInstance(document.getElementById('modalUploadArquivo')).hide();
+        input.value = '';
+        inputPasta.value = '';
+        sincronizarGrade();
+    })
+    .catch(() => alert('Erro no upload.'));
+});
+</script>
+{% endblock %}
+
