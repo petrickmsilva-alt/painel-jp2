@@ -1034,7 +1034,7 @@
     </button>
     <aside class="sidebar-enterprise">
         <div class="sidebar-brand">
-            <span style="font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px;">CONSOLE DE GESTAO</span>
+            <span style="font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px;">CONSOLE DE GESTÃO</span>
         </div>
         <div class="px-3 py-2">
             <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button" data-bs-toggle="collapse" data-bs-target="#menuResumo">
@@ -1061,51 +1061,51 @@
                             <button type="button" class="btn btn-sm btn-outline-info py-0 px-1" style="font-size: 0.58rem;" onclick="carregarPerformanceStatus()">Atualizar</button>
                         </div>
                         <div id="status-performance-list">
-                            <div class="status-route-row"><span>Aguardando medicões</span><strong>-- ms</strong></div>
+                            <div class="status-route-row"><span>Aguardando medicoes</span><strong>-- ms</strong></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="sidebar-menu">
-            <a href="/" class="menu-item"><span class="menu-mark">IN</span> VOLTAR AO PAINEL</a>
+            <a href="/" class="menu-item"><span class="menu-mark">IN</span> Voltar ao Painel</a>
                                   
             <div class="menu-header">Modulos de Arquivo</div>
             <a class="menu-item" id="menu-bloco-instituto" onclick="clicarBlocoMestre('instituto', this)">
-                <span class="menu-mark">IB</span> INSTITUTO (IBDTEC)
+                <span class="menu-mark">IB</span> Instituto (IBDTEC)
             </a>
             <a class="menu-item" id="menu-bloco-jp2" onclick="clicarBlocoMestre('jp2_business', this)">
-                <span class="menu-mark">JP</span> JP2 BUSINESS
+                <span class="menu-mark">JP</span> JP2 Business
             </a>
             
-            <div class="menu-header mt-3">GESTAO</div>
+            <div class="menu-header mt-3">GESTÃO</div>
             <a href="/compromissos" class="menu-item">
-                 <span class="menu-mark">CP</span> AGENDAR COMPROMISSO
+                 <span class="menu-mark">CP</span> Agendar Compromisso
             </a>
             <a href="/eventos" class="menu-item">
-                 <span class="menu-mark">EV</span> CADASTRO DE EVENTOS
+                 <span class="menu-mark">EV</span> Cadastro de Eventos
             </a>
             <a href="/contatos" class="menu-item">
-                 <span class="menu-mark">CT</span> AGENDA TELEFONICA
+                 <span class="menu-mark">CT</span> Agenda Telefônica
             </a>
             <a href="/financeiro" class="menu-item">
-               <span class="menu-mark">IE</span> EVENTOS E EMPRESTIMOS 
+               <span class="menu-mark">IE</span> Investimentos em Eventos
             </a>
-            <a href="/carteira-investimentos" class="menu-item">
-               <span class="menu-mark">CI</span> INVESTIMENTOS B3
+            <a href="/carteira" class="menu-item">
+               <span class="menu-mark">CI</span> Carteira de Investimentos
             </a>
             {% if usuario_e_admin %}
                 <a href="/admin/usuarios" class="menu-item">
-                    <span class="menu-mark">SO</span> GESTÃO DE SÓCIOS
+                    <span class="menu-mark">SO</span> Gestão de Sócios
                 </a>
                 <a href="/admin/logs" class="menu-item">
-                    <span class="menu-mark">AU</span> AUDITORIA (LOGS)
+                    <span class="menu-mark">AU</span> Auditoria (Logs)
                 </a>
             {% endif %}
 
             <div class="menu-header mt-3">Ecossistema Digital</div>
             <a class="menu-item" id="menu-bloco-sites" onclick="clicarBlocoMestre('sites_jp2', this)">
-                <span class="menu-mark">WB</span> SITES JP2 BUSINESS
+                <span class="menu-mark">WB</span> Sites JP2 Business
             </a>
         </div>    
     </aside>
@@ -1173,12 +1173,12 @@
                         </button>
                         <div class="folder-search">
                             <i class="bi bi-search"></i>
-                            <input type="search" id="inputBuscaPasta" name="jp2_busca_pasta_desativada" value="" autocomplete="new-password" autocapitalize="off" spellcheck="false" data-lpignore="true" data-form-type="other" placeholder="Buscar nesta pasta" oninput="filtrarItensDaGrade(this.value)">
+                            <input type="search" id="inputBuscaPasta" name="jp2_folder_search_no_login" value="" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" aria-autocomplete="none" inputmode="search" role="searchbox" readonly onfocus="this.removeAttribute('readonly')" data-search-field="true" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="search" placeholder="Buscar nesta pasta" oninput="filtrarItensDaGradeDebounced(this.value)">
                         </div>
                         
                         <select id="selectView" class="form-select form-select-sm ms-auto" style="width: 158px;" onchange="alterarVisualizacao(this.value)">
-                            <option value="pequeno">Icones Pequenos</option>
-                            <option value="medio" selected>Icones Medios</option>
+                            <option value="pequeno">Ícones Pequenos</option>
+                            <option value="medio" selected>Ícones Médios</option>
                             <option value="lista">Lista</option>
                         </select>
                     </div>
@@ -1264,17 +1264,17 @@
                 </select>
 
                 <div id="blocoReuniao">
-                    <label class="jp2-modal-label" for="tituloEvento">Pessoa ou assunto da reuniao</label>
+                    <label class="jp2-modal-label" for="tituloEvento">Pessoa ou assunto da reunião</label>
                     <input type="text" id="tituloEvento" class="form-control mb-3" placeholder="Ex: Reuniao com patrocinador X">
-                    <label class="jp2-modal-label" for="localEvento">Local ou link da reuniao</label>
+                    <label class="jp2-modal-label" for="localEvento">Local ou link da reunião</label>
                     <input type="text" id="localEvento" class="form-control mb-3" placeholder="Ex: Escritorio JP2 ou link do Meet">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="jp2-modal-label" for="dataReuniaoInput">Data da reuniao</label>
+                            <label class="jp2-modal-label" for="dataReuniaoInput">Data da reunião</label>
                             <input type="date" id="dataReuniaoInput" name="dataReuniaoInput" class="form-control">
                         </div>
                         <div class="col-md-6">
-                            <label class="jp2-modal-label" for="horaEventoInput">Horario</label>
+                            <label class="jp2-modal-label" for="horaEventoInput">Horário</label>
                             <input type="time" id="horaEventoInput" class="form-control">
                         </div>
                     </div>
@@ -1581,7 +1581,13 @@
         `;
     }
 
-    function filtrarItensDaGrade(termo) {
+    
+        let jp2BuscaPastaTimer = null;
+        function filtrarItensDaGradeDebounced(valor) {
+            clearTimeout(jp2BuscaPastaTimer);
+            jp2BuscaPastaTimer = setTimeout(() => filtrarItensDaGrade(valor), 180);
+        }
+        function filtrarItensDaGrade(termo) {
         const busca = String(termo || '').trim().toLowerCase();
         document.querySelectorAll('#wrapper-explorer-grid .explorer-card').forEach(card => {
             if (card.classList.contains('explorer-site-card')) return;
@@ -1654,12 +1660,6 @@
         if (item.tipo === 'pasta') {
             cliqueCorpoCard = `entrarSubpastaReal(${item.id}, '${nomeSeguro}')`;
             botoesAcaoHtml = `
-                <button class="btn btn-sm btn-light border py-0 px-1 text-secondary" title="Mover para cima" onclick="moverItemNaLista(event, ${item.id}, 'cima')">
-                    <i class="bi bi-arrow-up"></i>
-                </button>
-                <button class="btn btn-sm btn-light border py-0 px-1 text-secondary" title="Mover para baixo" onclick="moverItemNaLista(event, ${item.id}, 'baixo')">
-                    <i class="bi bi-arrow-down"></i>
-                </button>
                 <button class="btn btn-sm btn-light border py-0 px-1 text-primary" title="Renomear" onclick="abrirModalRenomear(event, ${item.id}, '${nomeSeguro}')">
                     <i class="bi bi-pencil"></i>
                 </button>
@@ -2007,7 +2007,7 @@
         let idsArray = Array.from(selecionados).map(cb => cb.getAttribute('data-id')).filter(Boolean);
         let senha = await solicitarSenhaExclusao(
             'Confirmar exclusao em lote',
-            `Deseja realmente mover ${selecionados.length} itens para a lixeira? Esta acao nao pode ser desfeita.`,
+            `Deseja realmente mover ${selecionados.length} itens para a lixeira? Esta ação não pode ser desfeita.`,
             'Excluir itens'
         );
         if (!senha) return;
@@ -2193,7 +2193,7 @@
         if(event) { event.preventDefault(); event.stopPropagation(); }
         let senha = await solicitarSenhaExclusao(
             'Confirmar exclusao',
-            'Deseja realmente excluir este item? Esta acao nao pode ser desfeita.'
+            'Deseja realmente excluir este item? Esta ação não pode ser desfeita.'
         );
         if (!senha) return;
 
@@ -2219,24 +2219,6 @@
         });
     }
 
-    function moverItemNaLista(event, id, direcao) {
-        if (event) event.stopPropagation();
-        const formData = new FormData();
-        formData.append('id', id);
-        formData.append('direcao', direcao);
-
-        fetch('/reordenar-item', { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status !== 'sucesso') {
-                    mostrarToast('Nao foi possivel mover', data.mensagem || 'Tente novamente.', 'erro');
-                    return;
-                }
-                invalidarCacheListagem();
-                sincronizarGrade();
-            })
-            .catch(() => mostrarToast('Erro de conexao', 'Nao foi possivel mover este item.', 'erro'));
-    }
     function abrirModalUploadComContexto() {
         let overlay = document.createElement('div');
         overlay.id = 'modal-global-overlay';
@@ -2274,7 +2256,7 @@
             let fileInput = overlay.querySelector('#arquivo_temp');
             let folderInput = overlay.querySelector('#pasta_temp');
             let inputSelecionado = folderInput && folderInput.files.length ? folderInput : fileInput;
-            if(!inputSelecionado || inputSelecionado.files.length === 0) return mostrarToast("Arquivo obrigatorio", "Selecione arquivos ou uma pasta para enviar.", "erro");
+            if(!inputSelecionado || inputSelecionado.files.length === 0) return mostrarToast("Arquivo obrigatório", "Selecione arquivos ou uma pasta para enviar.", "erro");
             
             // Fecha a caixa cinza na hora para liberar a visão da faixa azul no topo.
             overlay.remove();
@@ -2289,7 +2271,7 @@
     // Sistema de upload fragmentado com fatias de 1 MB.
     function dispararUploadAvancado(inputPassado) {
         let filesInput = inputPassado || document.getElementById('inputArquivosAvancado');
-        if (!filesInput || filesInput.files.length === 0) return mostrarToast("Arquivo obrigatorio", "Selecione os arquivos para enviar.", "erro");
+        if (!filesInput || filesInput.files.length === 0) return mostrarToast("Arquivo obrigatório", "Selecione os arquivos para enviar.", "erro");
         
         // Ativa visualmente o painel de progresso na tela
         let progressoContainer = document.getElementById('containerProgresso');
@@ -2299,7 +2281,6 @@
         let indiceArquivoAtual = 0;
         let itensEnviados = [];
         let uploadDePasta = arquivosParaSubir.some(arquivo => arquivo.webkitRelativePath);
-        let pastaRaizUpload = uploadDePasta ? String(arquivosParaSubir[0].webkitRelativePath || '').split('/')[0] : '';
 
         // Mini-fatias de 1 MB para evitar limite 413 ou estouro de memória.
         const CHUNK_SIZE = 1 * 1024 * 1024;
@@ -2355,7 +2336,6 @@
                 formData.append('guid', guidUnico);
                 formData.append('nome_original', arquivo.name);
                 formData.append('caminho_relativo', arquivo.webkitRelativePath || arquivo.name);
-                formData.append('pasta_raiz_upload', pastaRaizUpload);
 
                 let xhr = new XMLHttpRequest();
                 xhr.open('POST', '/upload-avancado', true);
@@ -2543,7 +2523,7 @@
         <a onclick="clicarBlocoMestre('jp2_business', this)" style="cursor:pointer;">ðŸ’¼ JP2 Business</a>
         <a href="/compromissos">Agendar Compromisso</a>
         <a href="/eventos">Cadastro de Eventos</a>
-        <a href="/contatos">Agenda Telefonica</a>
+        <a href="/contatos">Agenda Telefônica</a>
         <a href="/admin/usuarios">Gestão de Sócios</a>
         <a href="/admin/logs">ðŸ“Š Auditoria (Logs)</a>
         <a onclick="clicarBlocoMestre('sites_jp2', this)" style="cursor:pointer;">ðŸŒ Sites JP2 Business</a>
@@ -2578,7 +2558,40 @@
       menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
     }
   </script>
-  </body>
+  
+    <script>
+    function jp2BlindarCamposDeBusca(raiz) {
+        const base = raiz || document;
+        base.querySelectorAll('input[type="search"], input[data-search-field="true"], .dataTables_filter input').forEach((campo, indice) => {
+            campo.setAttribute('autocomplete', 'new-password');
+            campo.setAttribute('autocorrect', 'off');
+            campo.setAttribute('autocapitalize', 'off');
+            campo.setAttribute('spellcheck', 'false');
+            campo.setAttribute('aria-autocomplete', 'none');
+            if (!campo.hasAttribute('readonly')) {
+                campo.setAttribute('readonly', 'readonly');
+                campo.addEventListener('focus', () => campo.removeAttribute('readonly'), { once: true });
+            }
+            campo.setAttribute('data-lpignore', 'true');
+            campo.setAttribute('data-1p-ignore', 'true');
+            campo.setAttribute('data-bwignore', 'true');
+            campo.setAttribute('data-form-type', 'search');
+            if (!campo.name || campo.name.toLowerCase().includes('usuario') || campo.name.toLowerCase().includes('senha')) {
+                campo.name = `jp2_search_${Date.now()}_${indice}`;
+            }
+        });
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+        jp2BlindarCamposDeBusca(document);
+        const observadorBusca = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === 1) jp2BlindarCamposDeBusca(node);
+            }));
+        });
+        observadorBusca.observe(document.body, { childList: true, subtree: true });
+    });
+    </script>
+</body>
 </html>
 
 
