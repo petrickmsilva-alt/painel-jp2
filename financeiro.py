@@ -144,22 +144,28 @@ def decimal_ou_zero(valor):
 def decimal_formulario_ou_atual(valor, atual, permitir_zero=True):
     texto = str(valor or "").strip()
     if not texto:
-        return atual
-
+        return decimal_ou_zero(atual)
     numero = decimal_ou_zero(texto)
     if numero == 0 and not permitir_zero and texto not in {"0", "0,00", "0.00"}:
-        return atual
+        return decimal_ou_zero(atual)
     return numero
 
 
 def texto_formulario_ou_atual(valor, atual):
     texto = str(valor or "").strip()
-    return texto if texto else atual
+    return texto if texto else (atual or "")
 
 
 def data_formulario_ou_atual(valor, atual):
     texto = str(valor or "").strip()
-    return texto if texto else atual
+    if not texto:
+        return atual
+    for formato in ("%Y-%m-%d", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(texto[:10], formato).date()
+        except ValueError:
+            continue
+    return atual
 
 
 def percentual_excel(valor):
@@ -1107,15 +1113,30 @@ def editar_investimento(id):
                 conn.close()
                 return jsonify({"status": "erro", "msg": "Investimento nao encontrado."}), 404
 
+            valor_inicial = decimal_formulario_ou_atual(
+                request.form.get("valor"),
+                atual.get("valor_inicial"),
+                permitir_zero=False,
+            )
+            if valor_inicial <= 0:
+                conn.close()
+                return jsonify({
+                    "status": "erro",
+                    "msg": "O valor principal nao pode ficar zerado. Informe o valor correto antes de salvar."
+                }), 400
+
+            juros_mensais = decimal_formulario_ou_atual(
+                request.form.get("juros"),
+                atual.get("juros_mensais"),
+                permitir_zero=True,
+            )
             empresa_id = request.form.get("empresa_id") or atual.get("empresa_id")
             nome_investidor = texto_formulario_ou_atual(request.form.get("quem"), atual.get("nome_investidor"))
-            valor_inicial = decimal_formulario_ou_atual(request.form.get("valor"), decimal_ou_zero(atual.get("valor_inicial")), permitir_zero=False)
-            juros_mensais = decimal_formulario_ou_atual(request.form.get("juros"), decimal_ou_zero(atual.get("juros_mensais")), permitir_zero=True)
-            data_inicio = data_formulario_ou_atual(request.form.get("data_recurso"), atual.get("data_inicio"))
-            data_pgto = data_formulario_ou_atual(request.form.get("data_pgto"), atual.get("data_pgto"))
             captador = texto_formulario_ou_atual(request.form.get("captador"), atual.get("captador"))
             tipo_recurso = texto_formulario_ou_atual(request.form.get("tipo_recurso"), atual.get("tipo_recurso"))
             finalidade = texto_formulario_ou_atual(request.form.get("finalidade"), atual.get("finalidade"))
+            data_inicio = data_formulario_ou_atual(request.form.get("data_recurso"), atual.get("data_inicio"))
+            data_pgto = data_formulario_ou_atual(request.form.get("data_pgto"), atual.get("data_pgto"))
             observacoes = request.form.get("observacoes") if "observacoes" in request.form else atual.get("observacoes")
 
             cur.execute(
@@ -1144,7 +1165,7 @@ def editar_investimento(id):
                     id,
                 ),
             )
-            registrar_auditoria(cur, id, "Edicao", "Dados do investimento foram alterados sem zerar os valores calculados.")
+            registrar_auditoria(cur, id, "Edicao", "Dados do investimento foram alterados sem zerar principal ou calculos.")
         conn.commit()
         conn.close()
         return jsonify({"status": "sucesso"})
