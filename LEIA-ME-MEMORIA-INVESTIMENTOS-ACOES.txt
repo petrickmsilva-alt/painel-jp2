@@ -1,0 +1,47 @@
+MEMORIA DE INVESTIMENTOS - ACOES BRASIL
+
+Este pacote adiciona uma memoria interna para o modulo Carteira de Investimentos.
+
+Fonte objetiva inserida:
+- Planilha de Ouro Acoes Filtrada - Junho 2026.xlsx
+- 617 empresas importadas para o arquivo interno:
+  data/planilha_ouro_acoes_junho_2026.json
+
+Camadas de decisao implementadas:
+1. Sociedade
+   - Tag along
+   - Free float
+   - Segmento de listagem
+   - Governo como majoritario
+
+2. Lucro
+   - Margem EBIT
+   - Margem liquida
+   - ROIC
+   - ROE
+   - Anos gerando lucro
+
+3. Negocio
+   - Setor
+   - Patrimonio liquido
+   - Liquidez media diaria
+   - Divida liquida / EBITDA
+
+4. Retorno
+   - Dividend yield
+   - CAGR do lucro em 5 anos
+   - Soma dividendos + CAGR
+
+Como o sistema usa:
+- Ao iniciar, cria a tabela carteira_universo_acoes se ela ainda nao existir.
+- Se a tabela estiver vazia, importa automaticamente a base da Planilha de Ouro.
+- Calcula score de 0 a 100.
+- Classifica cada empresa como Aportar, Observar ou Nao aportar.
+- A aba Onde aportar passa a considerar essa base interna para indicar acoes brasileiras elegiveis.
+
+Endpoint interno:
+/carteira/api/ranking-acoes
+
+Observacao:
+StatusInvest e Fundamentus entram como etapa futura de atualizacao automatica dos dados.
+Nesta rodada deixamos a base interna confiavel a partir da planilha enviada, sem depender de raspagem externa instavel.

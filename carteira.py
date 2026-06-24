@@ -2,6 +2,7 @@
 from decimal import Decimal, InvalidOperation
 from functools import wraps
 import json
+import os
 import time
 import urllib.error
 import urllib.request
@@ -38,9 +39,15 @@ POLITICA_PADRAO = [
 ]
 CRITERIOS_PADRAO = [
     ("Acoes Brasil", "roic_min", 10, 15, 18, "ROIC minimo para empresa produtiva"),
+    ("Acoes Brasil", "margem_ebit_min", 8, 12, 10, "Margem EBIT minima"),
     ("Acoes Brasil", "margem_liquida_min", 8, 12, 16, "Margem liquida minima"),
     ("Acoes Brasil", "divida_ebitda_max", 3.5, 2.5, 18, "Bloqueio de divida elevada"),
     ("Acoes Brasil", "liquidez_diaria_min", 6000000, 10000000, 10, "Liquidez media diaria"),
+    ("Acoes Brasil", "patrimonio_liquido_min", 900000000, 3000000000, 10, "Patrimonio liquido minimo"),
+    ("Acoes Brasil", "tag_along_min", 1, 1, 10, "Protecao ao acionista minoritario"),
+    ("Acoes Brasil", "free_float_min", 0.15, 0.30, 8, "Acoes em circulacao no mercado"),
+    ("Acoes Brasil", "anos_lucro_min", 5, 10, 8, "Historico consistente de lucro"),
+    ("Acoes Brasil", "governo_majoritario_bloqueio", 1, 0, 20, "Evitar governo como majoritario"),
     ("Stocks", "roic_min", 10, 15, 18, "ROIC minimo para empresas globais"),
     ("Stocks", "margem_liquida_min", 8, 12, 16, "Margem liquida minima"),
     ("Stocks", "divida_ebitda_max", 3.5, 2.5, 18, "Divida controlada"),
@@ -48,6 +55,8 @@ CRITERIOS_PADRAO = [
     ("REITs", "dividend_yield_min", 4, 6, 8, "Renda em dolar"),
     ("ETFs", "liquidez_diaria_min", 1000000, 5000000, 8, "Liquidez do ETF"),
 ]
+
+BASE_ACOES_ARQUIVO = os.path.join(os.path.dirname(__file__), "data", "planilha_ouro_acoes_junho_2026.json")
 
 
 def login_required(view):
@@ -83,6 +92,103 @@ def fnum(valor):
 
 def br_money(valor):
     return f"R$ {fnum(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def importar_universo_acoes(cur):
+    if not os.path.exists(BASE_ACOES_ARQUIVO):
+        return
+    with open(BASE_ACOES_ARQUIVO, "r", encoding="utf-8") as arquivo:
+        dados = json.load(arquivo)
+    itens = dados.get("items") or []
+    if not itens:
+        return
+    sql = """
+        INSERT INTO carteira_universo_acoes (
+            ticker, empresa, setor, tipo_acao, tag_along, free_float, segmento_listagem,
+            segmento_ordem, governo_majoritario, patrimonio_liquido, liquidez_media_diaria,
+            margem_ebit, margem_liquida, roic, roe, anos_ipo, anos_lucro,
+            dividend_yield, cagr_lucro_5a, soma_div_cagr, divida_liquida_ebitda
+        ) VALUES (
+            %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
+        ) ON DUPLICATE KEY UPDATE
+            empresa=VALUES(empresa), setor=VALUES(setor), tipo_acao=VALUES(tipo_acao),
+            tag_along=VALUES(tag_along), free_float=VALUES(free_float),
+            segmento_listagem=VALUES(segmento_listagem), segmento_ordem=VALUES(segmento_ordem),
+            governo_majoritario=VALUES(governo_majoritario), patrimonio_liquido=VALUES(patrimonio_liquido),
+            liquidez_media_diaria=VALUES(liquidez_media_diaria), margem_ebit=VALUES(margem_ebit),
+            margem_liquida=VALUES(margem_liquida), roic=VALUES(roic), roe=VALUES(roe),
+            anos_ipo=VALUES(anos_ipo), anos_lucro=VALUES(anos_lucro),
+            dividend_yield=VALUES(dividend_yield), cagr_lucro_5a=VALUES(cagr_lucro_5a),
+            soma_div_cagr=VALUES(soma_div_cagr), divida_liquida_ebitda=VALUES(divida_liquida_ebitda)
+    """
+    valores = [
+        (
+            i.get("ticker"), i.get("empresa"), i.get("setor"), i.get("tipo_acao"),
+            num(i.get("tag_along")), num(i.get("free_float")), i.get("segmento_listagem"),
+            int(fnum(i.get("segmento_ordem")) or 99), i.get("governo_majoritario"),
+            num(i.get("patrimonio_liquido")), num(i.get("liquidez_media_diaria")),
+            num(i.get("margem_ebit")), num(i.get("margem_liquida")), num(i.get("roic")),
+            num(i.get("roe")), num(i.get("anos_ipo")), num(i.get("anos_lucro")),
+            num(i.get("dividend_yield")), num(i.get("cagr_lucro_5a")), num(i.get("soma_div_cagr")),
+            num(i.get("divida_liquida_ebitda")),
+        )
+        for i in itens
+        if i.get("ticker") and i.get("empresa")
+    ]
+    cur.executemany(sql, valores)
+
+
+def score_acao_universo(a):
+    score = 0
+    motivos, bloqueios = [], []
+    if str(a.get("governo_majoritario") or "").strip().lower() in ("sim", "yes", "1"):
+        bloqueios.append("governo majoritario")
+        score -= 30
+    if fnum(a.get("tag_along")) >= 1:
+        score += 10; motivos.append("tag along forte")
+    if fnum(a.get("free_float")) >= 0.15:
+        score += 8; motivos.append("free float adequado")
+    segmento = str(a.get("segmento_listagem") or "").lower()
+    if "novo mercado" in segmento:
+        score += 12; motivos.append("governanca Novo Mercado")
+    elif fnum(a.get("segmento_ordem")) <= 3:
+        score += 7; motivos.append("boa listagem")
+    if fnum(a.get("patrimonio_liquido")) >= 900000000:
+        score += 10; motivos.append("patrimonio liquido robusto")
+    else:
+        bloqueios.append("patrimonio liquido baixo")
+    if fnum(a.get("liquidez_media_diaria")) >= 6000000:
+        score += 10; motivos.append("liquidez diaria adequada")
+    else:
+        bloqueios.append("liquidez fraca")
+    if fnum(a.get("margem_ebit")) >= 0.08:
+        score += 8; motivos.append("margem EBIT acima de 8%")
+    else:
+        bloqueios.append("margem EBIT baixa")
+    if fnum(a.get("margem_liquida")) >= 0.08:
+        score += 10; motivos.append("margem liquida acima de 8%")
+    else:
+        bloqueios.append("margem liquida baixa")
+    if fnum(a.get("roic")) >= 0.10:
+        score += 14; motivos.append("ROIC acima de 10%")
+    else:
+        bloqueios.append("ROIC baixo")
+    if fnum(a.get("roe")) >= 0.12:
+        score += 6; motivos.append("ROE saudavel")
+    if fnum(a.get("anos_lucro")) >= 5:
+        score += 8; motivos.append("historico de lucro")
+    else:
+        bloqueios.append("poucos anos de lucro")
+    if fnum(a.get("soma_div_cagr")) >= 0.10:
+        score += 7; motivos.append("dividendos mais crescimento")
+    divida = fnum(a.get("divida_liquida_ebitda"))
+    if divida <= 3.5:
+        score += 7; motivos.append("divida controlada")
+    else:
+        score -= 12; bloqueios.append("divida elevada")
+    score = max(0, min(100, int(round(score))))
+    decisao = "Aportar" if score >= 75 and len(bloqueios) <= 1 else "Observar" if score >= 58 else "Nao aportar"
+    return score, decisao, motivos[:6], bloqueios[:6]
 
 
 def garantir_coluna(cur, tabela, coluna, definicao):
@@ -171,6 +277,34 @@ def garantir_tabelas():
                 atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
         """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS carteira_universo_acoes (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                ticker VARCHAR(32) NOT NULL UNIQUE,
+                empresa VARCHAR(180) NOT NULL,
+                setor VARCHAR(140) NULL,
+                tipo_acao VARCHAR(20) NULL,
+                tag_along DECIMAL(10,6) DEFAULT 0,
+                free_float DECIMAL(10,6) DEFAULT 0,
+                segmento_listagem VARCHAR(80) NULL,
+                segmento_ordem INT DEFAULT 99,
+                governo_majoritario VARCHAR(20) NULL,
+                patrimonio_liquido DECIMAL(20,2) DEFAULT 0,
+                liquidez_media_diaria DECIMAL(20,2) DEFAULT 0,
+                margem_ebit DECIMAL(12,6) DEFAULT 0,
+                margem_liquida DECIMAL(12,6) DEFAULT 0,
+                roic DECIMAL(12,6) DEFAULT 0,
+                roe DECIMAL(12,6) DEFAULT 0,
+                anos_ipo DECIMAL(10,2) DEFAULT 0,
+                anos_lucro DECIMAL(10,2) DEFAULT 0,
+                dividend_yield DECIMAL(12,6) DEFAULT 0,
+                cagr_lucro_5a DECIMAL(12,6) DEFAULT 0,
+                soma_div_cagr DECIMAL(12,6) DEFAULT 0,
+                divida_liquida_ebitda DECIMAL(12,6) DEFAULT 0,
+                fonte VARCHAR(120) DEFAULT 'Planilha de Ouro Acoes',
+                atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+        """)
         garantir_coluna(cur, "carteira_ativos", "pl", "DECIMAL(18,4) DEFAULT 0")
         garantir_coluna(cur, "carteira_ativos", "pvp", "DECIMAL(18,4) DEFAULT 0")
         garantir_coluna(cur, "carteira_ativos", "roe", "DECIMAL(10,4) DEFAULT 0")
@@ -183,6 +317,13 @@ def garantir_tabelas():
         cur.execute("SELECT COUNT(*) AS total FROM carteira_inteligencia_criterios")
         if int(cur.fetchone()["total"] or 0) == 0:
             cur.executemany("INSERT INTO carteira_inteligencia_criterios (classe, criterio, minimo, ideal, peso, descricao) VALUES (%s,%s,%s,%s,%s,%s)", CRITERIOS_PADRAO)
+        cur.executemany(
+            "INSERT IGNORE INTO carteira_inteligencia_criterios (classe, criterio, minimo, ideal, peso, descricao) VALUES (%s,%s,%s,%s,%s,%s)",
+            CRITERIOS_PADRAO,
+        )
+        cur.execute("SELECT COUNT(*) AS total FROM carteira_universo_acoes")
+        if int(cur.fetchone()["total"] or 0) == 0:
+            importar_universo_acoes(cur)
     conn.close()
     TABELAS_OK = True
 
@@ -279,6 +420,32 @@ def listar_ativos():
     return out
 
 
+def listar_universo_acoes(limite=40):
+    conn = get_db_connection()
+    with conn.cursor() as cur:
+        cur.execute("SELECT * FROM carteira_universo_acoes")
+        rows = cur.fetchall()
+    conn.close()
+    itens = []
+    for row in rows:
+        a = dict(row)
+        score, decisao, motivos, bloqueios = score_acao_universo(a)
+        a.update({
+            "score": score,
+            "decisao": decisao,
+            "motivos": motivos,
+            "bloqueios": bloqueios,
+            "classe": "Acoes Brasil",
+            "nome": a.get("empresa"),
+            "valor_atual": 0,
+            "preco_medio": 0,
+            "origem": "Planilha de Ouro",
+        })
+        itens.append(a)
+    itens.sort(key=lambda x: (-x["score"], x.get("setor") or "", x.get("ticker") or ""))
+    return itens[:limite]
+
+
 def listar_politica():
     conn=get_db_connection()
     with conn.cursor() as cur: cur.execute("SELECT * FROM carteira_politica ORDER BY prioridade,classe"); rows=cur.fetchall()
@@ -295,7 +462,9 @@ def resumo_classes(ativos=None, politica=None):
 
 
 def recomendacoes(valor=Decimal("100000")):
-    ativos=listar_ativos(); grupos,total=resumo_classes(ativos); candidatos=sorted([a for a in ativos if a["decisao"]=="Aportar"], key=lambda a:-a["score"]); prios=[g for g in grupos if g["gap"]>0] or grupos[:3]; soma=sum(max(0,g["gap"]) for g in prios) or len(prios) or 1; al=[]; v=fnum(valor)
+    ativos=listar_ativos(); grupos,total=resumo_classes(ativos); universo_acoes=listar_universo_acoes(60)
+    candidatos=sorted([a for a in ativos if a["decisao"]=="Aportar"] + [a for a in universo_acoes if a["decisao"]=="Aportar"], key=lambda a:-a["score"])
+    prios=[g for g in grupos if g["gap"]>0] or grupos[:3]; soma=sum(max(0,g["gap"]) for g in prios) or len(prios) or 1; al=[]; v=fnum(valor)
     for g in prios:
         valor_classe=v*((max(0,g["gap"])/soma) if soma else 0); ativos_classe=[a for a in candidatos if a.get("classe")==g["classe"]]
         if not ativos_classe: al.append({"classe":g["classe"],"valor":valor_classe,"ativo":None,"motivo":"classe abaixo da meta; cadastre ativo elegivel"}); continue
@@ -532,6 +701,23 @@ def reserva():
 @login_required
 def api_resumo():
     ativos=listar_ativos(); grupos,total=resumo_classes(ativos); return jsonify({"total":total,"classes":grupos,"ativos":ativos})
+
+
+@bp_carteira.route("/api/ranking-acoes")
+@login_required
+def api_ranking_acoes():
+    limite = int(fnum(request.args.get("limite")) or 30)
+    ranking = listar_universo_acoes(max(5, min(limite, 100)))
+    return jsonify({
+        "fonte": "Planilha de Ouro Acoes Filtrada - Junho 2026",
+        "criterios": {
+            "sociedade": ["tag along", "free float", "governanca", "governo majoritario"],
+            "lucro": ["margem EBIT", "margem liquida", "ROIC", "ROE", "anos gerando lucro"],
+            "negocio": ["setor", "patrimonio liquido", "liquidez media diaria", "divida liquida/EBITDA"],
+            "retorno": ["dividend yield", "CAGR do lucro em 5 anos", "soma dividendos + CAGR"],
+        },
+        "ranking": ranking,
+    })
 
 
 @bp_carteira.route("/api/sincronizar-mercado", methods=["POST"])
