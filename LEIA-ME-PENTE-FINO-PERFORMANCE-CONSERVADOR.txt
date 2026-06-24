@@ -1,0 +1,45 @@
+PENTE-FINO DE PERFORMANCE - RODADA CONSERVADORA
+
+Objetivo:
+Otimizar pontos seguros do painel sem mudar a estrutura, sem trocar layout e sem alterar as regras que ja estao funcionando.
+
+Inclui:
+1. Cache mais forte para arquivos estaticos:
+   - imagens, CSS e scripts em /static passam a receber cache publico por 7 dias.
+   - Isso reduz downloads repetidos ao navegar pelo painel.
+
+2. Tabelas grandes mais leves:
+   - Relacao de emprestimos.
+   - Pagamentos realizados.
+   - Auditoria financeira.
+   - Resumo geral de eventos.
+   - Foi ativado renderizacao adiada e atraso de busca nas DataTables.
+   - Nao foi ativado "stateSave" para evitar que filtros antigos voltem sozinhos.
+
+3. Busca sem sugestao de login/senha:
+   - Campo "Buscar nesta pasta" reforcado.
+   - Buscas globais e buscas das tabelas recebem atributos para reduzir sugestoes do Chrome/gerenciadores de senha.
+
+4. Mantem a carteira interna:
+   - Fase 1 corrigida.
+   - Fase 2 com inteligencia oculta.
+   - Fallback interno de templates para evitar novo erro TemplateNotFound.
+
+O que nao foi feito de proposito:
+- Nao removi funcoes antigas em massa.
+- Nao alterei nomes de rotas.
+- Nao mudei estrutura do banco.
+- Nao troquei arquitetura.
+
+Motivo:
+Esta e uma rodada conservadora para ganho real com baixo risco.
+
+Teste recomendado apos deploy:
+1. Abrir o painel principal.
+2. Clicar no campo "Buscar nesta pasta" e conferir se nao aparece usuario/senha.
+3. Abrir Instituto e JP2 Business.
+4. Abrir Relacao de emprestimos, Pagamentos, Auditoria e Eventos.
+5. Abrir /carteira.
+
+Observacao tecnica:
+Nao foi possivel rodar py_compile localmente porque o ambiente possui o lancador py.exe, mas nao tem Python instalado por tras dele.

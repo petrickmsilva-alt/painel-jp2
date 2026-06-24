@@ -1,0 +1,32 @@
+CORRECAO DEFINITIVA - CARTEIRA INTERNA COM FASE 2
+
+Erro que apareceu no Render:
+jinja2.exceptions.TemplateNotFound: carteira_dashboard.html
+
+O que esta versao faz:
+1. Mantem os arquivos HTML dentro de templates, como deveria ser.
+2. Tambem embute as telas principais da carteira dentro do proprio carteira.py como plano B.
+3. Se o GitHub ou Render nao enxergar algum template, o modulo ainda abre usando o fallback interno.
+4. A Fase 2 ja esta incluida: inteligencia oculta, criterios internos e campos adicionais de indicadores.
+
+Arquivos principais:
+- app.py
+- carteira.py
+- requirements.txt
+- templates/layout_carteira.html
+- templates/carteira_dashboard.html
+- templates/carteira_ativos.html
+- templates/carteira_onde_aportar.html
+- templates/carteira_resumo.html
+- templates/carteira_aportes.html
+- templates/carteira_configuracoes.html
+
+Como subir:
+Copie tudo para a raiz do repositorio painel-jp2.
+A pasta templates deve ser mesclada com a pasta templates existente.
+
+Teste final:
+https://app.ibdtec.ong.br/carteira
+
+Observacao:
+O repositorio separado da carteira nao e mais o caminho principal. Ele pode ficar apenas como backup.

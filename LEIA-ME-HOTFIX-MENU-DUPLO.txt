@@ -1,0 +1,15 @@
+HOTFIX CARTEIRA SEM MENU DUPLO
+
+Arquivos para subir no repositorio principal painel-jp2:
+- app.py
+- requirements.txt
+- templates/carteira_investimentos.html
+
+O que muda:
+- Remove o menu lateral externo da pagina /carteira-investimentos.
+- Mantem somente uma barra superior limpa com Voltar ao Painel e Abrir em tela cheia.
+- A carteira ocupa todo o restante da tela, usando o proprio menu interno dela.
+
+Resultado esperado:
+- Nao aparece mais Investimentos em Eventos no menu externo da tela da carteira.
+- Nao aparece mais dois menus laterais ao mesmo tempo.
