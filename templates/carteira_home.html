@@ -1,0 +1,75 @@
+{% extends 'layout_carteira.html' %}{% set titulo_pagina='Home' %}{% block content %}
+<section class="mb-4">
+  <h1 class="home-title">Bem vindo(a), <strong>{{ session.get('nome_exibicao') or session.get('usuario_logado') }}!</strong></h1>
+  <div class="muted">Acompanhe a evolucao da sua carteira.</div>
+</section>
+
+<div class="grid grid-2">
+  <section class="panel home-card">
+    <div class="panel-body">
+      <div style="width:32px;height:5px;background:var(--green);border-radius:99px;margin-bottom:58px"></div>
+      <div class="muted mb-2">Total</div>
+      <div class="muted">R$</div>
+      <div class="home-total">{{ br_money(total).replace('R$ ', '') }}</div>
+    </div>
+  </section>
+
+  <section class="panel home-card">
+    <div class="panel-body text-center d-flex flex-column justify-content-center h-100">
+      <i class="bi bi-wallet2" style="font-size:42px;color:#59635f;margin-bottom:18px"></i>
+      {% if melhor %}
+        <div class="mb-3">Na sua carteira esse mes e aconselhavel investir em <strong>{{ melhor.classe }}</strong>, especificamente <strong>{{ melhor.ticker }}</strong></div>
+        <a class="btn btn-green align-self-center" href="/carteira/onde-aportar">Ver detalhes</a>
+      {% else %}
+        <div class="mb-3">Cadastre ativos e objetivos para o sistema indicar onde aportar.</div>
+        <a class="btn btn-green align-self-center" href="/carteira/ativos">Cadastrar ativo</a>
+      {% endif %}
+    </div>
+  </section>
+</div>
+
+<div class="grid grid-2 mt-3">
+  <section class="panel">
+    <div class="panel-head">
+      <h2 class="panel-title"><i class="bi bi-cash-stack"></i>Renda passiva</h2>
+      <form method="get" action="/carteira/renda-passiva">
+        <select class="form-select form-select-sm" name="periodo" onchange="this.form.submit()">
+          <option value="mes">Mes atual</option>
+          <option value="6m">6 meses</option>
+          <option value="12m">12 meses</option>
+        </select>
+      </form>
+    </div>
+    <div class="panel-body">
+      <div class="money mb-3">{{ br_money(renda_mes) }}</div>
+      <div class="bar-chart">
+        {% for m in meses %}
+          <span style="height:{{ m.altura }}%"></span>
+        {% else %}
+          <span style="height:4%"></span>
+        {% endfor %}
+      </div>
+      {% set ultimo_mes = meses|last %}
+      <div class="text-center muted mt-2">{{ ultimo_mes.label if ultimo_mes else 'Mes atual' }}</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2 class="panel-title"><i class="bi bi-wallet2"></i>Carteira</h2>
+      <div class="d-flex gap-2">
+        <a class="btn btn-green btn-sm" href="/carteira/resumo">Classe de ativo</a>
+        <a class="btn btn-darkline btn-sm" href="/carteira/carteira">Ativo</a>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="donut mb-4"></div>
+      <div class="row g-2">
+        {% for g in grupos[:4] %}
+          <div class="col-6 muted"><span class="legend-dot" style="background:{{ ['var(--cyan)','var(--orange)','var(--purple)','#d946ef'][loop.index0] }}"></span>{{ g.classe }} - {{ '%.1f'|format(g.atual) }}%</div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
