@@ -4,6 +4,8 @@ Este pacote atualiza a Carteira de Investimentos interna do Painel JP2Business.
 
 O que foi incluído:
 - Layout escuro com menu lateral no padrão das telas de referência enviadas.
+- Aba Home executiva no modelo visual solicitado, com total, recomendação, renda passiva e carteira por classe.
+- Botão para voltar para a raiz do Painel JP2Business.
 - Abas internas: Carteira, Onde aportar, Definir objetivos, Reserva de emergência, Renda passiva, Resumo e Histórico.
 - Tela de novo ativo com indicadores usados pelo motor de decisão.
 - Tela de novo aporte/venda com atualização automática da posição do ativo.
@@ -14,5 +16,8 @@ O que foi incluído:
 Observação:
 Depois de subir no GitHub e fazer o deploy, acesse:
 /carteira
+
+A lista de ativos da carteira fica em:
+/carteira/carteira
 
 O módulo separado da Carteira não é mais necessário para esta versão integrada.
