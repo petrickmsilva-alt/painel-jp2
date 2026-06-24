@@ -1,0 +1,19 @@
+HOTFIX CARTEIRA SEM 502
+
+Arquivos para subir no repositorio principal painel-jp2:
+- app.py
+- requirements.txt
+- templates/carteira_investimentos.html
+
+O que muda:
+- Remove a ponte proxy que gerava 502 em /carteira-investimentos.
+- /carteira-investimentos agora é uma tela interna do painel principal.
+- A carteira é carregada em uma janela embutida dentro dessa tela.
+- Existe botão Abrir em tela cheia como plano B.
+
+Variavel no Render do painel principal:
+CARTEIRA_INVESTIMENTOS_URL=https://carteira-investimentos-jp2business-1.onrender.com
+
+Se a janela embutida ficar branca ou bloqueada:
+- O app da carteira pode estar impedindo carregamento por iframe.
+- Nesse caso usamos subdominio carteira.ibdtec.ong.br ou fazemos migracao completa do modulo para Flask.

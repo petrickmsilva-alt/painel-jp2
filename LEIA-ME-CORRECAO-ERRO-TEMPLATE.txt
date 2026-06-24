@@ -1,0 +1,34 @@
+CORRECAO DO ERRO DA FASE 1 + FASE 2 INCLUIDA
+
+Erro encontrado no log:
+jinja2.exceptions.TemplateNotFound: carteira_dashboard.html
+
+O que significa:
+O Render recebeu o arquivo carteira.py, mas nao encontrou as telas da carteira dentro da pasta templates.
+
+O que foi corrigido neste pacote:
+1. Fase 1 e Fase 2 estao juntas neste pacote.
+2. O modulo carteira.py agora declara explicitamente a pasta de templates.
+3. Os arquivos obrigatorios carteira_*.html e layout_carteira.html estao dentro da pasta templates.
+4. A inteligencia da carteira continua oculta, funcionando apenas como motor interno de decisao.
+
+Como subir:
+Copie todos os arquivos e pastas deste pacote para a raiz do repositorio painel-jp2.
+Importante: a pasta templates deste pacote deve mesclar com a pasta templates do projeto.
+Nao coloque os arquivos dentro de uma subpasta extra.
+
+Depois:
+1. Commit na branch.
+2. Pull request.
+3. Merge.
+4. Deploy no Render.
+5. Testar: https://app.ibdtec.ong.br/carteira
+
+Se aparecer novamente TemplateNotFound, confira no GitHub se estes arquivos existem:
+templates/layout_carteira.html
+templates/carteira_dashboard.html
+templates/carteira_ativos.html
+templates/carteira_onde_aportar.html
+templates/carteira_resumo.html
+templates/carteira_aportes.html
+templates/carteira_configuracoes.html

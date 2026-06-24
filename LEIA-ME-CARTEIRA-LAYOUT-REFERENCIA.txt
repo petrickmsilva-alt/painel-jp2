@@ -1,0 +1,18 @@
+CARTEIRA DE INVESTIMENTOS - LAYOUT DE REFERENCIA
+
+Este pacote atualiza a Carteira de Investimentos interna do Painel JP2Business.
+
+O que foi incluído:
+- Layout escuro com menu lateral no padrão das telas de referência enviadas.
+- Abas internas: Carteira, Onde aportar, Definir objetivos, Reserva de emergência, Renda passiva, Resumo e Histórico.
+- Tela de novo ativo com indicadores usados pelo motor de decisão.
+- Tela de novo aporte/venda com atualização automática da posição do ativo.
+- Histórico de movimentações com compra, venda, dividendos e JCP.
+- Cálculo de distância da carteira atual para a carteira objetivo.
+- Motor interno de decisão por score, bloqueios e política da carteira.
+
+Observação:
+Depois de subir no GitHub e fazer o deploy, acesse:
+/carteira
+
+O módulo separado da Carteira não é mais necessário para esta versão integrada.

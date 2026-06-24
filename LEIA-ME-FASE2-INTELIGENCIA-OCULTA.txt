@@ -1,0 +1,40 @@
+﻿CARTEIRA INTERNA - FASE 2 - INTELIGENCIA OCULTA
+
+Suba no repositorio principal painel-jp2:
+- app.py
+- carteira.py
+- requirements.txt
+- pasta templates completa deste pacote
+
+Resposta sobre o repositorio separado:
+- Correto: o repositorio separado da carteira deixa de ser o sistema principal.
+- Ele pode ficar guardado como backup/historico.
+- O sistema oficial agora fica dentro da raiz do painel JP2, no mesmo deploy do app.ibdtec.ong.br.
+
+O que a Fase 2 adiciona sem aparecer como pagina de inteligencia:
+- Tabela interna carteira_inteligencia_criterios.
+- Tabela interna carteira_dados_mercado.
+- Criterios por classe de ativo: ROIC, margem, divida, liquidez, DY, valuation, governanca.
+- Novos campos no cadastro de ativos: P/L, P/VP, ROE, crescimento de lucro e preco teto.
+- Score passa a usar esses criterios internos.
+- Onde aportar passa a decidir com a memoria interna do sistema.
+- API interna opcional para sincronizar preco de mercado:
+  POST /carteira/api/sincronizar-mercado
+
+Importante:
+- Nao foi criada tela chamada Inteligencia.
+- A inteligencia fica no banco e no motor de decisao.
+- O usuario ve apenas a decisao normal: Aportar, Observar ou Nao aportar.
+
+Como testar:
+1. Suba o pacote.
+2. Abra /carteira/ativos.
+3. Cadastre ativos com indicadores.
+4. Abra /carteira/onde-aportar.
+5. Simule um aporte.
+
+Proxima evolucao:
+- Importar planilhas de ouro.
+- Rotina agendada para atualizar precos.
+- Relatorio de confianca por ativo.
+- Correlação e limite por setor/pais/moeda.
