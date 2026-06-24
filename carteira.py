@@ -568,6 +568,15 @@ def buscar_preco_yahoo(ticker, classe, pais):
 @login_required
 def dashboard():
     ativos=listar_ativos(); grupos,total=resumo_classes(ativos); al,cand,_,_=recomendacoes(); score=round(sum(a["score"] for a in ativos)/len(ativos),1) if ativos else 0
+    renda_total, renda_mes, por_ativo, meses, maior_renda = resumo_renda_passiva("mes")
+    melhor = cand[0] if cand else None
+    return render_template("carteira_home.html", ativos=ativos, grupos=grupos, total=total, score_medio=score, candidatos=cand, alocacoes=al, melhor=melhor, renda_total=renda_total, renda_mes=renda_mes, por_ativo=por_ativo, meses=meses, maior_renda=maior_renda, br_money=br_money)
+
+
+@bp_carteira.route("/carteira")
+@login_required
+def carteira_lista():
+    ativos=listar_ativos(); grupos,total=resumo_classes(ativos); al,cand,_,_=recomendacoes(); score=round(sum(a["score"] for a in ativos)/len(ativos),1) if ativos else 0
     return render_template("carteira_dashboard.html", ativos=ativos, grupos=grupos, total=total, score_medio=score, candidatos=cand, alocacoes=al, br_money=br_money)
 
 
