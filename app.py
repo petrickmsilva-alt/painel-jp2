@@ -780,6 +780,70 @@ def home():
 
     return render_template('home.html', nome_socio=session.get('nome_exibicao', 'Sócio'))
 
+@app.route('/painel-arquivos')
+def painel_arquivos():
+    if 'usuario_logado' not in session:
+        return redirect(url_for('tela_login'))
+    return render_template('dashboard.html', nome_socio=session.get('nome_exibicao', 'Socio'))
+
+@app.route('/api/home-carteira-b3')
+def api_home_carteira_b3():
+    if 'usuario_logado' not in session:
+        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
+    dados = {"status": "sucesso", "total": 0, "ativos": 0, "classes": [], "melhor": None, "renda_mes": 0}
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            try:
+                cur.execute("""
+                    SELECT classe, SUM(COALESCE(quantidade,0) * COALESCE(valor_atual,0)) AS total, COUNT(*) AS qtd
+                    FROM carteira_ativos
+                    GROUP BY classe
+                    ORDER BY total DESC
+                """)
+                classes = cur.fetchall()
+                dados["classes"] = [
+                    {"classe": row.get("classe") or "-", "total": float(row.get("total") or 0), "qtd": int(row.get("qtd") or 0)}
+                    for row in classes
+                ]
+                dados["total"] = sum(item["total"] for item in dados["classes"])
+                dados["ativos"] = sum(item["qtd"] for item in dados["classes"])
+            except Exception:
+                pass
+
+            try:
+                cur.execute("""
+                    SELECT ticker, nome, classe, score_final
+                    FROM carteira_universo_acoes
+                    ORDER BY score_final DESC, ticker ASC
+                    LIMIT 1
+                """)
+                melhor = cur.fetchone()
+                if melhor:
+                    dados["melhor"] = {
+                        "ticker": melhor.get("ticker"),
+                        "nome": melhor.get("nome"),
+                        "classe": melhor.get("classe") or "Acoes",
+                        "score": float(melhor.get("score_final") or 0),
+                    }
+            except Exception:
+                pass
+
+            try:
+                inicio_mes = datetime.now().replace(day=1).strftime("%Y-%m-%d")
+                cur.execute("""
+                    SELECT SUM(COALESCE(valor,0)) AS total
+                    FROM carteira_aportes
+                    WHERE data_aporte >= %s
+                      AND UPPER(tipo) IN ('DIVIDENDO','JCP','RENDA','PROVENTO')
+                """, (inicio_mes,))
+                dados["renda_mes"] = float((cur.fetchone() or {}).get("total") or 0)
+            except Exception:
+                pass
+    finally:
+        conn.close()
+    return jsonify(dados)
+
 @app.route('/carteira-investimentos')
 @app.route('/carteira-investimentos/')
 def carteira_investimentos():
@@ -1871,6 +1935,5 @@ def manifest(): return send_from_directory('static', 'manifest.json')
 
 if __name__ == '__main__':
     app.run(debug=True)
-
 
 
