@@ -1061,7 +1061,7 @@
                             <button type="button" class="btn btn-sm btn-outline-info py-0 px-1" style="font-size: 0.58rem;" onclick="carregarPerformanceStatus()">Atualizar</button>
                         </div>
                         <div id="status-performance-list">
-                            <div class="status-route-row"><span>Aguardando medicoes</span><strong>-- ms</strong></div>
+                            <div class="status-route-row"><span>Aguardando medições</span><strong>-- ms</strong></div>
                         </div>
                     </div>
                 </div>
@@ -1079,33 +1079,33 @@
             </a>
             
             <div class="menu-header mt-3">GESTÃO</div>
+             <a href="/contatos" class="menu-item">
+                 <span class="menu-mark">CT</span> AGENDA TELEFÔNICA
+            </a>
             <a href="/compromissos" class="menu-item">
-                 <span class="menu-mark">CP</span> Agendar Compromisso
+                 <span class="menu-mark">CP</span> AGENDAR COMPROMISSO
             </a>
             <a href="/eventos" class="menu-item">
-                 <span class="menu-mark">EV</span> Cadastro de Eventos
-            </a>
-            <a href="/contatos" class="menu-item">
-                 <span class="menu-mark">CT</span> Agenda Telefônica
+                 <span class="menu-mark">EV</span> CADASTRO DE EVENTOS
             </a>
             <a href="/financeiro" class="menu-item">
-               <span class="menu-mark">IE</span> Investimentos em Eventos
+               <span class="menu-mark">IE</span> INVEST E EMPRESTIMOS
             </a>
             <a href="/carteira" class="menu-item">
-               <span class="menu-mark">CI</span> Carteira de Investimentos
+               <span class="menu-mark">CI</span> INVESTIMENTO B3
             </a>
             {% if usuario_e_admin %}
                 <a href="/admin/usuarios" class="menu-item">
-                    <span class="menu-mark">SO</span> Gestão de Sócios
+                    <span class="menu-mark">SO</span> GESTÃO DE SÓCIOS
                 </a>
                 <a href="/admin/logs" class="menu-item">
-                    <span class="menu-mark">AU</span> Auditoria (Logs)
+                    <span class="menu-mark">AU</span> AUDITORIA (LOGS)
                 </a>
             {% endif %}
 
-            <div class="menu-header mt-3">Ecossistema Digital</div>
+            <div class="menu-header mt-3">ECOSSISTEMA DIGITAL</div>
             <a class="menu-item" id="menu-bloco-sites" onclick="clicarBlocoMestre('sites_jp2', this)">
-                <span class="menu-mark">WB</span> Sites JP2 Business
+                <span class="menu-mark">WB</span> SITES JP2BUSINESS
             </a>
         </div>    
     </aside>
@@ -1196,7 +1196,7 @@
 <div id="jp2Toast" class="jp2-toast" role="status" aria-live="polite">
     <i id="jp2ToastIcon" class="bi bi-check-circle-fill text-success"></i>
     <div>
-        <strong id="jp2ToastTitle">Operacao concluida</strong>
+        <strong id="jp2ToastTitle">Operação concluida</strong>
         <span id="jp2ToastMessage">Tudo certo.</span>
     </div>
 </div>
@@ -1240,7 +1240,7 @@
                     <option value="eventos">Eventos</option>
                     <option value="marcas">Marcas</option>
                     <option value="institucional">Institucional</option>
-                    <option value="operacao">Operacao</option>
+                    <option value="operacao">Operação</option>
                 </select>
             </div>
             <div class="jp2-modal-footer">
@@ -1264,7 +1264,7 @@
                 </select>
 
                 <div id="blocoReuniao">
-                    <label class="jp2-modal-label" for="tituloEvento">Pessoa ou assunto da reunião</label>
+                    <label class="jp2-modal-label" for="tituloEvento">Pessoas ou assuntos da reunião</label>
                     <input type="text" id="tituloEvento" class="form-control mb-3" placeholder="Ex: Reuniao com patrocinador X">
                     <label class="jp2-modal-label" for="localEvento">Local ou link da reunião</label>
                     <input type="text" id="localEvento" class="form-control mb-3" placeholder="Ex: Escritorio JP2 ou link do Meet">
