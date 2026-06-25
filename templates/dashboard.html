@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-<head> 
+<head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Painel Executivo | JP2 & Instituto</title>
@@ -1048,7 +1048,7 @@
                         <span id="dash-arquivos" style="font-size: 0.7rem; font-weight: bold;">...</span>
                     </div>
                     <div class="d-flex justify-content-between mb-1">
-                        <small style="font-size: 0.6rem;">SÓCIOS:</small>
+                        <small style="font-size: 0.6rem;">SOCIOS:</small>
                         <span id="dash-socios" style="font-size: 0.7rem; font-weight: bold;">...</span>
                     </div>
                     <div class="d-flex justify-content-between">
@@ -1061,7 +1061,7 @@
                             <button type="button" class="btn btn-sm btn-outline-info py-0 px-1" style="font-size: 0.58rem;" onclick="carregarPerformanceStatus()">Atualizar</button>
                         </div>
                         <div id="status-performance-list">
-                            <div class="status-route-row"><span>Aguardando medições</span><strong>-- ms</strong></div>
+                            <div class="status-route-row"><span>Aguardando medicoes</span><strong>-- ms</strong></div>
                         </div>
                     </div>
                 </div>
@@ -1072,40 +1072,40 @@
                                   
             <div class="menu-header">Modulos de Arquivo</div>
             <a class="menu-item" id="menu-bloco-instituto" onclick="clicarBlocoMestre('instituto', this)">
-                <span class="menu-mark">IB</span> INSTITUTO (IBDTEC)
+                <span class="menu-mark">IB</span> Instituto (IBDTEC)
             </a>
             <a class="menu-item" id="menu-bloco-jp2" onclick="clicarBlocoMestre('jp2_business', this)">
-                <span class="menu-mark">JP</span> JP2 BUSINESS
+                <span class="menu-mark">JP</span> JP2 Business
             </a>
             
             <div class="menu-header mt-3">GESTÃO</div>
-            <a href="/contatos" class="menu-item">
-                <span class="menu-mark">CT</span> AGENDA TELEFÔNICA
-            </a>
             <a href="/compromissos" class="menu-item">
-                 <span class="menu-mark">CP</span> AGENDAR COMPROMISSO
+                 <span class="menu-mark">CP</span> Agendar Compromisso
             </a>
             <a href="/eventos" class="menu-item">
-                 <span class="menu-mark">EV</span> CADASTRO DE EVENTOS
+                 <span class="menu-mark">EV</span> Cadastro de Eventos
+            </a>
+            <a href="/contatos" class="menu-item">
+                 <span class="menu-mark">CT</span> Agenda Telefônica
             </a>
             <a href="/financeiro" class="menu-item">
-               <span class="menu-mark">IE</span> INVESTIMENTOS E EMPRESTIMOS
+               <span class="menu-mark">IE</span> Investimentos em Eventos
             </a>
             <a href="/carteira" class="menu-item">
-               <span class="menu-mark">CI</span> ENVESTIMENTOS B3
+               <span class="menu-mark">CI</span> Carteira de Investimentos
             </a>
             {% if usuario_e_admin %}
                 <a href="/admin/usuarios" class="menu-item">
-                    <span class="menu-mark">SO</span> GESTÃO DE SÓCIOS
+                    <span class="menu-mark">SO</span> Gestão de Sócios
                 </a>
                 <a href="/admin/logs" class="menu-item">
-                    <span class="menu-mark">AU</span> AUDITORIA (LOGS)
+                    <span class="menu-mark">AU</span> Auditoria (Logs)
                 </a>
             {% endif %}
 
-            <div class="menu-header mt-3">ECOSSISTEMA DIGITAL</div>
+            <div class="menu-header mt-3">Ecossistema Digital</div>
             <a class="menu-item" id="menu-bloco-sites" onclick="clicarBlocoMestre('sites_jp2', this)">
-                <span class="menu-mark">WB</span> SITES JP2BUSINESS
+                <span class="menu-mark">WB</span> Sites JP2 Business
             </a>
         </div>    
     </aside>
@@ -1124,7 +1124,7 @@
                 <div style="height: 25px; width: 1px; background-color: #cbd5e1;"></div>
                 <div class="text-end">
                     <span class="text-dark" style="font-size: 13.5px; font-weight: 600;">{{ nome_socio }}</span>
-                    <small class="text-muted d-block" style="font-size: 10px;">Sócio Logado</small>
+                    <small class="text-muted d-block" style="font-size: 10px;">Socio Logado</small>
                 </div>
                 <div style="height: 25px; width: 1px; background-color: #cbd5e1;"></div>
                 <a href="/logout" class="btn btn-sm btn-outline-danger px-2 py-1" style="font-size:12px;">Sair</a>
@@ -1196,7 +1196,7 @@
 <div id="jp2Toast" class="jp2-toast" role="status" aria-live="polite">
     <i id="jp2ToastIcon" class="bi bi-check-circle-fill text-success"></i>
     <div>
-        <strong id="jp2ToastTitle">Operação concluida</strong>
+        <strong id="jp2ToastTitle">Operacao concluida</strong>
         <span id="jp2ToastMessage">Tudo certo.</span>
     </div>
 </div>
@@ -1240,7 +1240,7 @@
                     <option value="eventos">Eventos</option>
                     <option value="marcas">Marcas</option>
                     <option value="institucional">Institucional</option>
-                    <option value="operacao">Operação</option>
+                    <option value="operacao">Operacao</option>
                 </select>
             </div>
             <div class="jp2-modal-footer">
@@ -1260,7 +1260,7 @@
             <div class="jp2-modal-body">
                 <label class="jp2-modal-label" for="tipoEventoSelect">Tipo de compromisso</label>
                 <select id="tipoEventoSelect" class="form-select mb-3" onchange="alternarCamposAgenda(this.value)">
-                    <option value="reuniao">Compromisso / Reunião</option>
+                    <option value="reuniao">Compromisso / Reuniao</option>
                 </select>
 
                 <div id="blocoReuniao">
@@ -2593,6 +2593,7 @@
     </script>
 </body>
 </html>
+
 
 
 

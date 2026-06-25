@@ -1,0 +1,20 @@
+Atualizacoes aplicadas em 24/06/2026
+
+1. Cadastro de Eventos / Resumo Geral
+- Edicao de evento passa a confirmar a gravacao no banco antes de recarregar a tela.
+- A tabela do resumo atualiza automaticamente ao alterar UF, regiao, mes, origem, status, datas ou busca.
+- O botao Filtrar continua disponivel para uso manual.
+
+2. Cadastro de Eventos / Agenda Visual
+- O calendario passou a usar a lista completa de eventos, independente dos filtros do Resumo Geral.
+- Os indicadores da agenda agora acompanham a visualizacao mensal ou anual.
+- Clique em um evento no calendario abre uma janela flutuante com os detalhes do cadastro.
+- Na visualizacao anual, cada mes mostra a quantidade e uma lista resumida com data e nome do evento.
+
+3. Investimento de Eventos / Exportacao
+- A exportacao do Resumo Geral passou a enviar valores monetarios formatados em Real.
+- A exportacao da Relacao de Emprestimos tambem foi ajustada para Principal, Pgto Hoje, Futuro e Pago.
+- Isso evita que o Excel interprete os valores como numeros gigantes.
+
+Observacao
+- Nao foi possivel executar validacao Python local neste computador porque o comando python nao esta disponivel no terminal do ambiente.
