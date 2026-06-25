@@ -28,18 +28,23 @@
     <aside class="sidebar">
         <div class="brand-kicker">Console de gestao</div>
         <div class="brand-title">Central executiva</div>
+        <a class="nav-link" href="#status-home"><i class="bi bi-bar-chart-line"></i> Consultar status</a>
         <div class="brand-line"></div>
         <a class="nav-link active" href="/"><i class="bi bi-house"></i> Home executiva</a>
-        <a class="nav-link" href="/painel-arquivos"><i class="bi bi-folder2-open"></i> Painel de arquivos</a>
+        <div class="nav-title">Modulos de arquivo</div>
+        <a class="nav-link" href="/painel-arquivos?bloco=instituto"><i class="bi bi-building"></i> Instituto (IBDTEC)</a>
+        <a class="nav-link" href="/painel-arquivos?bloco=jp2_business"><i class="bi bi-briefcase"></i> JP2 Business</a>
         <div class="nav-title">Gestao</div>
+        <a class="nav-link" href="/contatos"><i class="bi bi-person-lines-fill"></i> Agenda telefonica</a>
         <a class="nav-link" href="/compromissos"><i class="bi bi-calendar2-check"></i> Agendar compromisso</a>
         <a class="nav-link" href="/eventos"><i class="bi bi-calendar3"></i> Cadastro de eventos</a>
-        <a class="nav-link" href="/contatos"><i class="bi bi-person-lines-fill"></i> Agenda telefonica</a>
-        <a class="nav-link" href="/financeiro"><i class="bi bi-cash-coin"></i> Investimentos em eventos</a>
-        <a class="nav-link" href="/carteira"><i class="bi bi-graph-up-arrow"></i> Carteira de investimentos</a>
-        <div class="nav-title">Controle</div>
+        <a class="nav-link" href="/financeiro"><i class="bi bi-cash-coin"></i> Invest e emprestimos</a>
+        <a class="nav-link" href="/carteira"><i class="bi bi-graph-up-arrow"></i> Investimento B3</a>
         <a class="nav-link" href="/admin/usuarios"><i class="bi bi-people"></i> Gestao de socios</a>
-        <a class="nav-link" href="/admin/logs"><i class="bi bi-shield-check"></i> Auditoria</a>
+        <a class="nav-link" href="/admin/logs"><i class="bi bi-shield-check"></i> Auditoria (logs)</a>
+        <div class="nav-title">Ecossistema digital</div>
+        <a class="nav-link" href="/painel-arquivos?bloco=sites_jp2"><i class="bi bi-globe2"></i> Sites JP2Business</a>
+        <div class="brand-line"></div>
         <a class="nav-link" href="/logout"><i class="bi bi-box-arrow-right"></i> Sair</a>
     </aside>
     <main class="content">
@@ -53,13 +58,14 @@
                 </div>
             </div>
             <div class="actions">
-                <a class="btnx" href="/painel-arquivos"><i class="bi bi-folder2-open"></i> Painel de arquivos</a>
+                <a class="btnx" href="/painel-arquivos?bloco=instituto"><i class="bi bi-building"></i> Instituto</a>
+                <a class="btnx" href="/painel-arquivos?bloco=jp2_business"><i class="bi bi-briefcase"></i> JP2 Business</a>
                 <a class="btnx" href="/eventos"><i class="bi bi-calendar3"></i> Eventos</a>
                 <a class="btnx primary" href="/carteira"><i class="bi bi-graph-up-arrow"></i> Carteira B3</a>
             </div>
         </section>
 
-        <section class="metrics">
+        <section class="metrics" id="status-home">
             <div class="metric"><span>Investido em eventos</span><strong id="mInvestido">R$ 0,00</strong><small>Principal cadastrado</small></div>
             <div class="metric"><span>Quitacao hoje</span><strong id="mHoje">R$ 0,00</strong><small>Divida na data atual</small></div>
             <div class="metric"><span>Futuro projetado</span><strong id="mFuturo">R$ 0,00</strong><small>Projecao ate vencimento</small></div>

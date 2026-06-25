@@ -1,0 +1,18 @@
+Atualizacao do painel unificado - 25/06/2026
+
+Este pacote usa como base o arquivo painel-jp2-main (7).zip.
+
+Principais ajustes aplicados:
+- A Home Executiva agora tem o menu unico com todos os modulos na ordem definida.
+- O antigo botao "Painel de arquivos" deixou de representar um segundo painel separado.
+- Instituto, JP2 Business e Sites JP2Business entram pelo mesmo painel, usando links diretos por bloco.
+- A tela de arquivos recebeu o tema escuro premium para ficar alinhada com a Home Executiva.
+- Ao entrar em /painel-arquivos?bloco=instituto, /painel-arquivos?bloco=jp2_business ou /painel-arquivos?bloco=sites_jp2, o sistema abre diretamente o modulo correto.
+
+Arquivos principais alterados:
+- templates/home.html
+- templates/dashboard.html
+- home.html
+
+Observacao:
+Nao foi alterada a logica de upload, banco de dados, permissoes ou calculos. Esta rodada ficou focada na unificacao visual e navegacao do painel principal.

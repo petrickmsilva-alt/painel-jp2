@@ -1,0 +1,14 @@
+ATUALIZACAO - APP.PY DO USUARIO - 25/06/2026
+
+Base utilizada:
+- APP.PY enviado pelo usuario em C:\Users\Jefferson\Desktop\Nova pasta\APP.PY
+
+O que foi feito:
+1. O app.py do pacote foi atualizado usando o APP.PY enviado como base.
+2. Foram preservados templates/home.html e templates/eventos.html como estavam.
+3. Foram recolocadas as rotas necessarias para a Home executiva:
+   - /painel-arquivos
+   - /api/home-carteira-b3
+
+Observacao:
+- A validacao local com Python nao foi executada porque o Python nao esta instalado/disponivel no ambiente local do Codex.

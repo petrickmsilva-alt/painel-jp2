@@ -1,0 +1,27 @@
+Atualizacoes refeitas sobre a base atual do GitHub - 25/06/2026
+
+Base utilizada:
+- Arquivo recebido: painel-jp2-main (6).zip
+- Pasta extraida: painel-jp2-main
+
+Melhorias aplicadas:
+
+1. Cadastro de Eventos / Resumo Geral
+- Edicao de evento agora confirma a gravacao no banco antes de recarregar a tela.
+- Filtros do resumo atualizam a tabela automaticamente ao selecionar UF, regiao, mes, origem, status, datas ou busca.
+- O botao Filtrar continua disponivel.
+
+2. Cadastro de Eventos / Agenda Visual
+- Calendario mensal e anual agora usam a lista completa de eventos, independente dos filtros do Resumo Geral.
+- A agenda ganhou indicadores proprios de quantidade, valor, periodo e proximo evento.
+- Clique em evento no calendario abre janela flutuante com os detalhes cadastrados.
+- Visualizacao anual mostra quantidade por mes e lista resumida com data/cidade/evento.
+
+3. Investimento de Eventos / Exportacao
+- Exportacao do Resumo Geral corrigida para usar valores monetarios em Real.
+- Exportacao da Relacao de Emprestimos corrigida para Principal, Pgto Hoje, Futuro e Pago.
+- Isso evita os numeros gigantes ao abrir o CSV no Excel.
+
+4. Banco de dados
+- Rotas de criacao, edicao e exclusao de eventos/custos/financeiro passaram a confirmar commit.
+- Ao excluir evento, custos e parametros financeiros vinculados tambem sao removidos.

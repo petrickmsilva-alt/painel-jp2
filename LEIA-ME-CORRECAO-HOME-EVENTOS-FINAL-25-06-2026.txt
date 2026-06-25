@@ -1,0 +1,25 @@
+CORRECAO FINAL - HOME E EVENTOS - 25/06/2026
+
+Este pacote usa o APP.PY atualizado enviado pelo usuario e inclui os ajustes solicitados:
+
+1. Home inicial do Painel JP2Business
+- A rota inicial "/" abre a Home executiva.
+- A Home mostra resumo de investimentos/eventos/carteira.
+- O visual foi ajustado para um tema escuro premium inspirado na Carteira Executiva.
+- O painel de arquivos antigo continua em "/painel-arquivos".
+
+2. Cadastro de Eventos / Agenda Visual
+- O popup de detalhe do evento foi ampliado.
+- Os dados foram separados em blocos com mais espacamento.
+
+3. Cadastro de Eventos / Resumo Geral
+- "Total de eventos" passa a considerar o mes em visualizacao/filtro.
+- "Valor total" permanece como total geral.
+- Foi adicionado "Valor do mes" para somar apenas os eventos do mes exibido.
+
+4. Edicao de Status
+- O status vazio/undefined/null passa a ser tratado como "Pendente".
+- A tela recarrega a lista de eventos sem cache apos salvar, para evitar que o status antigo continue aparecendo.
+
+Observacao:
+- A validacao local por Python nao foi executada porque este ambiente local nao tem Python instalado/disponivel.
