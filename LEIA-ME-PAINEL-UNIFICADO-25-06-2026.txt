@@ -6,7 +6,7 @@ Principais ajustes aplicados:
 - A Home Executiva agora tem o menu unico com todos os modulos na ordem definida.
 - O antigo botao "Painel de arquivos" deixou de representar um segundo painel separado.
 - Instituto, JP2 Business e Sites JP2Business entram pelo mesmo painel, usando links diretos por bloco.
-- A tela de arquivos recebeu o tema escuro premium para ficar alinhada com a Home Executiva.
+- A tela de arquivos ficou em branco/clean para melhorar leitura de pastas, documentos e sites, mantendo o menu lateral escuro premium.
 - Ao entrar em /painel-arquivos?bloco=instituto, /painel-arquivos?bloco=jp2_business ou /painel-arquivos?bloco=sites_jp2, o sistema abre diretamente o modulo correto.
 
 Arquivos principais alterados:
@@ -15,4 +15,4 @@ Arquivos principais alterados:
 - home.html
 
 Observacao:
-Nao foi alterada a logica de upload, banco de dados, permissoes ou calculos. Esta rodada ficou focada na unificacao visual e navegacao do painel principal.
+Nao foi alterada a logica de upload, banco de dados, permissoes ou calculos. Esta rodada ficou focada na unificacao visual, navegacao do painel principal e melhor legibilidade dos modulos de arquivo.
