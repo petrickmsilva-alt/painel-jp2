@@ -31,7 +31,7 @@
         .calendar-shell{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px}.calendar-toolbar{align-items:center;display:flex;justify-content:space-between;gap:12px;margin-bottom:12px}.calendar-title{font-size:20px;font-weight:900}.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);border-left:1px solid #e5eaf2;border-top:1px solid #e5eaf2}.weekday,.day{border-bottom:1px solid #e5eaf2;border-right:1px solid #e5eaf2}.weekday{background:#f8fafc;color:#667085;font-size:11px;font-weight:900;padding:10px;text-align:center;text-transform:uppercase}.day{background:#fff;min-height:118px;padding:8px}.day.other{background:#f8fafc;color:#98a2b3}.day-number{font-size:12px;font-weight:900}.event-chip{border:0;border-radius:7px;color:#101828;cursor:pointer;display:block;font-size:11px;font-weight:800;margin-top:6px;max-width:100%;overflow:hidden;padding:5px 6px;text-align:left;text-overflow:ellipsis;white-space:nowrap;width:100%}.event-chip:hover{filter:brightness(.96);outline:2px solid rgba(21,94,239,.22)}.chip-Autorizado{background:#bbf7d0}.chip-Em-Andamento{background:#bfdbfe}.chip-Pendente{background:#fde68a}.chip-Em-Analise{background:#fed7aa}.chip-Encerrado{background:#e5e7eb}
         .year-panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}.mini-year{display:grid;gap:10px;grid-template-columns:repeat(2,1fr)}.mini-month{border:1px solid #edf1f7;border-radius:8px;padding:8px}.mini-title{font-size:11px;font-weight:900;margin-bottom:5px;text-align:center}.mini-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}.mini-day{border-radius:999px;font-size:8px;min-height:12px;text-align:center}.mini-dot{background:#155eef;color:#fff}
         .year-main{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.year-card{border:1px solid #edf1f7;border-radius:10px;padding:10px}.year-card h3{font-size:13px;font-weight:900;text-align:center}.year-events{display:grid;gap:5px;margin-top:8px}.year-event-line{background:#f8fafc;border:1px solid #edf1f7;border-radius:7px;color:#344054;font-size:11px;font-weight:800;line-height:1.25;padding:6px;text-align:left}.year-event-line:hover{background:#eef4ff;border-color:#bfdbfe;color:#155eef}.legend{display:flex;flex-wrap:wrap;gap:8px}.legend span{align-items:center;color:#475467;display:flex;font-size:12px;font-weight:800;gap:5px}.legend i{border-radius:99px;display:inline-block;height:10px;width:10px}
-        .event-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 22px}.event-detail-item{background:#f8fafc;border:1px solid #edf1f7;border-radius:10px;padding:12px}.event-detail-item.full{grid-column:1/-1}.event-detail-item label{display:block;margin-bottom:6px}.event-detail-item .money,.event-detail-item .muted{line-height:1.35;white-space:normal}
+        .event-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 24px}.event-detail-item{background:#f8fafc;border:1px solid #edf1f7;border-radius:12px;padding:14px 16px;min-height:76px}.event-detail-item.full{grid-column:1/-1}.event-detail-item label{display:block;margin-bottom:8px}.event-detail-item .money,.event-detail-item .muted{line-height:1.45;white-space:normal;word-break:normal}
         @media(max-width:1100px){.summary,.finance-grid{grid-template-columns:repeat(2,1fr)}.calendar-shell{grid-template-columns:1fr}.year-main{grid-template-columns:repeat(2,1fr)}.cost-row{grid-template-columns:1fr}}
         @media(max-width:820px){body{display:block}#sidebar{width:100%}.content{padding:16px}.hero{align-items:flex-start;flex-direction:column}.summary{grid-template-columns:1fr}.calendar-grid{min-width:760px}.calendar-overflow{overflow-x:auto}}
         @media print{ #sidebar,.no-print,.nav-pills,.panel-head .btn,.actions{display:none!important}body{display:block;background:#fff}.content{padding:0}.panel,.hero,.metric{box-shadow:none}}
@@ -295,7 +295,7 @@
 </main>
 
 <div class="modal fade" id="modalEventoDetalhe" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <div>
@@ -341,7 +341,9 @@ function formatarMoedaEvento(el){const n=numeroBR(el.value); el.value=n?dinheiro
 function statusClass(s){return 's-'+String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-');}
 function chipClass(s){return 'chip-'+String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-');}
 function statusEvento(e){const s=String(e?.status||'').trim(); return (!s || s.toLowerCase()==='undefined' || s.toLowerCase()==='null')?'Pendente':s;}
+function statusSelecionado(){return statusEvento({status:status.value});}
 function qs(){const p=new URLSearchParams(); [['uf',fUf.value],['regiao',fRegiao.value],['mes',fMes.value],['origem',fOrigem.value],['status',fStatus.value],['q',fBusca.value],['inicio',fInicio.value],['fim',fFim.value]].forEach(([k,v])=>{if(v)p.set(k,v)}); return p.toString();}
+function urlEventosComCache(extra=''){const p=new URLSearchParams(extra); p.set('_', Date.now()); return '/api/eventos?'+p.toString();}
 function opcoes(id, valores){document.getElementById(id).innerHTML='<option value="">Todos</option>'+[...new Set(valores.filter(Boolean))].sort().map(v=>`<option>${h(v)}</option>`).join('');}
 function atualizarMetricas(){
     const mesFiltro=fMes.value;
@@ -358,8 +360,8 @@ function atualizarMetricas(){
 }
 function carregarEventos(){
     Promise.all([
-        fetch('/api/eventos?'+qs()).then(r=>r.json()),
-        fetch('/api/eventos').then(r=>r.json())
+        fetch(urlEventosComCache(qs())).then(r=>r.json()),
+        fetch(urlEventosComCache()).then(r=>r.json())
     ]).then(([dadosFiltro,dadosTodos])=>{
         filtrados=Array.isArray(dadosFiltro.dados)?dadosFiltro.dados:[];
         eventosCalendario=Array.isArray(dadosTodos.dados)?dadosTodos.dados:[];
@@ -406,7 +408,7 @@ formEvento.addEventListener('submit',e=>{
     e.preventDefault();
     if(!cidade.value){alert('Selecione uma cidade da lista.'); return;}
     const fd=new FormData(); ['cidade','uf','regiao','nomeEvento','dataInicio','dataFim','valorVerba','origem','status','observacoes'].forEach(id=>{});
-    fd.append('cidade',cidade.value); fd.append('uf',uf.value); fd.append('regiao',regiao.value); fd.append('nome_evento',nomeEvento.value); fd.append('data_inicio',dataInicio.value); fd.append('data_fim',dataFim.value); fd.append('valor_verba',numeroBR(valorVerba.value)); fd.append('origem',origem.value); fd.append('status',status.value); fd.append('observacoes',observacoes.value);
+    fd.append('cidade',cidade.value); fd.append('uf',uf.value); fd.append('regiao',regiao.value); fd.append('nome_evento',nomeEvento.value); fd.append('data_inicio',dataInicio.value); fd.append('data_fim',dataFim.value); fd.append('valor_verba',numeroBR(valorVerba.value)); fd.append('origem',origem.value); fd.append('status',statusSelecionado()); fd.append('observacoes',observacoes.value);
     const id=eventoId.value; fetch(id?'/api/eventos/'+id:'/api/eventos',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.status!=='sucesso'){alert(d.msg||'Erro ao salvar evento.');return;} limparFormulario(); eventos=[]; eventosCalendario=[]; filtrosMontados=false; carregarEventos(); bootstrap.Tab.getOrCreateInstance(document.querySelector('[data-bs-target="#resumo"]')).show();});
 });
 function editarEvento(e){
