@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cadastro de Eventos | JP2 Business</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    <style>
+        :root{--ink:#101828;--muted:#667085;--line:#d9e2ef;--panel:#fff;--soft:#f4f7fb;--blue:#155eef;--nav:#101a2b}
+        body{background:var(--soft);display:flex;margin:0;min-height:100vh;color:var(--ink);font-family:Inter,Segoe UI,system-ui,sans-serif}
+        .sidebar-toggle-btn{align-items:center;background:#fff;border:1px solid #d7e2ef;border-radius:0 8px 8px 0;box-shadow:0 12px 30px rgba(15,23,42,.16);color:#1e293b;display:inline-flex;height:38px;justify-content:center;left:270px;position:fixed;top:18px;transition:left .22s ease,background .18s ease,color .18s ease;width:38px;z-index:130}.sidebar-toggle-btn:hover{background:#155eef;border-color:#155eef;color:#fff}body.sidebar-collapsed #sidebar{margin-left:-270px}body.sidebar-collapsed .sidebar-toggle-btn{left:0}
+        #sidebar{background:var(--nav);color:#fff;flex-shrink:0;padding:24px 18px;width:270px;transition:margin-left .22s ease}
+        .sidebar-kicker{color:#93a4bd;font-size:11px;font-weight:850;letter-spacing:.1em;text-transform:uppercase}
+        .sidebar-title{font-size:22px;font-weight:850;line-height:1.08;margin:6px 0 18px}
+        .sidebar-divider{background:rgba(255,255,255,.12);height:1px;margin:18px 0}
+        #sidebar a{align-items:center;border:1px solid transparent;border-radius:8px;color:#d6e0ef;display:flex;font-weight:750;gap:10px;margin-bottom:7px;padding:11px 10px;text-decoration:none}
+        #sidebar a:hover,#sidebar a.active{background:#172b49;border-color:rgba(21,94,239,.45);color:#fff}
+        #sidebar i{color:#7fb4ff;font-size:16px}.content{flex-grow:1;min-width:0;overflow-x:hidden;padding:28px}
+        .hero{align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 36px rgba(15,23,42,.06);display:flex;justify-content:space-between;gap:18px;margin-bottom:16px;padding:18px}
+        .brand{align-items:center;display:flex;gap:14px}.brand img{background:#050505;border-radius:10px;height:58px;object-fit:contain;padding:8px;width:170px}
+        .kicker{color:var(--muted);font-size:12px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}.title{font-size:28px;font-weight:900;margin:2px 0}.subtitle{color:var(--muted);font-size:14px}
+        .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}.metric{background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(15,23,42,.05);padding:14px}.metric span{color:var(--muted);font-size:11px;font-weight:850;text-transform:uppercase}.metric strong{display:block;font-size:20px;font-weight:900;margin-top:4px}
+        .panel{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 36px rgba(15,23,42,.06);margin-bottom:16px;overflow:hidden}.panel-head{align-items:center;border-bottom:1px solid #edf1f7;display:flex;justify-content:space-between;gap:12px;padding:14px 16px}.panel-head h2{font-size:16px;font-weight:900;margin:0}.panel-head p{color:var(--muted);font-size:12px;margin:2px 0 0}.panel-body{padding:16px}
+        .finance-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.finance-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}.finance-card span{color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase}.finance-card strong{display:block;font-size:20px;font-weight:900;margin-top:5px}.finance-card.resultado{background:#ecfdf3;border-color:#bbf7d0}.finance-card.alerta{background:#fff7ed;border-color:#fed7aa}.cost-table-wrap{border:1px solid #edf1f7;border-radius:10px;overflow:hidden}.cost-table{margin:0}.cost-table td,.cost-table th{padding:12px}.cost-actions{display:flex;gap:6px;justify-content:flex-end;white-space:nowrap}.cost-actions .btn{align-items:center;display:inline-flex;height:32px;justify-content:center;width:32px}
+        .nav-pills .nav-link{border-radius:8px;color:#344054;font-weight:800}.nav-pills .nav-link.active{background:#155eef}
+        label{font-size:12px;font-weight:850;color:#475467}.form-control,.form-select{border-color:#d5deeb;border-radius:8px;min-height:42px}.form-control:focus,.form-select:focus{border-color:#155eef;box-shadow:0 0 0 4px rgba(21,94,239,.1)}
+        .table th{background:#f8fafc;color:#667085;font-size:11px;font-weight:900;text-transform:uppercase;white-space:nowrap}.table td{font-size:13px;vertical-align:middle}.money{font-weight:900;white-space:nowrap}.muted{color:#667085;font-size:12px}.actions{display:flex;gap:6px;white-space:nowrap}.actions .btn{align-items:center;display:inline-flex;height:32px;justify-content:center;width:32px}
+        .pill{border-radius:999px;display:inline-flex;font-size:11px;font-weight:900;padding:5px 9px;white-space:nowrap}.s-Autorizado{background:#ecfdf3;color:#078c55}.s-Em-Andamento{background:#eef4ff;color:#155eef}.s-Pendente{background:#fff7ed;color:#b54708}.s-Em-Analise{background:#fff4ed;color:#c4320a}.s-Encerrado{background:#f2f4f7;color:#475467}
+        .calendar-shell{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px}.calendar-toolbar{align-items:center;display:flex;justify-content:space-between;gap:12px;margin-bottom:12px}.calendar-title{font-size:20px;font-weight:900}.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);border-left:1px solid #e5eaf2;border-top:1px solid #e5eaf2}.weekday,.day{border-bottom:1px solid #e5eaf2;border-right:1px solid #e5eaf2}.weekday{background:#f8fafc;color:#667085;font-size:11px;font-weight:900;padding:10px;text-align:center;text-transform:uppercase}.day{background:#fff;min-height:118px;padding:8px}.day.other{background:#f8fafc;color:#98a2b3}.day-number{font-size:12px;font-weight:900}.event-chip{border:0;border-radius:7px;color:#101828;cursor:pointer;display:block;font-size:11px;font-weight:800;margin-top:6px;max-width:100%;overflow:hidden;padding:5px 6px;text-align:left;text-overflow:ellipsis;white-space:nowrap;width:100%}.event-chip:hover{filter:brightness(.96);outline:2px solid rgba(21,94,239,.22)}.chip-Autorizado{background:#bbf7d0}.chip-Em-Andamento{background:#bfdbfe}.chip-Pendente{background:#fde68a}.chip-Em-Analise{background:#fed7aa}.chip-Encerrado{background:#e5e7eb}
+        .year-panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}.mini-year{display:grid;gap:10px;grid-template-columns:repeat(2,1fr)}.mini-month{border:1px solid #edf1f7;border-radius:8px;padding:8px}.mini-title{font-size:11px;font-weight:900;margin-bottom:5px;text-align:center}.mini-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}.mini-day{border-radius:999px;font-size:8px;min-height:12px;text-align:center}.mini-dot{background:#155eef;color:#fff}
+        .year-main{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.year-card{border:1px solid #edf1f7;border-radius:10px;padding:10px}.year-card h3{font-size:13px;font-weight:900;text-align:center}.year-events{display:grid;gap:5px;margin-top:8px}.year-event-line{background:#f8fafc;border:1px solid #edf1f7;border-radius:7px;color:#344054;font-size:11px;font-weight:800;line-height:1.25;padding:6px;text-align:left}.year-event-line:hover{background:#eef4ff;border-color:#bfdbfe;color:#155eef}.legend{display:flex;flex-wrap:wrap;gap:8px}.legend span{align-items:center;color:#475467;display:flex;font-size:12px;font-weight:800;gap:5px}.legend i{border-radius:99px;display:inline-block;height:10px;width:10px}
+        .event-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 22px}.event-detail-item{background:#f8fafc;border:1px solid #edf1f7;border-radius:10px;padding:12px}.event-detail-item.full{grid-column:1/-1}.event-detail-item label{display:block;margin-bottom:6px}.event-detail-item .money,.event-detail-item .muted{line-height:1.35;white-space:normal}
+        @media(max-width:1100px){.summary,.finance-grid{grid-template-columns:repeat(2,1fr)}.calendar-shell{grid-template-columns:1fr}.year-main{grid-template-columns:repeat(2,1fr)}.cost-row{grid-template-columns:1fr}}
+        @media(max-width:820px){body{display:block}#sidebar{width:100%}.content{padding:16px}.hero{align-items:flex-start;flex-direction:column}.summary{grid-template-columns:1fr}.calendar-grid{min-width:760px}.calendar-overflow{overflow-x:auto}}
+        @media print{ #sidebar,.no-print,.nav-pills,.panel-head .btn,.actions{display:none!important}body{display:block;background:#fff}.content{padding:0}.panel,.hero,.metric{box-shadow:none}}
+    </style>
+</head>
+<body>
+<button class="sidebar-toggle-btn" type="button" onclick="alternarMenuLateral()" title="Ocultar ou mostrar menu">
+    <i class="bi bi-layout-sidebar-inset"></i>
+</button>
+<aside id="sidebar">
+    <div class="sidebar-kicker">Painel de eventos</div>
+    <div class="sidebar-title">Gestão de eventos</div>
+    <div class="sidebar-divider"></div>
+    <a href="/"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
+    <a href="#cadastro" class="active" data-tab-target="cadastro"><i class="bi bi-plus-square"></i> Cadastro</a>
+    <a href="#resumo" data-tab-target="resumo"><i class="bi bi-table"></i> Resumo geral</a>
+    <a href="#custos" data-tab-target="custos"><i class="bi bi-receipt"></i> Custos do evento</a>
+    <a href="#financeiro" data-tab-target="financeiro"><i class="bi bi-calculator"></i> Resultado financeiro</a>
+    <a href="#calendario" data-tab-target="calendario"><i class="bi bi-calendar3"></i> Agenda visual</a>
+</aside>
+
+<main class="content">
+    <section class="hero">
+        <div class="brand">
+            <img src="{{ url_for('static', filename='image/logo_painel_eventos.png') }}" onerror="this.src='{{ url_for('static', filename='image/jp2_business.png') }}'" alt="JP2 Eventos">
+            <div>
+                <div class="kicker">Cadastro de eventos</div>
+                <h1 class="title">Painel de eventos JP2</h1>
+                <div class="subtitle">Cadastro, acompanhamento, agenda visual e exportação dos eventos do ecossistema.</div>
+            </div>
+        </div>
+        <div class="d-flex gap-2 no-print">
+            <button class="btn btn-outline-primary" onclick="sincronizarEventosCSV()"><i class="bi bi-arrow-repeat"></i> Sincronizar CSV</button>
+            <button class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+            <button class="btn btn-primary" onclick="exportarEventos()"><i class="bi bi-download"></i> Exportar CSV</button>
+        </div>
+    </section>
+
+    <section class="summary">
+        <div class="metric"><span>Total de eventos</span><strong id="mTotal">0</strong></div>
+        <div class="metric"><span>Valor total</span><strong id="mValor">R$ 0</strong></div>
+        <div class="metric"><span id="mMesLabel">Valor do mes</span><strong id="mValorMes">R$ 0</strong></div>
+        <div class="metric"><span>Próximo evento</span><strong id="mProximo">-</strong></div>
+        <div class="metric"><span>Em andamento</span><strong id="mAndamento">0</strong></div>
+    </section>
+
+    <ul class="nav nav-pills gap-2 mb-3 no-print" id="tabsEventos">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#cadastro">Cadastro</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#resumo">Resumo geral</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#custos">Custos do evento</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#financeiro">Resultado financeiro</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#calendario">Agenda visual</button></li>
+    </ul>
+
+    <div class="tab-content">
+        <section class="tab-pane fade show active" id="cadastro">
+            <div class="panel">
+                <div class="panel-head"><div><h2>Novo evento</h2><p>Selecione a cidade para preencher UF e região automaticamente.</p></div></div>
+                <div class="panel-body">
+                    <form id="formEvento" class="row g-3">
+                        <input type="hidden" id="eventoId">
+                        <input type="hidden" id="cidade">
+                        <input type="hidden" id="uf">
+                        <input type="hidden" id="regiao">
+                        <div class="col-lg-4">
+                            <label>Cidade do evento</label>
+                            <input class="form-control" id="cidadeBusca" list="listaMunicipios" placeholder="Digite a cidade ou UF" autocomplete="off" required>
+                            <datalist id="listaMunicipios"></datalist>
+                        </div>
+                        <div class="col-lg-2"><label>UF</label><input class="form-control" id="ufView" readonly></div>
+                        <div class="col-lg-3"><label>Região</label><input class="form-control" id="regiaoView" readonly></div>
+                        <div class="col-lg-3"><label>Valor da verba</label><input class="form-control" id="valorVerba" placeholder="R$ 0" oninput="formatarMoedaEvento(this)" required></div>
+                        <div class="col-lg-6"><label>Nome do evento</label><input class="form-control" id="nomeEvento" placeholder="Ex: Expo Fashion Brasil" required></div>
+                        <div class="col-lg-3"><label>Data inicial</label><input type="date" class="form-control" id="dataInicio" required></div>
+                        <div class="col-lg-3"><label>Data final</label><input type="date" class="form-control" id="dataFim" required></div>
+                        <div class="col-lg-3"><label>Origem do recurso</label><select class="form-select" id="origem" required><option value="">Selecione</option><option>Emenda Direta</option><option>Fomento</option><option>Emenda Pós</option><option>Privado</option></select></div>
+                        <div class="col-lg-3"><label>Status</label><select class="form-select" id="status" required><option value="">Selecione</option><option>Autorizado</option><option>Em Andamento</option><option>Pendente</option><option>Em Análise</option><option>Encerrado</option></select></div>
+                        <div class="col-lg-6"><label>Observações</label><input class="form-control" id="observacoes" placeholder="Anotações relevantes do evento"></div>
+                        <div class="col-12 d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-outline-secondary" onclick="limparFormulario()">Limpar</button>
+                            <button class="btn btn-primary px-4"><i class="bi bi-save"></i> Salvar evento</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section class="tab-pane fade" id="resumo">
+            <div class="panel no-print">
+                <div class="panel-body">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-lg-2"><label>UF</label><select class="form-select" id="fUf"></select></div>
+                        <div class="col-lg-2"><label>Região</label><select class="form-select" id="fRegiao"></select></div>
+                        <div class="col-lg-2"><label>Mês</label><select class="form-select" id="fMes"></select></div>
+                        <div class="col-lg-2"><label>Origem</label><select class="form-select" id="fOrigem"></select></div>
+                        <div class="col-lg-2"><label>Status</label><select class="form-select" id="fStatus"></select></div>
+                        <div class="col-lg-2"><label>Buscar</label><input class="form-control" id="fBusca" placeholder="Evento, cidade, obs."></div>
+                        <div class="col-lg-3"><label>Início a partir de</label><input type="date" class="form-control" id="fInicio"></div>
+                        <div class="col-lg-3"><label>Até</label><input type="date" class="form-control" id="fFim"></div>
+                        <div class="col-lg-6 d-flex gap-2"><button class="btn btn-primary flex-fill" onclick="aplicarFiltros()">Filtrar</button><button class="btn btn-outline-secondary" onclick="limparFiltros()">Limpar</button></div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-head"><div><h2>Resumo geral</h2><p>Edite, exclua e acompanhe todos os eventos cadastrados.</p></div></div>
+                <div class="table-responsive panel-body">
+                    <table class="table table-hover align-middle" id="tabelaEventos">
+                        <thead><tr><th>Evento</th><th>Cidade</th><th>Período</th><th>Dias</th><th>Valor</th><th>Origem</th><th>Status</th><th>Ações</th></tr></thead>
+                        <tbody id="corpoEventos"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section class="tab-pane fade" id="financeiro">
+            <div class="panel">
+                <div class="panel-head">
+                    <div>
+                        <h2>Resultado financeiro do evento</h2>
+                        <p>Calcule valor da emenda, repasse informado, custos operacionais e sobra projetada para o IBDTEC.</p>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-lg-8">
+                            <label>Evento</label>
+                            <select class="form-select" id="financeiroEventoSelect" onchange="carregarFinanceiroEvento()"></select>
+                        </div>
+                        <div class="col-lg-4">
+                            <button class="btn btn-outline-secondary w-100" onclick="carregarFinanceiroEvento()"><i class="bi bi-arrow-clockwise"></i> Atualizar cálculo</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <section class="finance-grid">
+                <div class="finance-card"><span>Valor da emenda</span><strong id="finValorEmenda">R$ 0</strong></div>
+                <div class="finance-card alerta"><span>Repasse informado</span><strong id="finRepasse">R$ 0</strong></div>
+                <div class="finance-card"><span>Custos operacionais</span><strong id="finCustos">R$ 0</strong></div>
+                <div class="finance-card resultado"><span>Resultado IBDTEC</span><strong id="finResultado">R$ 0</strong></div>
+            </section>
+
+            <div class="row g-3 mt-1">
+                <div class="col-lg-12">
+                    <div class="panel h-100">
+                        <div class="panel-head"><div><h2>Parâmetros do repasse</h2><p>Informe o percentual acordado para este evento.</p></div></div>
+                        <div class="panel-body">
+                            <form id="formEventoFinanceiro" class="row g-3">
+                                <div class="col-12">
+                                    <label>Percentual do parlamentar / captador (%)</label>
+                                    <input class="form-control" id="finPercentual" placeholder="Ex: 20" inputmode="decimal">
+                                </div>
+                                <div class="col-12">
+                                    <label>Observações</label>
+                                    <textarea class="form-control" id="finObservacoes" rows="3" placeholder="Condições, responsáveis, observações de conferência"></textarea>
+                                </div>
+                                <div class="col-12 d-flex justify-content-end">
+                                    <button class="btn btn-primary"><i class="bi bi-save"></i> Salvar parâmetros</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-7 d-none">
+                    <div class="panel h-100">
+                        <div class="panel-head"><div><h2>Custos do evento</h2><p>Cadastre som, iluminação, segurança, equipe, estrutura e demais despesas.</p></div></div>
+                        <div class="panel-body">
+                            <form id="formCustoEventoLegacy" class="row g-2 align-items-end mb-3">
+                                <div class="col-md-3"><label>Categoria</label><select class="form-select" id="custoCategoriaLegacy"><option>Som</option><option>Iluminação</option><option>Segurança</option><option>Palco/Estrutura</option><option>Equipe</option><option>Marketing</option><option>Transporte</option><option>Alimentação</option><option>Outros</option></select></div>
+                                <div class="col-md-3"><label>Descrição</label><input class="form-control" id="custoDescricaoLegacy" placeholder="Ex: sonorização"></div>
+                                <div class="col-md-3"><label>Fornecedor</label><input class="form-control" id="custoFornecedorLegacy" placeholder="Opcional"></div>
+                                <div class="col-md-2"><label>Valor</label><input class="form-control" id="custoValorLegacy" oninput="formatarMoedaEvento(this)" placeholder="R$ 0"></div>
+                                <div class="col-md-1 d-grid"><button class="btn btn-success" title="Adicionar custo"><i class="bi bi-plus-lg"></i></button></div>
+                            </form>
+                            <div class="cost-list" id="listaCustosEventoLegacy"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="tab-pane fade" id="custos">
+            <div class="panel">
+                <div class="panel-head">
+                    <div>
+                        <h2>Custos do evento</h2>
+                        <p>Cadastre, edite e acompanhe todas as despesas vinculadas ao evento selecionado.</p>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-lg-8">
+                            <label>Evento</label>
+                            <select class="form-select" id="custoEventoSelect" onchange="carregarCustosEvento()"></select>
+                        </div>
+                        <div class="col-lg-4">
+                            <button class="btn btn-outline-secondary w-100" onclick="carregarCustosEvento()"><i class="bi bi-arrow-clockwise"></i> Atualizar custos</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-head"><div><h2>Cadastro de custo</h2><p>Use o mesmo formulário para incluir ou alterar uma despesa.</p></div></div>
+                <div class="panel-body">
+                    <form id="formCustoEvento" class="row g-3 align-items-end">
+                        <input type="hidden" id="custoId">
+                        <div class="col-lg-2"><label>Categoria</label><input class="form-control" id="custoCategoria" placeholder="Ex: Som"></div>
+                        <div class="col-lg-3"><label>Descrição</label><input class="form-control" id="custoDescricao" placeholder="Ex: sonorização"></div>
+                        <div class="col-lg-3"><label>Fornecedor</label><input class="form-control" id="custoFornecedor" placeholder="Opcional"></div>
+                        <div class="col-lg-2"><label>Valor</label><input class="form-control" id="custoValor" oninput="formatarMoedaEvento(this)" placeholder="R$ 0"></div>
+                        <div class="col-lg-2 d-flex gap-2"><button class="btn btn-success flex-fill"><i class="bi bi-save"></i> Salvar</button><button type="button" class="btn btn-outline-secondary" onclick="limparCustoEvento()">Limpar</button></div>
+                    </form>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-head"><div><h2>Despesas cadastradas</h2><p>Visualização por evento com ações rápidas.</p></div><strong id="totalCustosAba">R$ 0</strong></div>
+                <div class="table-responsive panel-body">
+                    <div class="cost-table-wrap">
+                        <table class="table table-hover align-middle cost-table">
+                            <thead><tr><th>Categoria</th><th>Descrição</th><th>Fornecedor</th><th>Valor</th><th class="text-end">Ações</th></tr></thead>
+                            <tbody id="corpoCustosEvento"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="tab-pane fade" id="calendario">
+            <div class="panel">
+                <div class="panel-head">
+                    <div><h2>Agenda de eventos</h2><p>Visualização mensal e anual por status.</p></div>
+                    <div class="d-flex gap-2 no-print">
+                        <button class="btn btn-outline-secondary" onclick="mudarPeriodo(-1)"><i class="bi bi-chevron-left"></i></button>
+                        <button class="btn btn-outline-secondary" onclick="irHoje()">Hoje</button>
+                        <button class="btn btn-outline-secondary" onclick="mudarPeriodo(1)"><i class="bi bi-chevron-right"></i></button>
+                        <button class="btn btn-primary" onclick="alternarCalendario()"><span id="modoCalendario">Mês</span></button>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <section class="summary mb-3">
+                        <div class="metric"><span id="calEscopo">Eventos no mes</span><strong id="calQtd">0</strong></div>
+                        <div class="metric"><span>Valor exibido</span><strong id="calValor">R$ 0</strong></div>
+                        <div class="metric"><span>Proximo no periodo</span><strong id="calProximo">-</strong></div>
+                        <div class="metric"><span>Periodo</span><strong id="calPeriodo">-</strong></div>
+                    </section>
+                    <div class="legend mb-3" id="legendaStatus"></div>
+                    <div class="calendar-shell">
+                        <div>
+                            <div class="calendar-toolbar"><div class="calendar-title" id="tituloCalendario"></div></div>
+                            <div class="calendar-overflow" id="calendarioPrincipal"></div>
+                        </div>
+                        <aside class="year-panel">
+                            <div class="calendar-toolbar"><strong id="tituloAnoLateral"></strong></div>
+                            <div class="mini-year" id="miniAno"></div>
+                        </aside>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<div class="modal fade" id="modalEventoDetalhe" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <div class="kicker">Detalhe do evento</div>
+                    <h5 class="modal-title fw-bold" id="detEventoTitulo">Evento</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="event-detail-grid">
+                    <div class="event-detail-item"><label>Cidade</label><div class="money" id="detEventoCidade">-</div></div>
+                    <div class="event-detail-item"><label>Periodo</label><div class="money" id="detEventoPeriodo">-</div></div>
+                    <div class="event-detail-item"><label>Valor</label><div class="money" id="detEventoValor">R$ 0</div></div>
+                    <div class="event-detail-item"><label>Origem</label><div class="money" id="detEventoOrigem">-</div></div>
+                    <div class="event-detail-item"><label>Status</label><div id="detEventoStatus">-</div></div>
+                    <div class="event-detail-item"><label>Dias</label><div class="money" id="detEventoDias">-</div></div>
+                    <div class="event-detail-item full"><label>Observacoes</label><div class="muted" id="detEventoObs">-</div></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<script>
+let eventos=[], filtrados=[], eventosCalendario=[], tabela=null, municipioMap={}, calendarioData=new Date(), calendarioAno=false, financeiroAtual=null, filtrosMontados=false;
+const meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const mesesTitulo=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const statusCores={'Autorizado':'#16a34a','Em Andamento':'#2563eb','Pendente':'#d97706','Em Análise':'#ea580c','Encerrado':'#64748b'};
+function alternarMenuLateral(){const r=document.body.classList.toggle('sidebar-collapsed');localStorage.setItem('jp2EventosSidebarCollapsed',r?'1':'0');}
+function h(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+function dinheiro(v){return (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});}
+function dataBR(v){if(!v)return '-'; const p=String(v).split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:'-';}
+function numeroBR(v){return Number(String(v||'0').replace(/\D/g,''))||0;}
+function numeroDecimal(v){return Number(String(v||'0').replace(/\./g,'').replace(',','.').replace(/[^\d.]/g,''))||0;}
+function formatarMoedaEvento(el){const n=numeroBR(el.value); el.value=n?dinheiro(n):'';}
+function statusClass(s){return 's-'+String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-');}
+function chipClass(s){return 'chip-'+String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-');}
+function statusEvento(e){const s=String(e?.status||'').trim(); return (!s || s.toLowerCase()==='undefined' || s.toLowerCase()==='null')?'Pendente':s;}
+function qs(){const p=new URLSearchParams(); [['uf',fUf.value],['regiao',fRegiao.value],['mes',fMes.value],['origem',fOrigem.value],['status',fStatus.value],['q',fBusca.value],['inicio',fInicio.value],['fim',fFim.value]].forEach(([k,v])=>{if(v)p.set(k,v)}); return p.toString();}
+function opcoes(id, valores){document.getElementById(id).innerHTML='<option value="">Todos</option>'+[...new Set(valores.filter(Boolean))].sort().map(v=>`<option>${h(v)}</option>`).join('');}
+function atualizarMetricas(){
+    const mesFiltro=fMes.value;
+    const mesAtual=mesFiltro || meses[new Date().getMonth()];
+    const baseMes=eventosCalendario.filter(e=>String(e.mes||'').toLowerCase()===String(mesAtual||'').toLowerCase());
+    mTotal.innerText=baseMes.length;
+    mValor.innerText=dinheiro(eventosCalendario.reduce((s,e)=>s+Number(e.valor_verba||0),0));
+    mValorMes.innerText=dinheiro(baseMes.reduce((s,e)=>s+Number(e.valor_verba||0),0));
+    mMesLabel.innerText=mesFiltro?`Valor de ${mesFiltro}`:'Valor do mes atual';
+    mAndamento.innerText=filtrados.filter(e=>statusEvento(e)==='Em Andamento').length;
+    const hoje=new Date().toISOString().slice(0,10);
+    const prox=filtrados.find(e=>e.data_fim>=hoje);
+    mProximo.innerText=prox?`${prox.cidade} - ${dataBR(prox.data_inicio)}`:'-';
+}
+function carregarEventos(){
+    Promise.all([
+        fetch('/api/eventos?'+qs()).then(r=>r.json()),
+        fetch('/api/eventos').then(r=>r.json())
+    ]).then(([dadosFiltro,dadosTodos])=>{
+        filtrados=Array.isArray(dadosFiltro.dados)?dadosFiltro.dados:[];
+        eventosCalendario=Array.isArray(dadosTodos.dados)?dadosTodos.dados:[];
+        eventos=eventosCalendario;
+        if(!filtrosMontados){montarFiltros(eventosCalendario); filtrosMontados=true;}
+        montarSelectFinanceiro(); renderTabela(); atualizarMetricas(); renderCalendario();
+    });
+}
+function sincronizarEventosCSV(){
+    if(!confirm('Sincronizar os novos registros do arquivo CSV de eventos?')) return;
+    fetch('/api/eventos/sincronizar-csv',{method:'POST'})
+    .then(r=>r.json())
+    .then(d=>{
+        if(d.status!=='sucesso'){alert(d.msg||'Nao foi possivel sincronizar.');return;}
+        alert(`${d.importados||0} novo(s) registro(s) importado(s).`);
+        eventos=[]; eventosCalendario=[]; filtrosMontados=false;
+        carregarEventos();
+    })
+    .catch(()=>alert('Nao foi possivel falar com o servidor.'));
+}
+function montarSelectFinanceiro(){
+    const atual=financeiroEventoSelect.value;
+    const atualCusto=custoEventoSelect.value;
+    financeiroEventoSelect.innerHTML='<option value="">Selecione um evento</option>'+eventos.map(e=>`<option value="${e.id}">${h(e.nome_evento)} - ${h(e.cidade)} (${dinheiro(e.valor_verba)})</option>`).join('');
+    custoEventoSelect.innerHTML='<option value="">Selecione um evento</option>'+eventos.map(e=>`<option value="${e.id}">${h(e.nome_evento)} - ${h(e.cidade)} (${dinheiro(e.valor_verba)})</option>`).join('');
+    if(atual) financeiroEventoSelect.value=atual;
+    if(atualCusto) custoEventoSelect.value=atualCusto;
+    if(!financeiroEventoSelect.value && eventos[0]) financeiroEventoSelect.value=eventos[0].id;
+    if(!custoEventoSelect.value && eventos[0]) custoEventoSelect.value=eventos[0].id;
+}
+function montarFiltros(base){opcoes('fUf',base.map(e=>e.uf)); opcoes('fRegiao',base.map(e=>e.regiao)); opcoes('fMes',base.map(e=>e.mes)); opcoes('fOrigem',base.map(e=>e.origem)); opcoes('fStatus',base.map(e=>e.status));}
+function aplicarFiltros(){carregarEventos();}
+function limparFiltros(){['fUf','fRegiao','fMes','fOrigem','fStatus','fBusca','fInicio','fFim'].forEach(id=>document.getElementById(id).value=''); carregarEventos();}
+function renderTabela(){
+    if(tabela){tabela.destroy(); tabela=null;}
+    corpoEventos.innerHTML=filtrados.map(e=>{const st=statusEvento(e); return `<tr><td><div class="money">${h(e.nome_evento)}</div><div class="muted">${h(e.observacoes||'')}</div></td><td>${h(e.cidade)}<div class="muted">${h(e.uf)} - ${h(e.regiao)}</div></td><td>${dataBR(e.data_inicio)} a ${dataBR(e.data_fim)}</td><td>${e.dias_evento}</td><td class="money">${dinheiro(e.valor_verba)}</td><td>${h(e.origem)}</td><td><span class="pill ${statusClass(st)}">${h(st)}</span></td><td><div class="actions"><button class="btn btn-sm btn-outline-primary" title="Editar" onclick='editarEvento(${JSON.stringify({...e,status:st}).replace(/'/g,"&#039;")})'><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-outline-danger" title="Excluir" onclick="excluirEvento(${e.id})"><i class="bi bi-trash"></i></button></div></td></tr>`}).join('');
+    if(filtrados.length){tabela=$('#tabelaEventos').DataTable({pageLength:25,deferRender:true,searchDelay:350,language:{sSearch:'Buscar:',sLengthMenu:'Mostrar _MENU_ linhas',sInfo:'Mostrando _START_ até _END_ de _TOTAL_',sInfoEmpty:'Nenhum evento encontrado',sZeroRecords:'Nenhum evento encontrado',oPaginate:{sNext:'Próximo',sPrevious:'Anterior'}}});}
+}
+function buscarMunicipios(q){if((q||'').length<2)return; fetch('/api/eventos/municipios?q='+encodeURIComponent(q)).then(r=>r.json()).then(d=>{listaMunicipios.innerHTML=''; municipioMap={}; (d.dados||[]).forEach(m=>{municipioMap[m.label]=m; listaMunicipios.innerHTML+=`<option value="${h(m.label)}"></option>`;});});}
+cidadeBusca.addEventListener('input',e=>{buscarMunicipios(e.target.value); const m=municipioMap[e.target.value]; if(m){cidade.value=m.cidade; uf.value=m.uf; regiao.value=m.regiao; ufView.value=m.uf; regiaoView.value=m.regiao;}});
+dataInicio.addEventListener('change',()=>{dataFim.min=dataInicio.value; if(dataFim.value && dataFim.value<dataInicio.value)dataFim.value=dataInicio.value;});
+function limparFormulario(){formEvento.reset(); eventoId.value=''; cidade.value=''; uf.value=''; regiao.value=''; ufView.value=''; regiaoView.value=''; dataFim.min='';}
+formEvento.addEventListener('submit',e=>{
+    e.preventDefault();
+    if(!cidade.value){alert('Selecione uma cidade da lista.'); return;}
+    const fd=new FormData(); ['cidade','uf','regiao','nomeEvento','dataInicio','dataFim','valorVerba','origem','status','observacoes'].forEach(id=>{});
+    fd.append('cidade',cidade.value); fd.append('uf',uf.value); fd.append('regiao',regiao.value); fd.append('nome_evento',nomeEvento.value); fd.append('data_inicio',dataInicio.value); fd.append('data_fim',dataFim.value); fd.append('valor_verba',numeroBR(valorVerba.value)); fd.append('origem',origem.value); fd.append('status',status.value); fd.append('observacoes',observacoes.value);
+    const id=eventoId.value; fetch(id?'/api/eventos/'+id:'/api/eventos',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.status!=='sucesso'){alert(d.msg||'Erro ao salvar evento.');return;} limparFormulario(); eventos=[]; eventosCalendario=[]; filtrosMontados=false; carregarEventos(); bootstrap.Tab.getOrCreateInstance(document.querySelector('[data-bs-target="#resumo"]')).show();});
+});
+function editarEvento(e){
+    eventoId.value=e.id; cidade.value=e.cidade; uf.value=e.uf; regiao.value=e.regiao; cidadeBusca.value=`${e.cidade} - ${e.uf}`; ufView.value=e.uf; regiaoView.value=e.regiao; nomeEvento.value=e.nome_evento; dataInicio.value=e.data_inicio; dataFim.value=e.data_fim; dataFim.min=e.data_inicio; valorVerba.value=dinheiro(e.valor_verba); origem.value=e.origem; status.value=statusEvento(e); observacoes.value=e.observacoes||''; bootstrap.Tab.getOrCreateInstance(document.querySelector('[data-bs-target="#cadastro"]')).show();
+}
+function excluirEvento(id){if(!confirm('Excluir este evento?'))return; fetch('/api/eventos/'+id,{method:'DELETE'}).then(r=>r.json()).then(d=>{if(d.status==='sucesso'){eventos=[]; eventosCalendario=[]; filtrosMontados=false; carregarEventos();}});}
+function exportarEventos(){window.location='/eventos/exportar?'+qs();}
+function carregarCustosEvento(){
+    const id=custoEventoSelect.value;
+    if(!id){
+        totalCustosAba.innerText='R$ 0';
+        corpoCustosEvento.innerHTML='<tr><td colspan="5" class="text-center text-secondary py-4">Selecione um evento para visualizar os custos.</td></tr>';
+        return;
+    }
+    fetch('/api/eventos/financeiro/'+id).then(r=>r.json()).then(d=>{
+        if(d.status!=='sucesso'){alert(d.msg||'Não foi possível carregar os custos.');return;}
+        const dados=d.dados||{};
+        const custos=Array.isArray(dados.custos)?dados.custos:[];
+        totalCustosAba.innerText=dinheiro(dados.total_custos);
+        corpoCustosEvento.innerHTML=custos.length?custos.map(c=>`<tr data-custo-id="${c.id}"><td><input class="form-control form-control-sm custo-categoria" value="${h(c.categoria)}" disabled></td><td><input class="form-control form-control-sm custo-descricao" value="${h(c.descricao||'')}" disabled></td><td><input class="form-control form-control-sm custo-fornecedor" value="${h(c.fornecedor||'')}" disabled></td><td><input class="form-control form-control-sm custo-valor money" value="${dinheiro(c.valor).replace('R$ ','')}" oninput="formatarMoedaEvento(this)" disabled></td><td><div class="cost-actions"><button class="btn btn-sm btn-outline-primary" title="Alterar campos" onclick="habilitarEdicaoCusto(${c.id})"><i class="bi bi-pencil-square"></i></button><button class="btn btn-sm btn-outline-success" title="Salvar alteração" onclick="salvarCustoLinha(${c.id})"><i class="bi bi-save"></i></button><button class="btn btn-sm btn-outline-danger" title="Excluir custo" onclick="excluirCustoEvento(${c.id})"><i class="bi bi-trash"></i></button></div></td></tr>`).join(''):'<tr><td colspan="5" class="text-center text-secondary py-4">Nenhum custo cadastrado para este evento.</td></tr>';
+    });
+}
+function editarCustoEvento(c){
+    custoId.value=c.id||'';
+    custoCategoria.value=c.categoria||'';
+    custoDescricao.value=c.descricao||'';
+    custoFornecedor.value=c.fornecedor||'';
+    custoValor.value=dinheiro(c.valor).replace('R$ ','');
+}
+function linhaCusto(id){return document.querySelector(`tr[data-custo-id="${id}"]`);}
+function habilitarEdicaoCusto(id){
+    const tr=linhaCusto(id);
+    if(!tr)return;
+    tr.querySelectorAll('input').forEach(campo=>campo.disabled=false);
+    const primeiro=tr.querySelector('input');
+    if(primeiro)primeiro.focus();
+}
+function salvarCustoLinha(id){
+    const tr=linhaCusto(id);
+    if(!tr)return;
+    const fd=new FormData();
+    fd.append('categoria',tr.querySelector('.custo-categoria').value);
+    fd.append('descricao',tr.querySelector('.custo-descricao').value);
+    fd.append('fornecedor',tr.querySelector('.custo-fornecedor').value);
+    fd.append('valor',numeroBR(tr.querySelector('.custo-valor').value));
+    fetch('/api/eventos/financeiro/custos/'+id,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
+        if(d.status!=='sucesso'){alert(d.msg||'Erro ao salvar custo.');return;}
+        carregarCustosEvento();
+        if(financeiroEventoSelect.value===custoEventoSelect.value)carregarFinanceiroEvento();
+    });
+}
+function limparCustoEvento(){
+    custoId.value='';
+    custoCategoria.value='';
+    custoDescricao.value='';
+    custoFornecedor.value='';
+    custoValor.value='';
+}
+function carregarFinanceiroEvento(){
+    const id=financeiroEventoSelect.value;
+    if(!id){return;}
+    fetch('/api/eventos/financeiro/'+id).then(r=>r.json()).then(d=>{
+        if(d.status!=='sucesso'){alert(d.msg||'Não foi possível carregar o financeiro.');return;}
+        financeiroAtual=d.dados;
+        const item=financeiroAtual.evento||{};
+        finValorEmenda.innerText=dinheiro(item.valor_verba);
+        finRepasse.innerText=dinheiro(financeiroAtual.valor_parlamentar);
+        finCustos.innerText=dinheiro(financeiroAtual.total_custos);
+        finResultado.innerText=dinheiro(financeiroAtual.resultado_instituto);
+        finPercentual.value=Number(financeiroAtual.percentual_parlamentar||0).toLocaleString('pt-BR');
+        finObservacoes.value=financeiroAtual.observacoes||'';
+    });
+}
+formEventoFinanceiro.addEventListener('submit',e=>{
+    e.preventDefault();
+    const id=financeiroEventoSelect.value;
+    if(!id){alert('Selecione um evento.');return;}
+    const fd=new FormData();
+    fd.append('percentual_parlamentar',numeroDecimal(finPercentual.value));
+    fd.append('observacoes',finObservacoes.value);
+    fetch('/api/eventos/financeiro/'+id,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.status!=='sucesso'){alert(d.msg||'Erro ao salvar.');return;} carregarFinanceiroEvento();});
+});
+formCustoEvento.addEventListener('submit',e=>{
+    e.preventDefault();
+    const eventoId=custoEventoSelect.value;
+    if(!eventoId){alert('Selecione um evento.');return;}
+    const fd=new FormData();
+    fd.append('categoria',custoCategoria.value);
+    fd.append('descricao',custoDescricao.value);
+    fd.append('fornecedor',custoFornecedor.value);
+    fd.append('valor',numeroBR(custoValor.value));
+    const custoAtual=custoId.value;
+    const url=custoAtual?'/api/eventos/financeiro/custos/'+custoAtual:'/api/eventos/financeiro/'+eventoId+'/custos';
+    fetch(url,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
+        if(d.status!=='sucesso'){alert(d.msg||'Erro ao salvar custo.');return;}
+        limparCustoEvento();
+        carregarCustosEvento();
+        if(financeiroEventoSelect.value===eventoId) carregarFinanceiroEvento();
+    });
+});
+function excluirCustoEvento(id){
+    if(!confirm('Excluir este custo do evento?'))return;
+    fetch('/api/eventos/financeiro/custos/'+id,{method:'DELETE'}).then(r=>r.json()).then(d=>{if(d.status==='sucesso'){carregarCustosEvento(); if(financeiroEventoSelect.value===custoEventoSelect.value) carregarFinanceiroEvento();}});
+}
+function eventosNoDia(ano,mes,dia){const alvo=new Date(ano,mes,dia); return eventosCalendario.filter(e=>new Date(e.data_inicio+'T00:00:00')<=alvo && new Date(e.data_fim+'T00:00:00')>=alvo);}
+function eventosPeriodoCalendario(){
+    const ano=calendarioData.getFullYear(), mes=calendarioData.getMonth();
+    return eventosCalendario.filter(e=>{
+        const ini=new Date(e.data_inicio+'T00:00:00');
+        return calendarioAno ? ini.getFullYear()===ano : (ini.getFullYear()===ano && ini.getMonth()===mes);
+    });
+}
+function atualizarMetricasCalendario(){
+    const lista=eventosPeriodoCalendario().sort((a,b)=>String(a.data_inicio).localeCompare(String(b.data_inicio)));
+    const ano=calendarioData.getFullYear(), mes=calendarioData.getMonth();
+    calEscopo.innerText=calendarioAno?'Eventos no ano':'Eventos no mes';
+    calQtd.innerText=lista.length;
+    calValor.innerText=dinheiro(lista.reduce((s,e)=>s+Number(e.valor_verba||0),0));
+    calPeriodo.innerText=calendarioAno?String(ano):`${mesesTitulo[mes]} ${ano}`;
+    const hoje=new Date().toISOString().slice(0,10);
+    const prox=lista.find(e=>e.data_fim>=hoje)||lista[0];
+    calProximo.innerText=prox?`${dataBR(prox.data_inicio)} - ${prox.nome_evento}`:'-';
+}
+function abrirDetalheEvento(id){
+    const e=eventosCalendario.find(item=>String(item.id)===String(id));
+    if(!e)return;
+    detEventoTitulo.innerText=e.nome_evento||'Evento';
+    detEventoCidade.innerText=`${e.cidade||'-'} / ${e.uf||'-'}${e.regiao?' - '+e.regiao:''}`;
+    detEventoPeriodo.innerText=`${dataBR(e.data_inicio)} a ${dataBR(e.data_fim)}`;
+    detEventoValor.innerText=dinheiro(e.valor_verba);
+    detEventoOrigem.innerText=e.origem||'-';
+    const st=statusEvento(e);
+    detEventoStatus.innerHTML=`<span class="pill ${statusClass(st)}">${h(st)}</span>`;
+    detEventoDias.innerText=e.dias_evento||'-';
+    detEventoObs.innerText=e.observacoes||'-';
+    bootstrap.Modal.getOrCreateInstance(modalEventoDetalhe).show();
+}
+function renderCalendario(){
+    legendaStatus.innerHTML=Object.entries(statusCores).map(([s,c])=>`<span><i style="background:${c}"></i>${s}</span>`).join('');
+    tituloAnoLateral.innerText=calendarioData.getFullYear();
+    atualizarMetricasCalendario();
+    renderMiniAno();
+    calendarioAno?renderAnoPrincipal():renderMesPrincipal();
+}
+function renderMesPrincipal(){
+    const ano=calendarioData.getFullYear(), mes=calendarioData.getMonth();
+    tituloCalendario.innerText=`${mesesTitulo[mes]} ${ano}`;
+    let html='<div class="calendar-grid">'+['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d=>`<div class="weekday">${d}</div>`).join('');
+    const first=new Date(ano,mes,1).getDay(), total=new Date(ano,mes+1,0).getDate();
+    for(let i=0;i<first;i++)html+='<div class="day other"></div>';
+    for(let d=1;d<=total;d++){const evs=eventosNoDia(ano,mes,d).slice(0,3); html+=`<div class="day"><span class="day-number">${d}</span>${evs.map(e=>`<button type="button" class="event-chip ${chipClass(statusEvento(e))}" title="${h(e.nome_evento)}" onclick="abrirDetalheEvento(${e.id})">${h(e.cidade)} - ${h(e.nome_evento)}</button>`).join('')}</div>`;}
+    calendarioPrincipal.innerHTML=html+'</div>';
+}
+function renderAnoPrincipal(){
+    const ano=calendarioData.getFullYear(); tituloCalendario.innerText=`Ano ${ano}`;
+    calendarioPrincipal.innerHTML='<div class="year-main">'+mesesTitulo.map((m,idx)=>{
+        const mesEventos=eventosCalendario.filter(e=>{const ini=new Date(e.data_inicio+'T00:00:00'); return ini.getFullYear()===ano && ini.getMonth()===idx;}).sort((a,b)=>String(a.data_inicio).localeCompare(String(b.data_inicio)));
+        const linhas=mesEventos.slice(0,6).map(e=>`<button type="button" class="year-event-line" onclick="abrirDetalheEvento(${e.id})">${dataBR(e.data_inicio).slice(0,5)} - ${h(e.cidade)} ${h(e.nome_evento)}</button>`).join('');
+        const restante=mesEventos.length>6?`<div class="muted">+ ${mesEventos.length-6} evento(s)</div>`:'';
+        return `<div class="year-card"><h3>${m}</h3><div class="metric p-2"><span>Eventos</span><strong>${mesEventos.length}</strong></div><div class="year-events">${linhas||'<span class="muted">Sem eventos</span>'}${restante}</div></div>`;
+    }).join('')+'</div>';
+}
+function renderMiniAno(){
+    const ano=calendarioData.getFullYear();
+    miniAno.innerHTML=mesesTitulo.map((m,idx)=>{const total=new Date(ano,idx+1,0).getDate(); let dias=''; for(let d=1;d<=total;d++){dias+=`<span class="mini-day ${eventosNoDia(ano,idx,d).length?'mini-dot':''}">${d}</span>`} return `<div class="mini-month"><div class="mini-title">${m.slice(0,3)}</div><div class="mini-days">${dias}</div></div>`}).join('');
+}
+function mudarPeriodo(dir){calendarioAno?calendarioData.setFullYear(calendarioData.getFullYear()+dir):calendarioData.setMonth(calendarioData.getMonth()+dir); renderCalendario();}
+function irHoje(){calendarioData=new Date(); renderCalendario();}
+function alternarCalendario(){calendarioAno=!calendarioAno; modoCalendario.innerText=calendarioAno?'Ano':'Mês'; renderCalendario();}
+function ativarFiltrosAutomaticos(){
+    ['fUf','fRegiao','fMes','fOrigem','fStatus','fInicio','fFim'].forEach(id=>document.getElementById(id)?.addEventListener('change',carregarEventos));
+    let timerBusca=null;
+    document.getElementById('fBusca')?.addEventListener('input',()=>{clearTimeout(timerBusca); timerBusca=setTimeout(carregarEventos,260);});
+}
+document.querySelectorAll('[data-tab-target]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault(); bootstrap.Tab.getOrCreateInstance(document.querySelector(`[data-bs-target="#${a.dataset.tabTarget}"]`)).show(); document.querySelectorAll('#sidebar a').forEach(x=>x.classList.remove('active')); a.classList.add('active');}));
+document.querySelectorAll('[data-bs-toggle="pill"]').forEach(b=>b.addEventListener('shown.bs.tab',()=>{const id=b.dataset.bsTarget.replace('#',''); document.querySelectorAll('#sidebar a').forEach(x=>x.classList.toggle('active',x.dataset.tabTarget===id)); if(id==='calendario')renderCalendario(); if(id==='financeiro')carregarFinanceiroEvento(); if(id==='custos')carregarCustosEvento();}));
+document.addEventListener('DOMContentLoaded',()=>{if(localStorage.getItem('jp2EventosSidebarCollapsed')==='1')document.body.classList.add('sidebar-collapsed'); buscarMunicipios('GO'); ativarFiltrosAutomaticos(); carregarEventos();});
+</script>
+</body>
+</html>
