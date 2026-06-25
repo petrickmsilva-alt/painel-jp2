@@ -1,0 +1,27 @@
+ATUALIZACOES - HOME EXECUTIVA E EVENTOS - 25/06/2026
+
+Base utilizada:
+- painel-jp2-main (6).zip, enviado como codigo atualizado do GitHub.
+
+O que foi ajustado:
+1. A rota principal "/" agora abre uma Home executiva nova, separada do painel de arquivos.
+2. O painel antigo de arquivos continua disponivel em "/painel-arquivos".
+3. A Home mostra dados consolidados de:
+   - Investimentos e emprestimos de eventos.
+   - Cadastro de eventos, com calendario anual resumido.
+   - Carteira de investimentos B3.
+4. Em Cadastro de Eventos / Agenda Visual, o popup de detalhe do evento ganhou melhor espacamento e leitura.
+5. Em Cadastro de Eventos / Resumo Geral:
+   - "Total de eventos" agora considera o mes em visualizacao/filtro.
+   - "Valor total" continua mostrando o total geral.
+   - Foi criado o indicador "Valor do mes" para somar apenas os eventos daquele mes.
+6. O status de eventos agora trata valores vazios, "undefined" e "null" como "Pendente".
+7. A edicao de status passa a reabrir o formulario com o status normalizado.
+
+Arquivos principais alterados:
+- app.py
+- templates/home.html
+- templates/eventos.html
+
+Observacao:
+- Nao foi possivel executar a validacao local com Python neste computador porque o comando Python nao esta instalado/disponivel no ambiente local do Codex.

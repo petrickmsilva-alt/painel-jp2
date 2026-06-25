@@ -1024,6 +1024,109 @@
       .site-hub-metric { white-space: normal; }
       .site-filter-btn { flex: 1 1 auto; justify-content: center; }
     }
+
+    body.jp2-unified-dark {
+      --workspace-bg: #111111;
+      --sidebar-bg: #101010;
+      --sidebar-hover: rgba(72,181,106,.10);
+      --sidebar-active: rgba(72,181,106,.18);
+      background: #111111 !important;
+      color: #f4f7f5;
+    }
+
+    body.jp2-unified-dark .sidebar-enterprise,
+    body.jp2-unified-dark .sidebar-brand {
+      background: #101010 !important;
+      border-color: #2c3438 !important;
+      box-shadow: none;
+    }
+
+    body.jp2-unified-dark .sidebar-brand {
+      align-items: flex-start;
+      gap: 6px;
+      padding: 22px 18px;
+    }
+
+    body.jp2-unified-dark .sidebar-brand::after { content: none !important; }
+    body.jp2-unified-dark .menu-header {
+      color: #8d9b94;
+      font-weight: 850;
+      letter-spacing: .12em;
+    }
+
+    body.jp2-unified-dark .menu-item {
+      color: #f2f6f3;
+      border-left-color: transparent;
+      border-radius: 8px;
+      margin: 3px 10px;
+      padding: 11px 10px;
+    }
+
+    body.jp2-unified-dark .menu-item:hover,
+    body.jp2-unified-dark .menu-item.active {
+      background: #122318 !important;
+      color: #fff !important;
+      border-left-color: #48b56a !important;
+    }
+
+    body.jp2-unified-dark .menu-mark {
+      background: #f4f7f5;
+      color: #101010;
+      border-radius: 7px;
+      font-size: 9px;
+      font-weight: 900;
+      min-width: 26px;
+      text-align: center;
+      padding: 5px 4px;
+      margin-right: 10px;
+    }
+
+    body.jp2-unified-dark .topbar-workspace,
+    body.jp2-unified-dark .content-workspace-viewport {
+      background: #111111 !important;
+      border-color: #2c3438 !important;
+      color: #f4f7f5;
+    }
+
+    body.jp2-unified-dark .topbar-title strong,
+    body.jp2-unified-dark .topbar-title span,
+    body.jp2-unified-dark .text-dark { color: #f4f7f5 !important; }
+    body.jp2-unified-dark .text-muted { color: #a8b3ad !important; }
+
+    body.jp2-unified-dark .workspace-panel-header,
+    body.jp2-unified-dark .explorer-toolbar,
+    body.jp2-unified-dark .folder-header-card,
+    body.jp2-unified-dark .area-atual-card,
+    body.jp2-unified-dark .card,
+    body.jp2-unified-dark .panel {
+      background: #1b2023 !important;
+      border-color: #2c3438 !important;
+      color: #f4f7f5 !important;
+      box-shadow: 0 20px 46px rgba(0,0,0,.24) !important;
+    }
+
+    body.jp2-unified-dark .explorer-card {
+      background: #1b2023 !important;
+      border-color: #2c3438 !important;
+      color: #f4f7f5 !important;
+      box-shadow: 0 16px 34px rgba(0,0,0,.22) !important;
+    }
+
+    body.jp2-unified-dark .explorer-card:hover {
+      border-color: #48b56a !important;
+      transform: translateY(-2px);
+    }
+
+    body.jp2-unified-dark .form-control,
+    body.jp2-unified-dark .form-select {
+      background: #22282b !important;
+      border-color: #34413a !important;
+      color: #f4f7f5 !important;
+    }
+
+    body.jp2-unified-dark .form-control::placeholder { color: #a8b3ad !important; }
+    body.jp2-unified-dark .btn-primary { background: #1769ff !important; border-color: #1769ff !important; }
+    body.jp2-unified-dark .btn-success { background: #078c55 !important; border-color: #078c55 !important; }
   </style>
 </head>
 <body>
@@ -1525,15 +1628,53 @@
         if (localStorage.getItem('jp2SidebarCollapsed') === '1') {
             document.body.classList.add('sidebar-collapsed');
         }
+        jp2UnificarMenuArquivos();
         limparBuscaPastaPersistente();
-        console.log("Sistema carregado. Tentando carregar Instituto...");
-        let el = document.getElementById('menu-bloco-instituto');
+        const blocoInicial = new URLSearchParams(window.location.search).get('bloco') || 'instituto';
+        const mapaMenuInicial = {
+            instituto: 'menu-bloco-instituto',
+            jp2_business: 'menu-bloco-jp2',
+            sites_jp2: 'menu-bloco-sites'
+        };
+        console.log("Sistema carregado. Tentando carregar bloco:", blocoInicial);
+        let el = document.getElementById(mapaMenuInicial[blocoInicial] || 'menu-bloco-instituto');
         if(el) {
-            clicarBlocoMestre('instituto', el);
+            clicarBlocoMestre(blocoInicial, el);
         } else {
-            console.error("Erro: Elemento 'menu-bloco-instituto' not found mestre!");
+            console.error("Erro: Elemento de menu inicial nao encontrado!");
         }
     });
+
+    function jp2UnificarMenuArquivos() {
+        document.body.classList.add('jp2-unified-dark');
+        const marca = document.querySelector('.sidebar-brand');
+        if (marca) {
+            marca.innerHTML = '<span style="font-size:11px;font-weight:800;color:#9da8a2;letter-spacing:1px;">CONSOLE DE GESTÃO</span><strong style="font-size:22px;line-height:1.1;color:#fff;">Central executiva</strong>';
+        }
+        const textos = [
+            ['a[href="/"]', 'HM', 'HOME EXECUTIVA'],
+            ['#menu-bloco-instituto', 'IB', 'INSTITUTO (IBDTEC)'],
+            ['#menu-bloco-jp2', 'JP', 'JP2 BUSINESS'],
+            ['a[href="/contatos"]', 'CT', 'AGENDA TELEFÔNICA'],
+            ['a[href="/compromissos"]', 'CP', 'AGENDAR COMPROMISSO'],
+            ['a[href="/eventos"]', 'EV', 'CADASTRO DE EVENTOS'],
+            ['a[href="/financeiro"]', 'IE', 'INVEST E EMPRÉSTIMOS'],
+            ['a[href="/carteira"]', 'B3', 'INVESTIMENTO B3'],
+            ['a[href="/admin/usuarios"]', 'SO', 'GESTÃO DE SÓCIOS'],
+            ['a[href="/admin/logs"]', 'AU', 'AUDITORIA (LOGS)'],
+            ['#menu-bloco-sites', 'WB', 'SITES JP2BUSINESS']
+        ];
+        textos.forEach(([selector, sigla, texto]) => {
+            const item = document.querySelector(selector);
+            if (item) item.innerHTML = `<span class="menu-mark">${sigla}</span> ${texto}`;
+        });
+        document.querySelectorAll('.menu-header').forEach(header => {
+            const texto = header.textContent.toLowerCase();
+            if (texto.includes('arquivo')) header.textContent = 'MÓDULOS DE ARQUIVO';
+            if (texto.includes('gest')) header.textContent = 'GESTÃO';
+            if (texto.includes('ecossistema')) header.textContent = 'ECOSSISTEMA DIGITAL';
+        });
+    }
 
     window.addEventListener('pageshow', limparBuscaPastaPersistente);
 
