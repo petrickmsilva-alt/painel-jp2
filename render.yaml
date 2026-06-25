@@ -1,27 +1,10 @@
 services:
   - type: web
-    name: painel-jp2
-    runtime: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    name: carteira-investimentos-jp2business
+    runtime: node
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
     envVars:
-      - key: FLASK_SECRET_KEY
-        sync: false
-      - key: ADMIN_USERS
-        value: petrick
-      - key: DB_HOST
-        sync: false
-      - key: DB_USER
-        sync: false
-      - key: DB_PASSWORD
-        sync: false
-      - key: DB_NAME
-        sync: false
-      - key: R2_ACCOUNT_ID
-        sync: false
-      - key: R2_ACCESS_KEY_ID
-        sync: false
-      - key: R2_SECRET_ACCESS_KEY
-        sync: false
-      - key: R2_BUCKET_NAME
+      - key: DATABASE_URL
         sync: false
