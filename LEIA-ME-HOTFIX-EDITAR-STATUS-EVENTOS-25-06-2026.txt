@@ -1,0 +1,12 @@
+Hotfix - editar status dos eventos - 25/06/2026
+
+Arquivos alterados:
+- templates/eventos.html
+- eventos.html
+- eventos.py
+
+O que foi corrigido:
+- O formulario de eventos deixou de depender da variavel global chamada "status".
+- O navegador possui uma propriedade interna com esse nome, o que podia fazer o sistema enviar o status antigo ou voltar para Pendente.
+- Agora o sistema busca o campo pelo ID real do formulario antes de salvar.
+- O botao Editar passa a preencher o status correto e manter a opcao selecionada antes de salvar.

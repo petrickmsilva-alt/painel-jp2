@@ -344,7 +344,8 @@ function chaveStatus(s){return String(s||'').normalize('NFD').replace(/[\u0300-\
 function statusEvento(e){const raw=String(e?.status||'').trim(); if(!raw || raw.toLowerCase()==='undefined' || raw.toLowerCase()==='null')return 'Pendente'; const chave=chaveStatus(raw); if(chave.includes('AN')&&chave.includes('LISE'))return 'Em Análise'; const mapa={'AUTORIZADO':'Autorizado','EM ANDAMENTO':'Em Andamento','PENDENTE':'Pendente','EM ANALISE':'Em Análise','ENCERRADO':'Encerrado'}; return mapa[chave] || 'Pendente';}
 function statusClass(s){return 's-'+statusEvento({status:s}).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-');}
 function chipClass(s){return 'chip-'+statusEvento({status:s}).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-');}
-function statusSelecionado(){return statusEvento({status:status.value});}
+function campoStatusEvento(){return document.getElementById('status');}
+function statusSelecionado(){return statusEvento({status:campoStatusEvento()?.value});}
 function qs(){const p=new URLSearchParams(); [['uf',fUf.value],['regiao',fRegiao.value],['mes',fMes.value],['origem',fOrigem.value],['status',fStatus.value],['q',fBusca.value],['inicio',fInicio.value],['fim',fFim.value]].forEach(([k,v])=>{if(v)p.set(k,v)}); return p.toString();}
 function urlEventosComCache(extra=''){const p=new URLSearchParams(extra); p.set('_', Date.now()); return '/api/eventos?'+p.toString();}
 function opcoes(id, valores){document.getElementById(id).innerHTML='<option value="">Todos</option>'+[...new Set(valores.filter(Boolean))].sort().map(v=>`<option>${h(v)}</option>`).join('');}
@@ -415,7 +416,8 @@ formEvento.addEventListener('submit',e=>{
     const id=eventoId.value; fetch(id?'/api/eventos/'+id:'/api/eventos',{method:'POST',body:fd}).then(r=>r.json()).then(d=>{if(d.status!=='sucesso'){alert(d.msg||'Erro ao salvar evento.');return;} limparFormulario(); eventos=[]; eventosCalendario=[]; filtrosMontados=false; carregarEventos(); bootstrap.Tab.getOrCreateInstance(document.querySelector('[data-bs-target="#resumo"]')).show();});
 });
 function editarEvento(e){
-    eventoId.value=e.id; cidade.value=e.cidade; uf.value=e.uf; regiao.value=e.regiao; cidadeBusca.value=`${e.cidade} - ${e.uf}`; ufView.value=e.uf; regiaoView.value=e.regiao; nomeEvento.value=e.nome_evento; dataInicio.value=e.data_inicio; dataFim.value=e.data_fim; dataFim.min=e.data_inicio; valorVerba.value=dinheiro(e.valor_verba); origem.value=e.origem; status.value=statusEvento(e); observacoes.value=e.observacoes||''; bootstrap.Tab.getOrCreateInstance(document.querySelector('[data-bs-target="#cadastro"]')).show();
+    const st=statusEvento(e), selectStatus=campoStatusEvento();
+    eventoId.value=e.id; cidade.value=e.cidade; uf.value=e.uf; regiao.value=e.regiao; cidadeBusca.value=`${e.cidade} - ${e.uf}`; ufView.value=e.uf; regiaoView.value=e.regiao; nomeEvento.value=e.nome_evento; dataInicio.value=e.data_inicio; dataFim.value=e.data_fim; dataFim.min=e.data_inicio; valorVerba.value=dinheiro(e.valor_verba); origem.value=e.origem; if(![...selectStatus.options].some(o=>o.value===st)){selectStatus.add(new Option(st,st));} selectStatus.value=st; observacoes.value=e.observacoes||''; bootstrap.Tab.getOrCreateInstance(document.querySelector('[data-bs-target="#cadastro"]')).show();
 }
 function excluirEvento(id){if(!confirm('Excluir este evento?'))return; fetch('/api/eventos/'+id,{method:'DELETE'}).then(r=>r.json()).then(d=>{if(d.status==='sucesso'){eventos=[]; eventosCalendario=[]; filtrosMontados=false; carregarEventos();}});}
 function exportarEventos(){window.location='/eventos/exportar?'+qs();}
