@@ -18,6 +18,15 @@ CSV_EVENTOS = os.path.join(BASE_DIR, "data", "dados_eventos.csv")
 CSV_MUNICIPIOS = os.path.join(BASE_DIR, "data", "municipios.csv")
 MUNICIPIOS_CACHE = None
 
+STATUS_CANONICOS = ["Autorizado", "Em Andamento", "Pendente", "Em Análise", "Encerrado"]
+STATUS_ALIASES = {
+    "AUTORIZADO": "Autorizado",
+    "EM ANDAMENTO": "Em Andamento",
+    "PENDENTE": "Pendente",
+    "EM ANALISE": "Em Análise",
+    "ENCERRADO": "Encerrado",
+}
+
 STATUS_OPCOES = ["Autorizado", "Em Andamento", "Pendente", "Em AnÃ¡lise", "Encerrado"]
 ORIGEM_OPCOES = ["Emenda Direta", "Fomento", "Emenda PÃ³s", "Privado"]
 MESES = {
@@ -66,6 +75,13 @@ def normalizar_status_evento(valor):
     if texto.lower() in {"", "undefined", "null", "none"}:
         return "Pendente"
     texto_normalizado = normalizar_busca(texto)
+    if "AN" in texto_normalizado and "LISE" in texto_normalizado:
+        return "Em Análise"
+    if texto_normalizado in STATUS_ALIASES:
+        return STATUS_ALIASES[texto_normalizado]
+    for opcao in STATUS_CANONICOS:
+        if normalizar_busca(opcao) == texto_normalizado:
+            return opcao
     for opcao in STATUS_OPCOES:
         if normalizar_busca(opcao) == texto_normalizado:
             return opcao

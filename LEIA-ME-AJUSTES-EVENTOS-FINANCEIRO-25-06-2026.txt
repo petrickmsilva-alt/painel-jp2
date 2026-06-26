@@ -1,0 +1,18 @@
+Atualizacao - eventos e financeiro - 25/06/2026
+
+Arquivos alterados nesta rodada:
+- eventos.py
+- templates/eventos.html
+- eventos.html
+- templates/financeiro_resumo.html
+
+O que foi ajustado:
+- Status de eventos agora e normalizado em cinco opcoes oficiais:
+  Autorizado, Em Andamento, Pendente, Em Analise e Encerrado.
+- Registros antigos com status quebrado ou sem acento passam a ser tratados corretamente.
+- Cores da legenda e dos eventos na agenda visual passam a usar os status normalizados.
+- Edicao de status no Resumo Geral de eventos passa a salvar usando a mesma normalizacao.
+- No resumo financeiro, os quadros Empresas beneficiadas, Tipo de recurso, Captador de recursos e Finalidade aparecem logo abaixo do Racional de investimento.
+- Alertas financeiros e Maiores exposicoes foram movidos visualmente para baixo.
+
+Nao foram alterados calculos financeiros, upload de arquivos, permissoes ou banco de dados.
