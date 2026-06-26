@@ -328,6 +328,8 @@
 <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 <script>
 let eventos=[], filtrados=[], eventosCalendario=[], tabela=null, municipioMap={}, calendarioData=new Date(), calendarioAno=false, financeiroAtual=null, filtrosMontados=false;
+const STATUS_CANONICOS=['Autorizado','Em Andamento','Pendente','Em Análise','Encerrado'];
+const STATUS_CORES_CANONICAS={'Autorizado':'#16a34a','Em Andamento':'#2563eb','Pendente':'#d97706','Em Análise':'#ea580c','Encerrado':'#64748b'};
 const meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const mesesTitulo=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const statusCores={'Autorizado':'#16a34a','Em Andamento':'#2563eb','Pendente':'#d97706','Em Análise':'#ea580c','Encerrado':'#64748b'};
@@ -338,9 +340,10 @@ function dataBR(v){if(!v)return '-'; const p=String(v).split('-'); return p.leng
 function numeroBR(v){return Number(String(v||'0').replace(/\D/g,''))||0;}
 function numeroDecimal(v){return Number(String(v||'0').replace(/\./g,'').replace(',','.').replace(/[^\d.]/g,''))||0;}
 function formatarMoedaEvento(el){const n=numeroBR(el.value); el.value=n?dinheiro(n):'';}
-function statusClass(s){return 's-'+String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-');}
-function chipClass(s){return 'chip-'+String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-');}
-function statusEvento(e){const s=String(e?.status||'').trim(); return (!s || s.toLowerCase()==='undefined' || s.toLowerCase()==='null')?'Pendente':s;}
+function chaveStatus(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,' ').toUpperCase();}
+function statusEvento(e){const raw=String(e?.status||'').trim(); if(!raw || raw.toLowerCase()==='undefined' || raw.toLowerCase()==='null')return 'Pendente'; const chave=chaveStatus(raw); if(chave.includes('AN')&&chave.includes('LISE'))return 'Em Análise'; const mapa={'AUTORIZADO':'Autorizado','EM ANDAMENTO':'Em Andamento','PENDENTE':'Pendente','EM ANALISE':'Em Análise','ENCERRADO':'Encerrado'}; return mapa[chave] || 'Pendente';}
+function statusClass(s){return 's-'+statusEvento({status:s}).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-');}
+function chipClass(s){return 'chip-'+statusEvento({status:s}).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-');}
 function statusSelecionado(){return statusEvento({status:status.value});}
 function qs(){const p=new URLSearchParams(); [['uf',fUf.value],['regiao',fRegiao.value],['mes',fMes.value],['origem',fOrigem.value],['status',fStatus.value],['q',fBusca.value],['inicio',fInicio.value],['fim',fFim.value]].forEach(([k,v])=>{if(v)p.set(k,v)}); return p.toString();}
 function urlEventosComCache(extra=''){const p=new URLSearchParams(extra); p.set('_', Date.now()); return '/api/eventos?'+p.toString();}
@@ -392,7 +395,7 @@ function montarSelectFinanceiro(){
     if(!financeiroEventoSelect.value && eventos[0]) financeiroEventoSelect.value=eventos[0].id;
     if(!custoEventoSelect.value && eventos[0]) custoEventoSelect.value=eventos[0].id;
 }
-function montarFiltros(base){opcoes('fUf',base.map(e=>e.uf)); opcoes('fRegiao',base.map(e=>e.regiao)); opcoes('fMes',base.map(e=>e.mes)); opcoes('fOrigem',base.map(e=>e.origem)); opcoes('fStatus',base.map(e=>e.status));}
+function montarFiltros(base){opcoes('fUf',base.map(e=>e.uf)); opcoes('fRegiao',base.map(e=>e.regiao)); opcoes('fMes',base.map(e=>e.mes)); opcoes('fOrigem',base.map(e=>e.origem)); opcoes('fStatus',STATUS_CANONICOS);}
 function aplicarFiltros(){carregarEventos();}
 function limparFiltros(){['fUf','fRegiao','fMes','fOrigem','fStatus','fBusca','fInicio','fFim'].forEach(id=>document.getElementById(id).value=''); carregarEventos();}
 function renderTabela(){
@@ -547,7 +550,7 @@ function abrirDetalheEvento(id){
     bootstrap.Modal.getOrCreateInstance(modalEventoDetalhe).show();
 }
 function renderCalendario(){
-    legendaStatus.innerHTML=Object.entries(statusCores).map(([s,c])=>`<span><i style="background:${c}"></i>${s}</span>`).join('');
+    legendaStatus.innerHTML=STATUS_CANONICOS.map(s=>`<span><i style="background:${STATUS_CORES_CANONICAS[s]}"></i>${s}</span>`).join('');
     tituloAnoLateral.innerText=calendarioData.getFullYear();
     atualizarMetricasCalendario();
     renderMiniAno();
