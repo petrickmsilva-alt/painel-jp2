@@ -73,7 +73,7 @@
     <section class="summary">
         <div class="metric"><span>Total de eventos</span><strong id="mTotal">0</strong></div>
         <div class="metric"><span>Valor total</span><strong id="mValor">R$ 0</strong></div>
-        <div class="metric"><span id="mMesLabel">Valor do mes</span><strong id="mValorMes">R$ 0</strong></div>
+        <div class="metric"><span id="mMesLabel">Valor do mês</span><strong id="mValorMes">R$ 0</strong></div>
         <div class="metric"><span>Próximo evento</span><strong id="mProximo">-</strong></div>
         <div class="metric"><span>Em andamento</span><strong id="mAndamento">0</strong></div>
     </section>
@@ -272,9 +272,9 @@
                 </div>
                 <div class="panel-body">
                     <section class="summary mb-3">
-                        <div class="metric"><span id="calEscopo">Eventos no mes</span><strong id="calQtd">0</strong></div>
+                        <div class="metric"><span id="calEscopo">Eventos no mês</span><strong id="calQtd">0</strong></div>
                         <div class="metric"><span>Valor exibido</span><strong id="calValor">R$ 0</strong></div>
-                        <div class="metric"><span>Proximo no periodo</span><strong id="calProximo">-</strong></div>
+                        <div class="metric"><span>Próximo no periodo</span><strong id="calProximo">-</strong></div>
                         <div class="metric"><span>Periodo</span><strong id="calPeriodo">-</strong></div>
                     </section>
                     <div class="legend mb-3" id="legendaStatus"></div>
@@ -356,7 +356,7 @@ function atualizarMetricas(){
     mTotal.innerText=baseMes.length;
     mValor.innerText=dinheiro(eventosCalendario.reduce((s,e)=>s+Number(e.valor_verba||0),0));
     mValorMes.innerText=dinheiro(baseMes.reduce((s,e)=>s+Number(e.valor_verba||0),0));
-    mMesLabel.innerText=mesFiltro?`Valor de ${mesFiltro}`:'Valor do mes atual';
+    mMesLabel.innerText=mesFiltro?`Valor de ${mesFiltro}`:'Valor do mês atual';
     mAndamento.innerText=filtrados.filter(e=>statusEvento(e)==='Em Andamento').length;
     const hoje=new Date().toISOString().slice(0,10);
     const prox=filtrados.find(e=>e.data_fim>=hoje);
@@ -379,12 +379,12 @@ function sincronizarEventosCSV(){
     fetch('/api/eventos/sincronizar-csv',{method:'POST'})
     .then(r=>r.json())
     .then(d=>{
-        if(d.status!=='sucesso'){alert(d.msg||'Nao foi possivel sincronizar.');return;}
+        if(d.status!=='sucesso'){alert(d.msg||'Não foi possivel sincronizar.');return;}
         alert(`${d.importados||0} novo(s) registro(s) importado(s).`);
         eventos=[]; eventosCalendario=[]; filtrosMontados=false;
         carregarEventos();
     })
-    .catch(()=>alert('Nao foi possivel falar com o servidor.'));
+    .catch(()=>alert('Não foi possível falar com o servidor.'));
 }
 function montarSelectFinanceiro(){
     const atual=financeiroEventoSelect.value;
