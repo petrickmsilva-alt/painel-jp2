@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Termos de Fomento | JP2 Business</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <style>
+        :root{--ink:#101828;--muted:#667085;--line:#d9e2ef;--soft:#f4f7fb;--blue:#155eef;--nav:#101a2b;--green:#067647}
+        *{box-sizing:border-box}body{background:var(--soft);color:var(--ink);display:flex;font-family:Inter,Segoe UI,system-ui,sans-serif;margin:0;min-height:100vh}
+        #sidebar{background:var(--nav);color:#fff;flex:0 0 270px;padding:24px 18px}.sidebar-kicker{color:#93a4bd;font-size:11px;font-weight:850;letter-spacing:.1em;text-transform:uppercase}.sidebar-title{font-size:22px;font-weight:850;line-height:1.08;margin:6px 0 18px}.sidebar-divider{background:rgba(255,255,255,.12);height:1px;margin:18px 0}#sidebar a{align-items:center;border:1px solid transparent;border-radius:8px;color:#d6e0ef;display:flex;font-weight:750;gap:10px;margin-bottom:7px;padding:11px 10px;text-decoration:none}#sidebar a:hover,#sidebar a.active{background:#172b49;border-color:rgba(21,94,239,.45);color:#fff}#sidebar i{color:#7fb4ff;font-size:16px}
+        .content{flex:1;min-width:0;padding:28px}.hero{align-items:center;background:#fff;border:1px solid var(--line);border-radius:10px;display:flex;gap:18px;justify-content:space-between;margin-bottom:16px;padding:20px}.kicker{color:var(--muted);font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.title{font-size:28px;font-weight:900;letter-spacing:0;margin:3px 0}.subtitle{color:var(--muted);font-size:13px}.hero-mark{align-items:center;background:#eef4ff;border-radius:8px;color:var(--blue);display:flex;font-size:25px;height:52px;justify-content:center;width:52px}
+        .summary{display:grid;gap:12px;grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:16px}.metric{background:#fff;border:1px solid var(--line);border-radius:9px;padding:14px}.metric span{color:var(--muted);font-size:10px;font-weight:900;text-transform:uppercase}.metric strong{display:block;font-size:19px;margin-top:4px}.panel{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:16px;overflow:hidden}.panel-head{align-items:center;border-bottom:1px solid #edf1f7;display:flex;gap:12px;justify-content:space-between;padding:15px 17px}.panel-head h2{font-size:17px;font-weight:900;margin:0}.panel-head p{color:var(--muted);font-size:12px;margin:3px 0 0}.panel-body{padding:17px}
+        .toolbar{align-items:center;display:flex;gap:9px;flex-wrap:wrap}.btn{border-radius:7px;font-weight:750}.btn-icon{align-items:center;display:inline-flex;height:34px;justify-content:center;padding:0;width:34px}label{color:#475467;font-size:11px;font-weight:900;margin-bottom:5px;text-transform:uppercase}.form-control,.form-select{border-color:#d5deeb;border-radius:7px;min-height:42px}.form-control:focus,.form-select:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(21,94,239,.09)}textarea.form-control{line-height:1.55;min-height:130px}.section-title{border-bottom:1px solid #edf1f7;font-size:15px;font-weight:900;margin:4px 0 16px;padding-bottom:10px}.nav-pills{background:#eaf0f8;border-radius:8px;display:flex;gap:4px;padding:5px}.nav-pills .nav-link{border-radius:6px;color:#344054;font-size:12px;font-weight:850}.nav-pills .nav-link.active{background:#fff;box-shadow:0 2px 8px rgba(15,23,42,.09);color:var(--blue)}
+        .table th{background:#f8fafc;color:#667085;font-size:10px;font-weight:900;text-transform:uppercase;white-space:nowrap}.table td{font-size:12px;vertical-align:middle}.term-title{font-size:13px;font-weight:900}.muted{color:var(--muted);font-size:11px}.money{font-weight:900;white-space:nowrap}.status{background:#ecfdf3;border-radius:999px;color:#067647;display:inline-flex;font-size:10px;font-weight:900;padding:5px 8px}.empty{color:var(--muted);padding:44px;text-align:center}.dynamic-table input{font-size:12px;min-height:36px}.dynamic-table textarea{font-size:12px;min-height:64px}.dynamic-table .btn{height:32px;width:32px}.json-section+.json-section{border-top:1px solid #edf1f7;margin-top:20px;padding-top:20px}.notice{background:#eff8ff;border:1px solid #b2ddff;border-radius:8px;color:#175cd3;font-size:12px;padding:11px 13px}.hidden{display:none!important}
+        @media(max-width:1100px){.summary{grid-template-columns:repeat(2,1fr)}}@media(max-width:820px){body{display:block}#sidebar{width:100%}.content{padding:14px}.hero{align-items:flex-start;flex-direction:column}.summary{grid-template-columns:1fr}.toolbar{width:100%}.toolbar .btn{flex:1}}
+    </style>
+</head>
+<body>
+<aside id="sidebar">
+    <div class="sidebar-kicker">Painel de eventos</div>
+    <div class="sidebar-title">Gestão de eventos</div>
+    <div class="sidebar-divider"></div>
+    <a href="/"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
+    <a href="/eventos#cadastro"><i class="bi bi-plus-square"></i> Cadastro de eventos</a>
+    <a href="/eventos#resumo"><i class="bi bi-table"></i> Resumo geral</a>
+    <a href="/eventos#custos"><i class="bi bi-receipt"></i> Custos do evento</a>
+    <a href="/eventos#financeiro"><i class="bi bi-calculator"></i> Resultado financeiro</a>
+    <a href="/eventos#calendario"><i class="bi bi-calendar3"></i> Agenda visual</a>
+    <a class="active" href="/eventos/fomentos"><i class="bi bi-file-earmark-text"></i> Termos de fomento</a>
+</aside>
+
+<main class="content">
+    <section class="hero">
+        <div class="d-flex align-items-center gap-3">
+            <div class="hero-mark"><i class="bi bi-file-earmark-check"></i></div>
+            <div><div class="kicker">Parcerias e instrumentos públicos</div><h1 class="title">Termos de fomento</h1><div class="subtitle">Cadastre planos de trabalho, metas, orçamento e gere a versão para impressão.</div></div>
+        </div>
+        <div class="toolbar">
+            <button class="btn btn-outline-secondary" type="button" onclick="mostrarLista()"><i class="bi bi-list-ul"></i> Cadastros</button>
+            <button class="btn btn-primary" type="button" onclick="novoFomento()"><i class="bi bi-plus-lg"></i> Novo termo</button>
+        </div>
+    </section>
+
+    <section class="summary">
+        <div class="metric"><span>Termos cadastrados</span><strong id="mTotal">0</strong></div>
+        <div class="metric"><span>Valor consolidado</span><strong id="mValor">R$ 0,00</strong></div>
+        <div class="metric"><span>Em vigência</span><strong id="mVigentes">0</strong></div>
+        <div class="metric"><span>Planos de trabalho</span><strong id="mPlanos">0</strong></div>
+    </section>
+
+    <section id="viewLista" class="panel">
+        <div class="panel-head"><div><h2>Fomentos cadastrados</h2><p>O TF-8-SECEC/2026 já está incluído com o conteúdo integral do documento oficial.</p></div><input id="busca" class="form-control" style="max-width:280px" placeholder="Buscar termo, projeto ou OSC" autocomplete="off"></div>
+        <div class="table-responsive panel-body">
+            <table class="table table-hover align-middle mb-0"><thead><tr><th>Instrumento</th><th>Projeto / OSC</th><th>Vigência</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead><tbody id="listaFomentos"></tbody></table>
+        </div>
+    </section>
+
+    <section id="viewFormulario" class="hidden">
+        <div class="panel">
+            <div class="panel-head"><div><h2 id="tituloFormulario">Novo termo de fomento</h2><p>Preencha por blocos. As informações ficam salvas no MySQL do painel.</p></div><div class="toolbar"><a id="btnOriginal" class="btn btn-outline-secondary hidden" target="_blank"><i class="bi bi-file-pdf"></i> Documento oficial</a><a id="btnImprimir" class="btn btn-outline-secondary hidden" target="_blank"><i class="bi bi-printer"></i> Imprimir</a><button class="btn btn-primary" type="button" onclick="salvarFomento()"><i class="bi bi-save"></i> Salvar</button></div></div>
+            <div class="panel-body">
+                <div class="notice mb-3"><i class="bi bi-shield-check"></i> O documento oficial permanece preservado. A impressão do sistema usa os dados editáveis deste cadastro.</div>
+                <ul class="nav nav-pills mb-4" role="tablist">
+                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tabIdentificacao">Identificação</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabOsc">OSC e responsáveis</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabTecnico">Conteúdo técnico</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabMetas">Metas e orçamento</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabIntegral">Conteúdo integral</button></li>
+                </ul>
+                <form id="formFomento" class="tab-content" autocomplete="off">
+                    <input type="hidden" id="fomentoId">
+                    <div class="tab-pane fade show active" id="tabIdentificacao">
+                        <h3 class="section-title">Identificação do instrumento</h3>
+                        <div class="row g-3">
+                            <div class="col-lg-3"><label>Número do termo</label><input class="form-control" id="termo_numero" required></div>
+                            <div class="col-lg-3"><label>Plano de trabalho nº</label><input class="form-control" id="plano_trabalho_numero"></div>
+                            <div class="col-lg-4"><label>MROSC / processo</label><input class="form-control" id="mrsc_numero"></div>
+                            <div class="col-lg-2"><label>Status</label><select class="form-select" id="status"><option>Em elaboração</option><option>Em análise</option><option>Vigente</option><option>Concluído</option><option>Cancelado</option></select></div>
+                            <div class="col-lg-6"><label>Nome da parceria</label><input class="form-control" id="nome_parceria"></div>
+                            <div class="col-lg-6"><label>Título do projeto</label><input class="form-control" id="titulo_projeto" required></div>
+                            <div class="col-lg-3"><label>Valor total</label><input class="form-control money-input" id="valor_total" inputmode="decimal"></div>
+                            <div class="col-lg-3"><label>Início da vigência</label><input class="form-control" type="date" id="vigencia_inicio"></div>
+                            <div class="col-lg-3"><label>Término da vigência</label><input class="form-control" type="date" id="vigencia_fim"></div>
+                            <div class="col-lg-3"><label>Evento relacionado (ID)</label><input class="form-control" id="evento_id" inputmode="numeric"></div>
+                            <div class="col-12"><label>Objeto</label><textarea class="form-control" id="objeto"></textarea></div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="tabOsc">
+                        <h3 class="section-title">Dados e informações da OSC</h3>
+                        <div class="row g-3">
+                            <div class="col-lg-8"><label>Nome da OSC</label><input class="form-control" id="osc_nome"></div><div class="col-lg-4"><label>CNPJ</label><input class="form-control" id="osc_cnpj"></div>
+                            <div class="col-lg-8"><label>Endereço completo</label><input class="form-control" id="osc_endereco"></div><div class="col-lg-4"><label>Região administrativa</label><input class="form-control" id="osc_ra"></div>
+                            <div class="col-lg-2"><label>UF</label><input class="form-control" id="osc_uf" maxlength="2"></div><div class="col-lg-3"><label>CEP</label><input class="form-control" id="osc_cep"></div><div class="col-lg-7"><label>Site, blog ou outro</label><input class="form-control" id="osc_site"></div>
+                        </div>
+                        <h3 class="section-title mt-4">Representante legal</h3>
+                        <div class="row g-3"><div class="col-lg-4"><label>Nome</label><input class="form-control" id="representante_nome"></div><div class="col-lg-3"><label>Cargo</label><input class="form-control" id="representante_cargo"></div><div class="col-lg-2"><label>RG</label><input class="form-control" id="representante_rg"></div><div class="col-lg-1"><label>Órgão</label><input class="form-control" id="representante_orgao"></div><div class="col-lg-2"><label>CPF</label><input class="form-control" id="representante_cpf"></div></div>
+                        <h3 class="section-title mt-4">Acompanhamento da parceria</h3>
+                        <div class="row g-3"><div class="col-lg-4"><label>Responsável</label><input class="form-control" id="acompanhamento_nome"></div><div class="col-lg-3"><label>Função</label><input class="form-control" id="acompanhamento_funcao"></div><div class="col-lg-2"><label>CPF</label><input class="form-control" id="acompanhamento_cpf"></div><div class="col-lg-2"><label>RG</label><input class="form-control" id="acompanhamento_rg"></div><div class="col-lg-1"><label>Órgão</label><input class="form-control" id="acompanhamento_orgao"></div><div class="col-lg-4"><label>Telefone</label><input class="form-control" id="acompanhamento_telefone"></div><div class="col-lg-8"><label>E-mail</label><input class="form-control" type="email" id="acompanhamento_email"></div></div>
+                    </div>
+                    <div class="tab-pane fade" id="tabTecnico">
+                        <div class="row g-3">
+                            <div class="col-12"><label>Apresentação</label><textarea class="form-control" id="apresentacao"></textarea></div>
+                            <div class="col-12"><label>Justificativa</label><textarea class="form-control" id="justificativa"></textarea></div>
+                            <div class="col-12"><label>Descrição do projeto</label><textarea class="form-control" id="descricao_projeto"></textarea></div>
+                            <div class="col-12"><label>Análise do cenário</label><textarea class="form-control" id="analise_cenario"></textarea></div>
+                            <div class="col-12"><label>Eixos de atuação</label><textarea class="form-control" id="eixos_atuacao"></textarea></div>
+                            <div class="col-12"><label>Alinhamento com as políticas públicas</label><textarea class="form-control" id="alinhamento_politicas"></textarea></div>
+                            <div class="col-lg-8"><label>Público-alvo beneficiado</label><textarea class="form-control" id="publico_alvo"></textarea></div><div class="col-lg-4"><label>Contrapartida</label><textarea class="form-control" id="contrapartida"></textarea></div>
+                            <div class="col-12"><label>Metodologia das ações</label><textarea class="form-control" id="metodologia"></textarea></div>
+                            <div class="col-12"><label>Resultados esperados</label><textarea class="form-control" id="resultados_esperados"></textarea></div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="tabMetas">
+                        <div class="json-section"><div class="d-flex justify-content-between align-items-center mb-2"><h3 class="section-title border-0 m-0 p-0">Metas e indicadores</h3><button class="btn btn-sm btn-outline-primary" type="button" onclick="adicionarLinha('metas')"><i class="bi bi-plus"></i> Meta</button></div><div class="table-responsive"><table class="table dynamic-table"><thead><tr><th>Nº</th><th>Título</th><th>Quantidade</th><th>Indicadores / verificação</th><th></th></tr></thead><tbody id="rowsMetas"></tbody></table></div></div>
+                        <div class="json-section"><div class="d-flex justify-content-between align-items-center mb-2"><h3 class="section-title border-0 m-0 p-0">Planejamento financeiro</h3><button class="btn btn-sm btn-outline-primary" type="button" onclick="adicionarLinha('orcamento')"><i class="bi bi-plus"></i> Classificação</button></div><div class="table-responsive"><table class="table dynamic-table"><thead><tr><th>Meta</th><th>Classificação econômica</th><th>Valor</th><th></th></tr></thead><tbody id="rowsOrcamento"></tbody></table></div></div>
+                        <div class="json-section"><div class="d-flex justify-content-between align-items-center mb-2"><h3 class="section-title border-0 m-0 p-0">Equipe de trabalho</h3><button class="btn btn-sm btn-outline-primary" type="button" onclick="adicionarLinha('equipe')"><i class="bi bi-plus"></i> Profissional</button></div><div class="table-responsive"><table class="table dynamic-table"><thead><tr><th>Cargo</th><th>Qtd.</th><th>Unidade</th><th>Valor unitário</th><th>Total</th><th></th></tr></thead><tbody id="rowsEquipe"></tbody></table></div></div>
+                        <div class="json-section"><div class="d-flex justify-content-between align-items-center mb-2"><h3 class="section-title border-0 m-0 p-0">Previsão de receitas</h3><button class="btn btn-sm btn-outline-primary" type="button" onclick="adicionarLinha('receitas')"><i class="bi bi-plus"></i> Receita</button></div><div class="table-responsive"><table class="table dynamic-table"><thead><tr><th>Fonte de recurso</th><th>Fonte</th><th>Valor</th><th></th></tr></thead><tbody id="rowsReceitas"></tbody></table></div></div>
+                        <div class="json-section"><div class="d-flex justify-content-between align-items-center mb-2"><h3 class="section-title border-0 m-0 p-0">Parcelas</h3><button class="btn btn-sm btn-outline-primary" type="button" onclick="adicionarLinha('parcelas')"><i class="bi bi-plus"></i> Parcela</button></div><div class="table-responsive"><table class="table dynamic-table"><thead><tr><th>Parcela</th><th>Data</th><th>Valor</th><th></th></tr></thead><tbody id="rowsParcelas"></tbody></table></div></div>
+                        <div class="json-section"><div class="d-flex justify-content-between align-items-center mb-2"><h3 class="section-title border-0 m-0 p-0">Cronograma de desembolso</h3><button class="btn btn-sm btn-outline-primary" type="button" onclick="adicionarLinha('desembolso')"><i class="bi bi-plus"></i> Item</button></div><div class="table-responsive"><table class="table dynamic-table"><thead><tr><th>Parcela</th><th>Classificação econômica</th><th>Valor</th><th></th></tr></thead><tbody id="rowsDesembolso"></tbody></table></div></div>
+                    </div>
+                    <div class="tab-pane fade" id="tabIntegral"><label>Conteúdo integral do documento</label><textarea class="form-control" id="conteudo_integral" style="min-height:520px;font-family:Consolas,monospace;font-size:12px"></textarea><input type="hidden" id="documento_original"><p class="muted mt-2">Este campo preserva todo o texto extraído das 29 páginas do plano de trabalho.</p></div>
+                </form>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const camposSimples=['evento_id','termo_numero','plano_trabalho_numero','mrsc_numero','nome_parceria','titulo_projeto','osc_nome','osc_cnpj','osc_endereco','osc_ra','osc_uf','osc_cep','osc_site','representante_nome','representante_cargo','representante_rg','representante_orgao','representante_cpf','acompanhamento_nome','acompanhamento_funcao','acompanhamento_cpf','acompanhamento_rg','acompanhamento_orgao','acompanhamento_telefone','acompanhamento_email','valor_total','vigencia_inicio','vigencia_fim','objeto','apresentacao','justificativa','descricao_projeto','analise_cenario','eixos_atuacao','alinhamento_politicas','publico_alvo','contrapartida','metodologia','resultados_esperados','conteudo_integral','documento_original','status'];
+const configs={
+ metas:{target:'rowsMetas',fields:[['numero','text','70px'],['titulo','text','280px'],['quantidade','text','100px'],['indicadores','textarea','320px'],['verificacao','hidden','']]},
+ orcamento:{target:'rowsOrcamento',fields:[['meta','text','90px'],['classificacao','text','520px'],['valor','number','180px']]},
+ equipe:{target:'rowsEquipe',fields:[['cargo','text','300px'],['quantidade','number','90px'],['unidade','text','130px'],['valor_unitario','number','150px'],['valor_total','number','150px']]},
+ receitas:{target:'rowsReceitas',fields:[['fonte_recurso','text','420px'],['fonte','text','120px'],['valor','number','180px']]},
+ parcelas:{target:'rowsParcelas',fields:[['parcela','text','100px'],['data','date','180px'],['valor','number','180px']]},
+ desembolso:{target:'rowsDesembolso',fields:[['parcela','text','100px'],['classificacao','text','520px'],['valor','number','180px']]}
+};
+let fomentos=[],arrays={metas:[],orcamento:[],equipe:[],receitas:[],parcelas:[],desembolso:[]};
+const brl=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function renderLinhas(tipo){const cfg=configs[tipo],body=document.getElementById(cfg.target);body.innerHTML='';(arrays[tipo]||[]).forEach((row,index)=>{const tr=document.createElement('tr');cfg.fields.filter(f=>f[1]!=='hidden').forEach(([campo,type,width])=>{const td=document.createElement('td');td.style.minWidth=width;if(type==='textarea'){td.innerHTML=`<textarea class="form-control" data-tipo="${tipo}" data-index="${index}" data-campo="${campo}">${esc(row[campo])}</textarea>`}else{td.innerHTML=`<input class="form-control" type="${type}" step="0.01" data-tipo="${tipo}" data-index="${index}" data-campo="${campo}" value="${esc(row[campo])}">`}tr.appendChild(td)});const ac=document.createElement('td');ac.innerHTML=`<button class="btn btn-outline-danger btn-icon" type="button" onclick="removerLinha('${tipo}',${index})" title="Excluir"><i class="bi bi-trash"></i></button>`;tr.appendChild(ac);body.appendChild(tr)});}
+function sincronizarLinhas(tipo){document.querySelectorAll(`[data-tipo="${tipo}"]`).forEach(el=>{arrays[tipo][Number(el.dataset.index)][el.dataset.campo]=el.value});}
+function adicionarLinha(tipo){sincronizarLinhas(tipo);const vazio={};configs[tipo].fields.forEach(([campo])=>vazio[campo]='');arrays[tipo].push(vazio);renderLinhas(tipo)}
+function removerLinha(tipo,index){sincronizarLinhas(tipo);arrays[tipo].splice(index,1);renderLinhas(tipo)}
+async function carregarLista(){const r=await fetch('/api/eventos/fomentos');const j=await r.json();fomentos=j.dados||[];renderLista();document.getElementById('mTotal').textContent=fomentos.length;document.getElementById('mValor').textContent=brl(fomentos.reduce((s,x)=>s+Number(x.valor_total||0),0));document.getElementById('mVigentes').textContent=fomentos.filter(x=>normal(x.status)==='VIGENTE').length;document.getElementById('mPlanos').textContent=new Set(fomentos.map(x=>x.plano_trabalho_numero).filter(Boolean)).size;}
+function normal(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase()}
+function renderLista(){const q=normal(document.getElementById('busca').value),body=document.getElementById('listaFomentos');const dados=fomentos.filter(x=>normal([x.termo_numero,x.plano_trabalho_numero,x.titulo_projeto,x.osc_nome].join(' ')).includes(q));body.innerHTML=dados.length?dados.map(x=>`<tr><td><div class="term-title">${esc(x.termo_numero)}</div><div class="muted">Plano de Trabalho nº ${esc(x.plano_trabalho_numero||'-')}</div></td><td><div class="term-title">${esc(x.titulo_projeto)}</div><div class="muted">${esc(x.osc_nome||'-')}</div></td><td>${esc(dataBr(x.vigencia_inicio))}<br><span class="muted">até ${esc(dataBr(x.vigencia_fim))}</span></td><td class="money">${brl(x.valor_total)}</td><td><span class="status">${esc(x.status)}</span></td><td><div class="toolbar"><button class="btn btn-outline-primary btn-icon" onclick="editarFomento(${x.id})" title="Editar"><i class="bi bi-pencil"></i></button><a class="btn btn-outline-secondary btn-icon" href="/eventos/fomentos/${x.id}/imprimir" target="_blank" title="Imprimir"><i class="bi bi-printer"></i></a><button class="btn btn-outline-danger btn-icon" onclick="excluirFomento(${x.id})" title="Excluir"><i class="bi bi-trash"></i></button></div></td></tr>`).join(''):'<tr><td colspan="6" class="empty">Nenhum termo encontrado.</td></tr>';}
+function dataBr(v){if(!v)return '-';const [a,m,d]=v.split('-');return `${d}/${m}/${a}`}
+function mostrarLista(){document.getElementById('viewLista').classList.remove('hidden');document.getElementById('viewFormulario').classList.add('hidden');carregarLista()}
+function novoFomento(){document.getElementById('formFomento').reset();document.getElementById('fomentoId').value='';camposSimples.forEach(c=>{const el=document.getElementById(c);if(el)el.value=''});document.getElementById('status').value='Em elaboração';Object.keys(arrays).forEach(k=>{arrays[k]=[];renderLinhas(k)});prepararFormulario(null);}
+function prepararFormulario(d){document.getElementById('viewLista').classList.add('hidden');document.getElementById('viewFormulario').classList.remove('hidden');const id=d?.id||'';document.getElementById('fomentoId').value=id;document.getElementById('tituloFormulario').textContent=id?`${d.termo_numero} • Plano de Trabalho nº ${d.plano_trabalho_numero}`:'Novo termo de fomento';const imp=document.getElementById('btnImprimir'),orig=document.getElementById('btnOriginal');imp.classList.toggle('hidden',!id);imp.href=id?`/eventos/fomentos/${id}/imprimir`:'#';orig.classList.toggle('hidden',!d?.documento_original);orig.href=d?.documento_original||'#';window.scrollTo({top:0,behavior:'smooth'});}
+async function editarFomento(id){const r=await fetch(`/api/eventos/fomentos/${id}`),j=await r.json();if(!r.ok)return alert(j.mensagem||'Não foi possível abrir o termo.');const d=j.dado;camposSimples.forEach(c=>{const el=document.getElementById(c);if(el)el.value=d[c]??''});arrays={metas:d.metas_json||[],orcamento:d.orcamento_json||[],equipe:d.equipe_json||[],receitas:d.receitas_json||[],parcelas:d.parcelas_json||[],desembolso:d.desembolso_json||[]};Object.keys(arrays).forEach(renderLinhas);prepararFormulario(d)}
+function payload(){Object.keys(arrays).forEach(sincronizarLinhas);const d={};camposSimples.forEach(c=>{const el=document.getElementById(c);if(el)d[c]=el.value});d.metas_json=arrays.metas;d.orcamento_json=arrays.orcamento;d.equipe_json=arrays.equipe;d.receitas_json=arrays.receitas;d.parcelas_json=arrays.parcelas;d.desembolso_json=arrays.desembolso;return d}
+async function salvarFomento(){const d=payload();if(!d.termo_numero||!d.titulo_projeto)return alert('Informe o número do termo e o título do projeto.');const id=document.getElementById('fomentoId').value;const r=await fetch(id?`/api/eventos/fomentos/${id}`:'/api/eventos/fomentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}),j=await r.json();if(!r.ok)return alert(j.mensagem||'Não foi possível salvar.');alert('Termo de fomento salvo com sucesso.');await editarFomento(j.id)}
+async function excluirFomento(id){if(!confirm('Deseja realmente excluir este termo de fomento?'))return;const r=await fetch(`/api/eventos/fomentos/${id}`,{method:'DELETE'}),j=await r.json();if(!r.ok)return alert(j.mensagem||'Não foi possível excluir.');carregarLista()}
+document.getElementById('busca').addEventListener('input',renderLista);document.addEventListener('DOMContentLoaded',carregarLista);
+</script>
+</body>
+</html>
