@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ fomento.termo_numero }} • Plano de Trabalho {{ fomento.plano_trabalho_numero }}</title>
+    <style>
+        @page{size:A4;margin:28mm 13mm 18mm}*{box-sizing:border-box}body{color:#111;font-family:Arial,Helvetica,sans-serif;font-size:10px;line-height:1.42;margin:0}.screen-actions{align-items:center;background:#172b49;display:flex;gap:10px;justify-content:flex-end;padding:12px;position:sticky;top:0;z-index:4}.screen-actions button,.screen-actions a{background:#fff;border:1px solid #d0d5dd;border-radius:5px;color:#101828;font-size:13px;font-weight:700;padding:9px 13px;text-decoration:none}.document-header{border-bottom:2px solid #111;margin-bottom:12px;padding-bottom:9px;text-align:center}.document-header strong{display:block;font-size:12px}.document-header .document-title{font-size:11px;margin-top:7px}.document-header .meta{font-size:9px;margin-top:3px}.section{break-inside:auto;margin:0 0 16px}.section h2{background:#e7e7e7;border:1px solid #111;font-size:11px;margin:0;padding:6px 7px;text-transform:uppercase}.section h3{border-bottom:1px solid #777;font-size:10px;margin:11px 0 5px;padding-bottom:3px;text-transform:uppercase}.text{font-size:10px;text-align:justify;white-space:pre-line}.grid{display:grid;grid-template-columns:repeat(2,1fr)}.field{border:1px solid #777;margin:-1px 0 0 -1px;min-height:42px;padding:6px}.field.full{grid-column:1/-1}.field label{display:block;font-size:8px;font-weight:bold;text-transform:uppercase}.field strong{display:block;font-size:10px;margin-top:3px}.value-highlight{font-size:13px!important}.table{border-collapse:collapse;margin-top:6px;width:100%}.table th,.table td{border:1px solid #777;padding:5px;text-align:left;vertical-align:top}.table th{background:#e7e7e7;font-size:8px;text-transform:uppercase}.table .number{text-align:right;white-space:nowrap}.page-break{break-before:page}.total-row td{font-weight:bold}.signature{border-top:1px solid #222;margin:40px auto 0;padding-top:5px;text-align:center;width:65%}.footer-note{color:#444;font-size:8px;margin-top:20px;text-align:center}.integral{font-family:Arial,Helvetica,sans-serif;font-size:9px;white-space:pre-wrap}.official-banner{background:#f0f6ff;border:1px solid #aac7f5;margin-bottom:14px;padding:8px;text-align:center}
+        @media print{.screen-actions,.official-banner{display:none}.document-header{position:fixed;left:0;right:0;top:-21mm}.section:first-of-type{margin-top:0}}
+    </style>
+</head>
+<body>
+<div class="screen-actions"><a href="{{ fomento.documento_original }}" target="_blank">Abrir documento oficial</a><button onclick="window.print()">Imprimir / Salvar em PDF</button><button onclick="window.close()">Fechar</button></div>
+<div class="official-banner">Esta é a versão gerada pelo cadastro do painel. Para reprodução absolutamente idêntica, utilize “Abrir documento oficial”.</div>
+
+<header class="document-header">
+    <strong>GOVERNO DO DISTRITO FEDERAL</strong>
+    <strong>SECRETARIA DE ESTADO DE CULTURA E ECONOMIA CRIATIVA DO DISTRITO FEDERAL</strong>
+    <div class="document-title">TERMO DE FOMENTO {{ fomento.termo_numero }} • PLANO DE TRABALHO Nº {{ fomento.plano_trabalho_numero }}</div>
+    <div class="meta">MROSC: {{ fomento.mrsc_numero }}</div>
+</header>
+
+<section class="section">
+    <h2>Dados e informações da OSC</h2>
+    <div class="grid">
+        <div class="field full"><label>Nome da parceria</label><strong>{{ fomento.nome_parceria }}</strong></div>
+        <div class="field"><label>Nome da OSC</label><strong>{{ fomento.osc_nome }}</strong></div><div class="field"><label>CNPJ</label><strong>{{ fomento.osc_cnpj }}</strong></div>
+        <div class="field full"><label>Endereço completo</label><strong>{{ fomento.osc_endereco }}</strong></div>
+        <div class="field"><label>Região administrativa / UF / CEP</label><strong>{{ fomento.osc_ra }} • {{ fomento.osc_uf }} • {{ fomento.osc_cep }}</strong></div><div class="field"><label>Site, blog, outros</label><strong>{{ fomento.osc_site }}</strong></div>
+        <div class="field"><label>Representante legal</label><strong>{{ fomento.representante_nome }} • {{ fomento.representante_cargo }}</strong></div><div class="field"><label>RG / órgão / CPF</label><strong>{{ fomento.representante_rg }} • {{ fomento.representante_orgao }} • {{ fomento.representante_cpf }}</strong></div>
+    </div>
+</section>
+
+<section class="section">
+    <h2>Acompanhamento da parceria</h2>
+    <div class="grid"><div class="field"><label>Responsável</label><strong>{{ fomento.acompanhamento_nome }}</strong></div><div class="field"><label>Função na parceria</label><strong>{{ fomento.acompanhamento_funcao }}</strong></div><div class="field"><label>CPF / RG / órgão</label><strong>{{ fomento.acompanhamento_cpf }} • {{ fomento.acompanhamento_rg }} • {{ fomento.acompanhamento_orgao }}</strong></div><div class="field"><label>Telefone / e-mail</label><strong>{{ fomento.acompanhamento_telefone }} • {{ fomento.acompanhamento_email }}</strong></div></div>
+</section>
+
+<section class="section">
+    <div class="grid"><div class="field"><label>Valor total</label><strong class="value-highlight">{{ dinheiro(fomento.valor_total) }}</strong></div><div class="field"><label>Período de vigência</label><strong>INÍCIO: {{ data_br(fomento.vigencia_inicio) }} &nbsp; TÉRMINO: {{ data_br(fomento.vigencia_fim) }}</strong></div><div class="field full"><label>Título do projeto</label><strong>{{ fomento.titulo_projeto }}</strong></div></div>
+</section>
+
+{% for titulo, campo in [
+    ('Objeto','objeto'),('Apresentação','apresentacao'),('Justificativa','justificativa'),
+    ('Descrição do projeto','descricao_projeto'),('Análise do cenário','analise_cenario'),
+    ('Eixos de atuação','eixos_atuacao'),('Alinhamento com as políticas públicas','alinhamento_politicas'),
+    ('Público-alvo beneficiado','publico_alvo'),('Contrapartida','contrapartida'),
+    ('Metodologia das ações','metodologia'),('Resultados esperados','resultados_esperados')
+] %}
+{% if fomento[campo] %}<section class="section"><h2>{{ titulo }}</h2><div class="text">{{ fomento[campo] }}</div></section>{% endif %}
+{% endfor %}
+
+<section class="section page-break">
+    <h2>Detalhamento das metas e indicadores</h2>
+    {% for meta in fomento.metas_json %}<h3>Meta {{ meta.numero }}: {{ meta.titulo }}</h3><table class="table"><tr><th>Público-alvo</th><th>Região administrativa</th><th>Quantidade</th></tr><tr><td>{{ meta.publico }}</td><td>{{ meta.regiao }}</td><td>{{ meta.quantidade }}</td></tr><tr><th colspan="3">Indicadores</th></tr><tr><td colspan="3">{{ meta.indicadores }}</td></tr><tr><th colspan="3">Meios de verificação</th></tr><tr><td colspan="3">{{ meta.verificacao }}</td></tr></table>{% endfor %}
+</section>
+
+<section class="section page-break"><h2>Planejamento financeiro</h2><table class="table"><thead><tr><th>Meta</th><th>Classificação econômica</th><th class="number">Valor total</th></tr></thead><tbody>{% for item in fomento.orcamento_json %}<tr><td>{{ item.meta }}</td><td>{{ item.classificacao }}</td><td class="number">{{ dinheiro(item.valor) }}</td></tr>{% endfor %}<tr class="total-row"><td colspan="2">TOTAL GERAL</td><td class="number">{{ dinheiro(fomento.valor_total) }}</td></tr></tbody></table></section>
+
+{% if fomento.equipe_json %}<section class="section"><h2>Equipe de trabalho</h2><table class="table"><thead><tr><th>Cargo</th><th>Quantidade</th><th>Unidade</th><th class="number">Valor unitário</th><th class="number">Total</th></tr></thead><tbody>{% for item in fomento.equipe_json %}<tr><td>{{ item.cargo }}</td><td>{{ item.quantidade }}</td><td>{{ item.unidade }}</td><td class="number">{{ dinheiro(item.valor_unitario) }}</td><td class="number">{{ dinheiro(item.valor_total) }}</td></tr>{% endfor %}</tbody></table></section>{% endif %}
+
+{% if fomento.receitas_json %}<section class="section"><h2>Quadro de previsão de receitas</h2><table class="table"><thead><tr><th>Fonte de recurso</th><th>Fonte</th><th class="number">Valor</th></tr></thead><tbody>{% for item in fomento.receitas_json %}<tr><td>{{ item.fonte_recurso }}</td><td>{{ item.fonte }}</td><td class="number">{{ dinheiro(item.valor) }}</td></tr>{% endfor %}</tbody></table></section>{% endif %}
+
+{% if fomento.parcelas_json %}<section class="section"><h2>Parcelas</h2><table class="table"><thead><tr><th>Parcela</th><th>Data</th><th class="number">Valor</th></tr></thead><tbody>{% for item in fomento.parcelas_json %}<tr><td>{{ item.parcela }}</td><td>{{ data_br(item.data) }}</td><td class="number">{{ dinheiro(item.valor) }}</td></tr>{% endfor %}</tbody></table></section>{% endif %}
+
+{% if fomento.desembolso_json %}<section class="section"><h2>Cronograma de desembolso</h2><table class="table"><thead><tr><th>Parcela</th><th>Classificação econômica</th><th class="number">Valor</th></tr></thead><tbody>{% for item in fomento.desembolso_json %}<tr><td>{{ item.parcela }}</td><td>{{ item.classificacao }}</td><td class="number">{{ dinheiro(item.valor) }}</td></tr>{% endfor %}<tr class="total-row"><td colspan="2">TOTAL GERAL</td><td class="number">{{ dinheiro(fomento.valor_total) }}</td></tr></tbody></table></section>{% endif %}
+
+<section class="section page-break"><h2>Conteúdo integral preservado</h2><div class="integral">{{ fomento.conteudo_integral }}</div></section>
+<div class="signature">{{ fomento.representante_nome }}<br>{{ fomento.representante_cargo }} • {{ fomento.osc_nome }}</div>
+<div class="footer-note">Documento gerado pelo Painel JP2 Business a partir dos dados cadastrados. Consulte o documento oficial anexado para autenticação e assinatura eletrônica.</div>
+</body>
+</html>

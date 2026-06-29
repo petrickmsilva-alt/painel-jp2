@@ -51,6 +51,7 @@
     <a href="#custos" data-tab-target="custos"><i class="bi bi-receipt"></i> Custos do evento</a>
     <a href="#financeiro" data-tab-target="financeiro"><i class="bi bi-calculator"></i> Resultado financeiro</a>
     <a href="#calendario" data-tab-target="calendario"><i class="bi bi-calendar3"></i> Agenda visual</a>
+    <a href="/eventos/fomentos"><i class="bi bi-file-earmark-text"></i> Termos de fomento</a>
 </aside>
 
 <main class="content">
@@ -73,7 +74,7 @@
     <section class="summary">
         <div class="metric"><span>Total de eventos</span><strong id="mTotal">0</strong></div>
         <div class="metric"><span>Valor total</span><strong id="mValor">R$ 0</strong></div>
-        <div class="metric"><span id="mMesLabel">Valor do mês</span><strong id="mValorMes">R$ 0</strong></div>
+        <div class="metric"><span id="mMesLabel">Valor do mes</span><strong id="mValorMes">R$ 0</strong></div>
         <div class="metric"><span>Próximo evento</span><strong id="mProximo">-</strong></div>
         <div class="metric"><span>Em andamento</span><strong id="mAndamento">0</strong></div>
     </section>
@@ -84,6 +85,7 @@
         <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#custos">Custos do evento</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#financeiro">Resultado financeiro</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#calendario">Agenda visual</button></li>
+        <li class="nav-item"><a class="nav-link" href="/eventos/fomentos">Termos de fomento</a></li>
     </ul>
 
     <div class="tab-content">
@@ -168,8 +170,8 @@
             </div>
 
             <section class="finance-grid">
-                <div class="finance-card"><span>Valor da Acordo</span><strong id="finValorEmenda">R$ 0</strong></div>
-                <div class="finance-card alerta"><span>Acordo informado</span><strong id="finRepasse">R$ 0</strong></div>
+                <div class="finance-card"><span>Valor da emenda</span><strong id="finValorEmenda">R$ 0</strong></div>
+                <div class="finance-card alerta"><span>Repasse informado</span><strong id="finRepasse">R$ 0</strong></div>
                 <div class="finance-card"><span>Custos operacionais</span><strong id="finCustos">R$ 0</strong></div>
                 <div class="finance-card resultado"><span>Resultado IBDTEC</span><strong id="finResultado">R$ 0</strong></div>
             </section>
@@ -272,9 +274,9 @@
                 </div>
                 <div class="panel-body">
                     <section class="summary mb-3">
-                        <div class="metric"><span id="calEscopo">Eventos no mês</span><strong id="calQtd">0</strong></div>
+                        <div class="metric"><span id="calEscopo">Eventos no mes</span><strong id="calQtd">0</strong></div>
                         <div class="metric"><span>Valor exibido</span><strong id="calValor">R$ 0</strong></div>
-                        <div class="metric"><span>Próximo no periodo</span><strong id="calProximo">-</strong></div>
+                        <div class="metric"><span>Proximo no periodo</span><strong id="calProximo">-</strong></div>
                         <div class="metric"><span>Periodo</span><strong id="calPeriodo">-</strong></div>
                     </section>
                     <div class="legend mb-3" id="legendaStatus"></div>
@@ -356,7 +358,7 @@ function atualizarMetricas(){
     mTotal.innerText=baseMes.length;
     mValor.innerText=dinheiro(eventosCalendario.reduce((s,e)=>s+Number(e.valor_verba||0),0));
     mValorMes.innerText=dinheiro(baseMes.reduce((s,e)=>s+Number(e.valor_verba||0),0));
-    mMesLabel.innerText=mesFiltro?`Valor de ${mesFiltro}`:'Valor do mês atual';
+    mMesLabel.innerText=mesFiltro?`Valor de ${mesFiltro}`:'Valor do mes atual';
     mAndamento.innerText=filtrados.filter(e=>statusEvento(e)==='Em Andamento').length;
     const hoje=new Date().toISOString().slice(0,10);
     const prox=filtrados.find(e=>e.data_fim>=hoje);
@@ -379,12 +381,12 @@ function sincronizarEventosCSV(){
     fetch('/api/eventos/sincronizar-csv',{method:'POST'})
     .then(r=>r.json())
     .then(d=>{
-        if(d.status!=='sucesso'){alert(d.msg||'Não foi possivel sincronizar.');return;}
+        if(d.status!=='sucesso'){alert(d.msg||'Nao foi possivel sincronizar.');return;}
         alert(`${d.importados||0} novo(s) registro(s) importado(s).`);
         eventos=[]; eventosCalendario=[]; filtrosMontados=false;
         carregarEventos();
     })
-    .catch(()=>alert('Não foi possível falar com o servidor.'));
+    .catch(()=>alert('Nao foi possivel falar com o servidor.'));
 }
 function montarSelectFinanceiro(){
     const atual=financeiroEventoSelect.value;
