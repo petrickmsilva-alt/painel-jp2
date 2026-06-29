@@ -64,6 +64,10 @@ app.register_blueprint(bp_financeiro)
 from eventos import bp_eventos
 app.register_blueprint(bp_eventos)
 
+# Registro do modulo de termos de fomento e planos de trabalho
+from fomentos import bp_fomentos
+app.register_blueprint(bp_fomentos)
+
 # Registro do módulo interno de carteira de investimentos
 from carteira import bp_carteira
 app.register_blueprint(bp_carteira)
