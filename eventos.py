@@ -335,6 +335,11 @@ def montar_where(args):
             filtros.append(f"{coluna} = %s")
             params.append(valor)
 
+    periodo_mes = args.get("periodo_mes", "").strip()
+    if re.fullmatch(r"\d{4}-\d{2}", periodo_mes):
+        filtros.append("DATE_FORMAT(data_inicio, '%%Y-%%m') = %s")
+        params.append(periodo_mes)
+
     busca = args.get("q", "").strip()
     if busca:
         filtros.append("(nome_evento LIKE %s OR cidade LIKE %s OR observacoes LIKE %s)")

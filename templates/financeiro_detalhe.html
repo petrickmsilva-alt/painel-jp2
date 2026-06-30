@@ -33,9 +33,10 @@ function dinheiro(v){return (Number(v)||0).toLocaleString('pt-BR',{style:'curren
 function numeroBR(v){return Number(String(v||'0').replace(/\./g,'').replace(',','.'))||0;}
 function formatarMoeda(i){let v=i.value.replace(/\D/g,''); v=(Number(v)/100).toFixed(2).replace('.',','); i.value=v.replace(/(\d)(\d{3})(\d{3}),/g,'$1.$2.$3,').replace(/(\d)(\d{3}),/g,'$1.$2,');}
 function iso(v){return v?String(v).split(' ')[0]:'';}
+function hojeLocal(){const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function dataBR(v){if(!v)return '-'; const p=String(v).split(' ')[0].split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:'-';}
 function classeStatus(s){return {'Quitado':'pill-green','Parcial':'pill-blue','Vencido':'pill-red','Vencendo':'pill-amber','Em aberto':'pill-gray'}[s]||'pill-gray';}
-function statusItem(i){if(i.status_pagamento)return i.status_pagamento; const saldo=Number(i.saldo_projetado)||0,pago=Number(i.total_pago)||0,prazo=iso(i.data_pgto),hoje=new Date().toISOString().slice(0,10); if(saldo<=0)return 'Quitado'; if(pago>0)return 'Parcial'; if(prazo&&prazo<hoje)return 'Vencido'; if(prazo){const d=(new Date(prazo+'T00:00:00')-new Date(hoje+'T00:00:00'))/86400000; if(d<=30)return 'Vencendo';} return 'Em aberto';}
+function statusItem(i){if(i.status_pagamento)return i.status_pagamento; const saldo=Number(i.saldo_projetado)||0,pago=Number(i.total_pago)||0,prazo=iso(i.data_pgto),hoje=hojeLocal(); if(saldo<=0)return 'Quitado'; if(pago>0)return 'Parcial'; if(prazo&&prazo<hoje)return 'Vencido'; if(prazo){const d=(new Date(prazo+'T00:00:00')-new Date(hoje+'T00:00:00'))/86400000; if(d<=30)return 'Vencendo';} return 'Em aberto';}
 function opts(id,valores){const el=document.getElementById(id); const atual=el.value; el.innerHTML='<option value="">Todos</option>'+[...new Set(valores.filter(Boolean))].sort().map(v=>`<option>${html(v)}</option>`).join(''); if([...el.options].some(o=>o.value===atual))el.value=atual;}
 function baseDetalhe(){const emp=filtroEmpresaDetalhe.value; return investimentos.filter(i=>!emp||i.empresa_nome===emp);}
 function listaDetalheFiltrada(){const credor=filtroCredorDetalhe.value,captador=filtroCaptadorDetalhe.value; return baseDetalhe().filter(i=>(!credor||i.nome_investidor===credor)&&(!captador||i.captador===captador));}
