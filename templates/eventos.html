@@ -338,6 +338,7 @@ const statusCores={'Autorizado':'#16a34a','Em Andamento':'#2563eb','Pendente':'#
 function alternarMenuLateral(){const r=document.body.classList.toggle('sidebar-collapsed');localStorage.setItem('jp2EventosSidebarCollapsed',r?'1':'0');}
 function h(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
 function dinheiro(v){return (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});}
+function hojeLocal(){const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function dataBR(v){if(!v)return '-'; const p=String(v).split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:'-';}
 function numeroBR(v){return Number(String(v||'0').replace(/\D/g,''))||0;}
 function numeroDecimal(v){return Number(String(v||'0').replace(/\./g,'').replace(',','.').replace(/[^\d.]/g,''))||0;}
@@ -348,19 +349,19 @@ function statusClass(s){return 's-'+statusEvento({status:s}).normalize('NFD').re
 function chipClass(s){return 'chip-'+statusEvento({status:s}).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-');}
 function campoStatusEvento(){return document.getElementById('status');}
 function statusSelecionado(){return statusEvento({status:campoStatusEvento()?.value});}
-function qs(){const p=new URLSearchParams(); [['uf',fUf.value],['regiao',fRegiao.value],['mes',fMes.value],['origem',fOrigem.value],['status',fStatus.value],['q',fBusca.value],['inicio',fInicio.value],['fim',fFim.value]].forEach(([k,v])=>{if(v)p.set(k,v)}); return p.toString();}
+function qs(){const p=new URLSearchParams(); [['uf',fUf.value],['regiao',fRegiao.value],['periodo_mes',fMes.value],['origem',fOrigem.value],['status',fStatus.value],['q',fBusca.value],['inicio',fInicio.value],['fim',fFim.value]].forEach(([k,v])=>{if(v)p.set(k,v)}); return p.toString();}
 function urlEventosComCache(extra=''){const p=new URLSearchParams(extra); p.set('_', Date.now()); return '/api/eventos?'+p.toString();}
 function opcoes(id, valores){document.getElementById(id).innerHTML='<option value="">Todos</option>'+[...new Set(valores.filter(Boolean))].sort().map(v=>`<option>${h(v)}</option>`).join('');}
 function atualizarMetricas(){
     const mesFiltro=fMes.value;
-    const mesAtual=mesFiltro || meses[new Date().getMonth()];
-    const baseMes=eventosCalendario.filter(e=>String(e.mes||'').toLowerCase()===String(mesAtual||'').toLowerCase());
-    mTotal.innerText=baseMes.length;
-    mValor.innerText=dinheiro(eventosCalendario.reduce((s,e)=>s+Number(e.valor_verba||0),0));
+    const mesAtual=mesFiltro || hojeLocal().slice(0,7);
+    const baseMes=filtrados.filter(e=>String(e.data_inicio||'').slice(0,7)===mesAtual);
+    mTotal.innerText=filtrados.length;
+    mValor.innerText=dinheiro(filtrados.reduce((s,e)=>s+Number(e.valor_verba||0),0));
     mValorMes.innerText=dinheiro(baseMes.reduce((s,e)=>s+Number(e.valor_verba||0),0));
-    mMesLabel.innerText=mesFiltro?`Valor de ${mesFiltro}`:'Valor do mes atual';
+    mMesLabel.innerText=mesFiltro?`Valor de ${rotuloPeriodoMes(mesFiltro)}`:'Valor do mes atual';
     mAndamento.innerText=filtrados.filter(e=>statusEvento(e)==='Em Andamento').length;
-    const hoje=new Date().toISOString().slice(0,10);
+    const hoje=hojeLocal();
     const prox=filtrados.find(e=>e.data_fim>=hoje);
     mProximo.innerText=prox?`${prox.cidade} - ${dataBR(prox.data_inicio)}`:'-';
 }
@@ -398,7 +399,9 @@ function montarSelectFinanceiro(){
     if(!financeiroEventoSelect.value && eventos[0]) financeiroEventoSelect.value=eventos[0].id;
     if(!custoEventoSelect.value && eventos[0]) custoEventoSelect.value=eventos[0].id;
 }
-function montarFiltros(base){opcoes('fUf',base.map(e=>e.uf)); opcoes('fRegiao',base.map(e=>e.regiao)); opcoes('fMes',base.map(e=>e.mes)); opcoes('fOrigem',base.map(e=>e.origem)); opcoes('fStatus',STATUS_CANONICOS);}
+function rotuloPeriodoMes(valor){const [ano,mes]=String(valor||'').split('-'); return ano&&mes?`${mesesTitulo[Number(mes)-1]||mes}/${ano}`:valor;}
+function montarFiltroMes(base){const atual=fMes.value; const periodos=[...new Set(base.map(e=>String(e.data_inicio||'').slice(0,7)).filter(v=>/^\d{4}-\d{2}$/.test(v)))].sort().reverse(); fMes.innerHTML='<option value="">Todos</option>'+periodos.map(v=>`<option value="${v}">${h(rotuloPeriodoMes(v))}</option>`).join(''); if(periodos.includes(atual))fMes.value=atual;}
+function montarFiltros(base){opcoes('fUf',base.map(e=>e.uf)); opcoes('fRegiao',base.map(e=>e.regiao)); montarFiltroMes(base); opcoes('fOrigem',base.map(e=>e.origem)); opcoes('fStatus',STATUS_CANONICOS);}
 function aplicarFiltros(){carregarEventos();}
 function limparFiltros(){['fUf','fRegiao','fMes','fOrigem','fStatus','fBusca','fInicio','fFim'].forEach(id=>document.getElementById(id).value=''); carregarEventos();}
 function renderTabela(){
@@ -535,7 +538,7 @@ function atualizarMetricasCalendario(){
     calQtd.innerText=lista.length;
     calValor.innerText=dinheiro(lista.reduce((s,e)=>s+Number(e.valor_verba||0),0));
     calPeriodo.innerText=calendarioAno?String(ano):`${mesesTitulo[mes]} ${ano}`;
-    const hoje=new Date().toISOString().slice(0,10);
+    const hoje=hojeLocal();
     const prox=lista.find(e=>e.data_fim>=hoje)||lista[0];
     calProximo.innerText=prox?`${dataBR(prox.data_inicio)} - ${prox.nome_evento}`:'-';
 }
