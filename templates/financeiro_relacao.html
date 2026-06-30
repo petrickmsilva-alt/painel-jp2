@@ -171,20 +171,21 @@ function html(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&
 function dinheiro(v){return (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
 function dataBR(v){if(!v)return '-'; const p=String(v).split(' ')[0].split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:'-';}
 function iso(v){return v?String(v).split(' ')[0]:'';}
+function hojeLocal(){const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function numeroBR(v){return Number(String(v||'0').replace(/\./g,'').replace(',','.'))||0;}
 function formatarMoeda(i){let v=i.value.replace(/\D/g,''); v=(Number(v)/100).toFixed(2).replace('.',','); i.value=v.replace(/(\d)(\d{3})(\d{3}),/g,'$1.$2.$3,').replace(/(\d)(\d{3}),/g,'$1.$2,');}
 function dividaHoje(i){return Number(i.valor_divida_day_base !== undefined ? i.valor_divida_day_base : (i.valor_divida_day || 0)) || 0;}
 function futuroResumo(i){return Number(i.valor_projetado_base !== undefined ? i.valor_projetado_base : (i.valor_divida_futuro || 0)) || 0;}
-function diasPrazo(i){const prazo=iso(i.data_pgto); if(!prazo)return '-'; const hoje=new Date().toISOString().slice(0,10); const dias=Math.ceil((new Date(prazo+'T00:00:00')-new Date(hoje+'T00:00:00'))/86400000); if(dias<0)return `${Math.abs(dias)} atraso`; if(dias===0)return 'Hoje'; return `${dias} dias`;}
+function diasPrazo(i){const prazo=iso(i.data_pgto); if(!prazo)return '-'; const hoje=hojeLocal(); const dias=Math.ceil((new Date(prazo+'T00:00:00')-new Date(hoje+'T00:00:00'))/86400000); if(dias<0)return `${Math.abs(dias)} atraso`; if(dias===0)return 'Hoje'; return `${dias} dias`;}
 function classeStatus(s){return {'Quitado':'pill-green','Parcial':'pill-blue','Vencido':'pill-red','Vencendo':'pill-amber','Em aberto':'pill-gray'}[s]||'pill-gray';}
-function statusItem(i){if(i.status_pagamento)return [i.status_pagamento,classeStatus(i.status_pagamento)]; const saldo=Number(i.saldo_projetado)||0,pago=Number(i.total_pago)||0; const prazo=iso(i.data_pgto); const hoje=new Date().toISOString().slice(0,10); if(saldo<=0)return ['Quitado','pill-green']; if(pago>0)return ['Parcial','pill-blue']; if(prazo && prazo<hoje)return ['Vencido','pill-red']; if(prazo){const d=(new Date(prazo+'T00:00:00')-new Date(hoje+'T00:00:00'))/86400000; if(d<=30)return ['Vencendo','pill-amber'];} return ['Em aberto','pill-gray'];}
+function statusItem(i){if(i.status_pagamento)return [i.status_pagamento,classeStatus(i.status_pagamento)]; const saldo=Number(i.saldo_projetado)||0,pago=Number(i.total_pago)||0; const prazo=iso(i.data_pgto); const hoje=hojeLocal(); if(saldo<=0)return ['Quitado','pill-green']; if(pago>0)return ['Parcial','pill-blue']; if(prazo && prazo<hoje)return ['Vencido','pill-red']; if(prazo){const d=(new Date(prazo+'T00:00:00')-new Date(hoje+'T00:00:00'))/86400000; if(d<=30)return ['Vencendo','pill-amber'];} return ['Em aberto','pill-gray'];}
 function opts(id,valores){const el=document.getElementById(id); if(!el)return; const atual=el.value; el.innerHTML='<option value="">Todos</option>'+[...new Set(valores.filter(Boolean))].sort().map(v=>`<option>${html(v)}</option>`).join(''); if([...el.options].some(o=>o.value===atual))el.value=atual;}
 function baseEmpresa(){const emp=filtroEmpresa.value; return investimentos.filter(i=>!emp||i.empresa_nome===emp);}
 function atualizarOpcoesRelacao(){const base=baseEmpresa(); opts('filtroTipo',base.map(i=>i.tipo_recurso)); opts('filtroFinalidade',base.map(i=>i.finalidade)); opts('filtroCredor',base.map(i=>i.nome_investidor)); opts('filtroCaptador',base.map(i=>i.captador));}
 function atualizarResumo(){const total=(campo)=>listaFiltrada.reduce((s,i)=>s+Number(campo(i)||0),0); resumoQtd.innerText=listaFiltrada.length; resumoPrincipal.innerText=dinheiro(total(i=>i.valor_inicial)); resumoHoje.innerText=dinheiro(total(dividaHoje)); resumoFuturo.innerText=dinheiro(total(futuroResumo));}
 function carregarEmpresas(){return fetch('/api/empresas').then(r=>r.json()).then(d=>{empresas=d.dados||[]; editEmpresa.innerHTML=empresas.map(e=>`<option value="${e.id}">${html(e.nome)}</option>`).join('');});}
 function carregarRelacao(){fetch('/api/resumo-investimentos').then(r=>r.json()).then(data=>{investimentos=Array.isArray(data.dados)?data.dados:[]; opts('filtroEmpresa',investimentos.map(i=>i.empresa_nome)); atualizarOpcoesRelacao(); listaFiltrada=investimentos; renderTabela();});}
-function aplicarFiltros(){const emp=filtroEmpresa.value,tipo=filtroTipo.value,fin=filtroFinalidade.value,st=filtroStatus.value,credor=filtroCredor.value,captador=filtroCaptador.value,busca=filtroBusca.value.toLowerCase(),ini=filtroInicio.value,fim=filtroFim.value; listaFiltrada=investimentos.filter(i=>{const s=statusItem(i)[0]; const texto=`${i.nome_investidor||''} ${i.captador||''} ${i.observacoes||''} ${i.empresa_nome||''}`.toLowerCase(); return (!emp||i.empresa_nome===emp)&&(!tipo||i.tipo_recurso===tipo)&&(!fin||i.finalidade===fin)&&(!st||s===st)&&(!credor||i.nome_investidor===credor)&&(!captador||i.captador===captador)&&(!busca||texto.includes(busca))&&(!ini||iso(i.data_inicio)>=ini)&&(!fim||iso(i.data_pgto)<=fim);}); atualizarOpcoesRelacao(); renderTabela();}
+function aplicarFiltros(){const emp=filtroEmpresa.value,tipo=filtroTipo.value,fin=filtroFinalidade.value,st=filtroStatus.value,credor=filtroCredor.value,captador=filtroCaptador.value,busca=filtroBusca.value.toLowerCase(),ini=filtroInicio.value,fim=filtroFim.value; listaFiltrada=investimentos.filter(i=>{const s=statusItem(i)[0],dataInicio=iso(i.data_inicio),dataPgto=iso(i.data_pgto); const texto=`${i.nome_investidor||''} ${i.captador||''} ${i.observacoes||''} ${i.empresa_nome||''}`.toLowerCase(); return (!emp||i.empresa_nome===emp)&&(!tipo||i.tipo_recurso===tipo)&&(!fin||i.finalidade===fin)&&(!st||s===st)&&(!credor||i.nome_investidor===credor)&&(!captador||i.captador===captador)&&(!busca||texto.includes(busca))&&(!ini||(dataInicio&&dataInicio>=ini))&&(!fim||(dataPgto&&dataPgto<=fim));}); atualizarOpcoesRelacao(); renderTabela();}
 function limparFiltros(){['filtroEmpresa','filtroTipo','filtroFinalidade','filtroStatus','filtroCredor','filtroCaptador','filtroBusca','filtroInicio','filtroFim','filtroValorMin'].forEach(id=>{const el=document.getElementById(id); if(el)el.value='';}); atualizarOpcoesRelacao(); listaFiltrada=investimentos; renderTabela();}
 function renderTabela(){
     const tb=corpoRelacao;
@@ -201,7 +202,7 @@ function renderTabela(){
     atualizarResumo();
     if(listaFiltrada.length){tabelaRelacao=$('#tabelaRelacao').DataTable({pageLength:25,deferRender:true,searchDelay:350,language:{sSearch:'Buscar:',sLengthMenu:'Mostrar _MENU_ linhas',sInfo:'Mostrando _START_ até _END_ de _TOTAL_',sInfoEmpty:'Nenhum registro encontrado',sZeroRecords:'Nenhum registro encontrado',oPaginate:{sNext:'Próximo',sPrevious:'Anterior'}}});}
 }
-function abrirPagamento(i){pagamentoInvestimentoId.value=i.id; pagamentoTitulo.innerText=`${i.empresa_nome||'-'} - ${i.nome_investidor||'-'}`; dataPagamento.value=new Date().toISOString().slice(0,10); valorPagamento.value=''; obsPagamento.value=''; bootstrap.Modal.getOrCreateInstance(modalPagamento).show();}
+function abrirPagamento(i){pagamentoInvestimentoId.value=i.id; pagamentoTitulo.innerText=`${i.empresa_nome||'-'} - ${i.nome_investidor||'-'}`; dataPagamento.value=hojeLocal(); valorPagamento.value=''; obsPagamento.value=''; bootstrap.Modal.getOrCreateInstance(modalPagamento).show();}
 function abrirPagamentosDetalhados(i){
     pagamentosDetalheTitulo.innerText=`${i.importacao_id||i.id} - ${i.empresa_nome||'-'} - ${i.nome_investidor||'-'}`;
     corpoPagamentosDetalhados.innerHTML='<tr><td colspan="3" class="text-center text-secondary py-4">Carregando pagamentos...</td></tr>';
@@ -248,7 +249,7 @@ function abrirPagamentosDetalhados(i){
 function abrirEditarPagamentoExtrato(id, investimentoId, data, valor, obs){
     editPagamentoId.value=id;
     editPagamentoInvestimentoId.value=investimentoId;
-    editPagamentoData.value=data||new Date().toISOString().slice(0,10);
+    editPagamentoData.value=data||hojeLocal();
     editPagamentoValor.value=dinheiro(valor).replace('R$ ','');
     editPagamentoObs.value=decodeURIComponent(obs||'');
     bootstrap.Modal.getOrCreateInstance(modalEditarPagamento).show();

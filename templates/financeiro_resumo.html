@@ -29,9 +29,10 @@
 let resumoExportacao={};
 function dinheiro(v){return (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
 function iso(v){return v?String(v).split(' ')[0]:'';}
+function hojeLocal(){const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function futuroResumo(item){return Number(item.valor_projetado_base !== undefined ? item.valor_projetado_base : (item.valor_divida_futuro || 0)) || 0;}
 function dividaHoje(item){return Number(item.valor_divida_day_base !== undefined ? item.valor_divida_day_base : (item.valor_divida_day || 0)) || 0;}
-function statusItem(i){if(i.status_pagamento)return i.status_pagamento; const saldo=Number(i.saldo_projetado)||0,pago=Number(i.total_pago)||0,prazo=iso(i.data_pgto),hoje=new Date().toISOString().slice(0,10); if(saldo<=0)return 'Quitado'; if(pago>0)return 'Parcial'; if(prazo&&prazo<hoje)return 'Vencido'; if(prazo){const d=(new Date(prazo+'T00:00:00')-new Date(hoje+'T00:00:00'))/86400000; if(d<=30)return 'Vencendo';} return 'Em aberto';}
+function statusItem(i){if(i.status_pagamento)return i.status_pagamento; const saldo=Number(i.saldo_projetado)||0,pago=Number(i.total_pago)||0,prazo=iso(i.data_pgto),hoje=hojeLocal(); if(saldo<=0)return 'Quitado'; if(pago>0)return 'Parcial'; if(prazo&&prazo<hoje)return 'Vencido'; if(prazo){const d=(new Date(prazo+'T00:00:00')-new Date(hoje+'T00:00:00'))/86400000; if(d<=30)return 'Vencendo';} return 'Em aberto';}
 function add(map,key,item){key=key||'-'; if(!map[key])map[key]={qtd:0,valor:0,hoje:0,futuro:0}; map[key].qtd++; map[key].valor+=Number(item.valor_inicial)||0; map[key].hoje+=dividaHoje(item); map[key].futuro+=futuroResumo(item);}
 function linhasOrdenadas(map,campo='valor'){return Object.entries(map).sort((a,b)=>b[1][campo]-a[1][campo]);}
 function renderTabela(id,map){document.getElementById(id).innerHTML='<tr><th>Nome</th><th>Qtd</th><th>Principal</th><th>Pgto hoje</th><th>Futuro</th></tr>'+linhasOrdenadas(map).map(([k,v])=>`<tr><td>${k}</td><td>${v.qtd}</td><td class="money">${dinheiro(v.valor)}</td><td class="money">${dinheiro(v.hoje)}</td><td class="money">${dinheiro(v.futuro)}</td></tr>`).join('');}
