@@ -72,6 +72,10 @@ app.register_blueprint(bp_fomentos)
 from carteira import bp_carteira
 app.register_blueprint(bp_carteira)
 
+# Registro do modulo de atas de reuniao
+from atas import bp_atas
+app.register_blueprint(bp_atas)
+
 # DIRETÃ“RIO LOCAL DE ARMAZENAMENTO
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
