@@ -1,6 +1,6 @@
 from datetime import date
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 
 from database import get_db_connection
 
@@ -112,8 +112,9 @@ def nova():
             flash("Informe o título e a data da reunião.")
             return render_template("ata_form.html", ata=dados, status_validos=STATUS_VALIDOS, hoje=date.today().isoformat())
         usuario = session.get("nome_exibicao") or session.get("usuario_logado") or "Sistema"
-        conn = get_db_connection()
+        conn = None
         try:
+            conn = get_db_connection()
             with conn.cursor() as cur:
                 cur.execute(
                     """
@@ -123,14 +124,24 @@ def nova():
                      criado_por, atualizado_por)
                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                     """,
-                    tuple(dados.values()) + (usuario, usuario),
+                    (dados["titulo"], dados["data_reuniao"], dados["horario_inicio"], dados["horario_fim"], dados["local_reuniao"], dados["participantes"], dados["pauta"], dados["resumo"], dados["deliberacoes"], dados["encaminhamentos"], dados["responsaveis"], dados["prazo"], dados["status"], usuario, usuario),
                 )
                 ata_id = cur.lastrowid
                 numero = f"ATA-{str(dados['data_reuniao'])[:4]}-{ata_id:04d}"
                 cur.execute("UPDATE atas_reuniao SET numero_ata=%s WHERE id=%s", (numero, ata_id))
+            conn.commit()
+        except Exception as exc:
+            print(f"ERRO AO SALVAR ATA: {type(exc).__name__}: {exc}", flush=True)
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify({"status": "erro", "mensagem": "Não foi possível salvar a ata no banco de dados."}), 500
+            flash("Não foi possível salvar a ata. Tente novamente.")
+            return render_template("ata_form.html", ata=dados, status_validos=STATUS_VALIDOS, hoje=date.today().isoformat()), 500
         finally:
-            conn.close()
+            if conn:
+                conn.close()
         flash("Ata criada com sucesso.")
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"status": "sucesso", "url": url_for("atas.detalhe", ata_id=ata_id)})
         return redirect(url_for("atas.detalhe", ata_id=ata_id))
     return render_template("ata_form.html", ata={}, status_validos=STATUS_VALIDOS, hoje=date.today().isoformat())
 
@@ -175,8 +186,9 @@ def editar(ata_id):
             dados["id"], dados["numero_ata"] = ata_id, ata.get("numero_ata")
             return render_template("ata_form.html", ata=dados, status_validos=STATUS_VALIDOS, hoje=date.today().isoformat())
         usuario = session.get("nome_exibicao") or session.get("usuario_logado") or "Sistema"
-        conn = get_db_connection()
+        conn = None
         try:
+            conn = get_db_connection()
             with conn.cursor() as cur:
                 cur.execute(
                     """
@@ -185,11 +197,22 @@ def editar(ata_id):
                     deliberacoes=%s, encaminhamentos=%s, responsaveis=%s, prazo=%s, status=%s,
                     atualizado_por=%s WHERE id=%s
                     """,
-                    tuple(dados.values()) + (usuario, ata_id),
+                    (dados["titulo"], dados["data_reuniao"], dados["horario_inicio"], dados["horario_fim"], dados["local_reuniao"], dados["participantes"], dados["pauta"], dados["resumo"], dados["deliberacoes"], dados["encaminhamentos"], dados["responsaveis"], dados["prazo"], dados["status"], usuario, ata_id),
                 )
+            conn.commit()
+        except Exception as exc:
+            print(f"ERRO AO ATUALIZAR ATA {ata_id}: {type(exc).__name__}: {exc}", flush=True)
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify({"status": "erro", "mensagem": "Não foi possível atualizar a ata no banco de dados."}), 500
+            flash("Não foi possível atualizar a ata. Tente novamente.")
+            dados["id"], dados["numero_ata"] = ata_id, ata.get("numero_ata")
+            return render_template("ata_form.html", ata=dados, status_validos=STATUS_VALIDOS, hoje=date.today().isoformat()), 500
         finally:
-            conn.close()
+            if conn:
+                conn.close()
         flash("Ata atualizada com sucesso.")
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify({"status": "sucesso", "url": url_for("atas.detalhe", ata_id=ata_id)})
         return redirect(url_for("atas.detalhe", ata_id=ata_id))
     return render_template("ata_form.html", ata=ata, status_validos=STATUS_VALIDOS, hoje=date.today().isoformat())
 
