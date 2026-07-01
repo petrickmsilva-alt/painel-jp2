@@ -524,7 +524,7 @@ def sincronizar_pagamentos_importados(cur):
     )
 
 
-def substituir_pagamentos_importados_excel(cur, investimentos_por_importacao, pagamentos_detalhados):
+def _substituir_pagamentos_importados_excel_legado(cur, investimentos_por_importacao, pagamentos_detalhados):
     total_lancamentos = 0
     total_valor = Decimal("0")
 
