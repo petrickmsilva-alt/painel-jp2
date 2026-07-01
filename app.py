@@ -76,6 +76,10 @@ app.register_blueprint(bp_carteira)
 from atas import bp_atas
 app.register_blueprint(bp_atas)
 
+# Registro do gerenciador premium de tarefas
+from tarefas import bp_tarefas
+app.register_blueprint(bp_tarefas)
+
 # DIRETÃ“RIO LOCAL DE ARMAZENAMENTO
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
