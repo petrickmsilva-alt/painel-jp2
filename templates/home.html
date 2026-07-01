@@ -26,25 +26,25 @@
 <div class="shell" id="shell">
     <button class="toggle" type="button" onclick="alternarMenu()" title="Ocultar menu"><i class="bi bi-layout-sidebar-inset"></i></button>
     <aside class="sidebar">
-        <div class="brand-kicker">Console de gestao</div>
-        <div class="brand-title">Central executiva</div>
-        <a class="nav-link" href="#status-home"><i class="bi bi-bar-chart-line"></i> Consultar status</a>
+        <div class="brand-kicker">CONSOLE DE GESTÃO</div>
+        <div class="brand-title">CENTRAL EXECUTIVA</div>
+        <a class="nav-link" href="#status-home"><i class="bi bi-bar-chart-line"></i> CONSULTAR STATUS</a>
         <div class="brand-line"></div>
-        <a class="nav-link active" href="/"><i class="bi bi-house"></i> Home executiva</a>
-        <div class="nav-title">Modulos de arquivo</div>
-        <a class="nav-link" href="/painel-arquivos?bloco=instituto"><i class="bi bi-building"></i> Instituto (IBDTEC)</a>
-        <a class="nav-link" href="/painel-arquivos?bloco=jp2_business"><i class="bi bi-briefcase"></i> JP2 Business</a>
-        <div class="nav-title">Gestao</div>
-        <a class="nav-link" href="/contatos"><i class="bi bi-person-lines-fill"></i> Agenda telefonica</a>
-        <a class="nav-link" href="/compromissos"><i class="bi bi-calendar2-check"></i> Agendar compromisso</a>
-        <a class="nav-link" href="/atas"><i class="bi bi-journal-text"></i> Atas de reuniao</a>
-        <a class="nav-link" href="/eventos"><i class="bi bi-calendar3"></i> Cadastro de eventos</a>
-        <a class="nav-link" href="/financeiro"><i class="bi bi-cash-coin"></i> Invest e emprestimos</a>
-        <a class="nav-link" href="/carteira"><i class="bi bi-graph-up-arrow"></i> Investimento B3</a>
-        <a class="nav-link" href="/admin/usuarios"><i class="bi bi-people"></i> Gestao de socios</a>
-        <a class="nav-link" href="/admin/logs"><i class="bi bi-shield-check"></i> Auditoria (logs)</a>
-        <div class="nav-title">Ecossistema digital</div>
-        <a class="nav-link" href="/painel-arquivos?bloco=sites_jp2"><i class="bi bi-globe2"></i> Sites JP2Business</a>
+        <a class="nav-link active" href="/"><i class="bi bi-house"></i> HOME EXECUTIVA</a>
+        <div class="nav-title">MODULOS DE ARQUIVO</div>
+        <a class="nav-link" href="/painel-arquivos?bloco=instituto"><i class="bi bi-building"></i> INSTITUTO (IBDTEC)</a>
+        <a class="nav-link" href="/painel-arquivos?bloco=jp2_business"><i class="bi bi-briefcase"></i> JP2 BUSINESS</a>
+        <div class="nav-title">GESTÃO</div>
+        <a class="nav-link" href="/contatos"><i class="bi bi-person-lines-fill"></i> AGENDA TELEFÔNICA</a>
+        <a class="nav-link" href="/compromissos"><i class="bi bi-calendar2-check"></i> AGENDAR COMPROMISSO</a>
+        <a class="nav-link" href="/atas"><i class="bi bi-journal-text"></i> GESTÃO DE ATAS</a>
+        <a class="nav-link" href="/eventos"><i class="bi bi-calendar3"></i> GESTÃO DE EVENTOS</a>
+        <a class="nav-link" href="/financeiro"><i class="bi bi-cash-coin"></i> INVEST E EMPRESTIMOS</a>
+        <a class="nav-link" href="/carteira"><i class="bi bi-graph-up-arrow"></i> INVESTIMENTO B3</a>
+        <a class="nav-link" href="/admin/usuarios"><i class="bi bi-people"></i> GESTÃO DE SÓCIOS</a>
+        <a class="nav-link" href="/admin/logs"><i class="bi bi-shield-check"></i> AUDITORIA (LOGS)</a>
+        <div class="nav-title">ECOSSISTEMA DIGITAL</div>
+        <a class="nav-link" href="/painel-arquivos?bloco=sites_jp2"><i class="bi bi-globe2"></i> SITES JP2BUSINESS</a>
         <div class="brand-line"></div>
         <a class="nav-link" href="/logout"><i class="bi bi-box-arrow-right"></i> Sair</a>
     </aside>
@@ -55,7 +55,7 @@
                 <div>
                     <div class="kicker">Home executiva</div>
                     <h1>Painel JP2 Business</h1>
-                    <div class="muted">Visao consolidada de arquivos, eventos, investimentos e carteira.</div>
+                    <div class="muted">Visão consolidada de arquivos, eventos, investimentos e carteira.</div>
                 </div>
             </div>
             <div class="actions">
@@ -69,8 +69,8 @@
 
         <section class="metrics" id="status-home">
             <div class="metric"><span>Investido em eventos</span><strong id="mInvestido">R$ 0,00</strong><small>Principal cadastrado</small></div>
-            <div class="metric"><span>Quitacao hoje</span><strong id="mHoje">R$ 0,00</strong><small>Divida na data atual</small></div>
-            <div class="metric"><span>Futuro projetado</span><strong id="mFuturo">R$ 0,00</strong><small>Projecao ate vencimento</small></div>
+            <div class="metric"><span>Quitação hoje</span><strong id="mHoje">R$ 0,00</strong><small>Dívida na data atual</small></div>
+            <div class="metric"><span>Futuro projetado</span><strong id="mFuturo">R$ 0,00</strong><small>Projeção até vencimento</small></div>
             <div class="metric"><span>Eventos no ano</span><strong id="mEventos">0</strong><small id="mValorEventos">R$ 0,00</small></div>
             <div class="metric"><span>Carteira B3</span><strong id="mB3">R$ 0,00</strong><small id="mB3Ativos">0 ativos</small></div>
         </section>
@@ -98,7 +98,7 @@
 
             <div class="panel">
                 <div class="panel-head">
-                    <div><div class="kicker">Cadastro de eventos</div><h2>Calendario anual</h2></div>
+                    <div><div class="kicker">Cadastro de eventos</div><h2>Calendário anual</h2></div>
                     <a class="btnx" href="/eventos#agenda"><i class="bi bi-calendar-week"></i> Agenda</a>
                 </div>
                 <div class="event-board" id="eventBoard"><div class="loading">Carregando eventos...</div></div>
@@ -110,9 +110,9 @@
                     <div><div class="kicker">Investimento B3</div><h2>Carteira executiva</h2></div>
                     <a class="btnx" href="/carteira"><i class="bi bi-arrow-up-right-square"></i> Abrir</a>
                 </div>
-                <div class="b3-card"><small>Patrimonio cadastrado</small><strong id="b3Total">R$ 0,00</strong><span id="b3Info">0 ativos acompanhados</span></div>
+                <div class="b3-card"><small>Patrimônio cadastrado</small><strong id="b3Total">R$ 0,00</strong><span id="b3Info">0 ativos acompanhados</span></div>
                 <div class="recommend">
-                    <div class="muted">Sugestao do motor interno</div>
+                    <div class="muted">Sugestão do motor interno</div>
                     <div class="ticker" id="b3Ticker">-</div>
                     <div id="b3Motivo" class="muted">Aguardando dados da carteira.</div>
                 </div>
