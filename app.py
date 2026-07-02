@@ -80,6 +80,10 @@ app.register_blueprint(bp_atas)
 from tarefas import bp_tarefas
 app.register_blueprint(bp_tarefas)
 
+# Central de consultoria para prefeituras e projetos de turismo
+from consultoria import bp_consultoria
+app.register_blueprint(bp_consultoria)
+
 # DIRETÃ“RIO LOCAL DE ARMAZENAMENTO
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
