@@ -1,0 +1,24 @@
+MÓDULO CONSULTORIA MUNICIPAL — IBDTEC
+
+Arquivos deste pacote:
+- app.py
+- consultoria.py
+- templates/home.html
+- templates/layout_consultoria.html
+- templates/consultoria_dashboard.html
+- templates/consultoria_municipio_form.html
+- templates/consultoria_municipio_detalhe.html
+- templates/consultoria_projeto_form.html
+- templates/consultoria_projeto_detalhe.html
+
+PUBLICAÇÃO
+1. Envie os arquivos ao GitHub preservando a pasta templates.
+2. Faça o deploy normal no Render.
+3. Acesse /consultoria após entrar no painel.
+4. As tabelas são criadas automaticamente no MySQL da HostGator no primeiro acesso.
+
+O módulo não armazena senhas gov.br e não protocola atos em nome da Prefeitura.
+Os links abrem os portais oficiais para o agente público autorizado concluir o ato.
+O checklist nacional usa como referência a Portaria MTur nº 1/2026, já considerando
+as revogações da Portaria MTur nº 5/2026. Critérios estaduais e regras específicas
+de cada programa/emenda devem ser confirmados antes de declarar um dossiê apto.
