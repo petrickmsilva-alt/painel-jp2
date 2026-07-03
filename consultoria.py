@@ -16,9 +16,17 @@ STATUS_ITEM = ("Pendente", "Em andamento", "Concluído", "Não se aplica")
 RISCOS = ("Baixo", "Médio", "Alto", "Crítico")
 
 CHECKLIST_PADRAO = (
-    ("Diagnóstico", "Confirmar CNPJ, gestor e unidade responsável da Prefeitura", 1),
-    ("Diagnóstico", "Formalizar autorização e escopo da consultoria", 1),
-    ("Diagnóstico", "Validar regularidade e capacidade técnica do proponente", 1),
+    ("Diagnóstico", "Confirmar programa federal que admite OSC como beneficiária direta", 1),
+    ("Diagnóstico", "Confirmar indicação da emenda para o CNPJ do IBDTEC", 1),
+    ("Diagnóstico", "Validar cadastro da OSC e dos dirigentes no Transferegov", 1),
+    ("Diagnóstico", "Estatuto registrado compatível com o objeto da proposta", 1),
+    ("Diagnóstico", "Ata registrada e mandato vigente da Diretoria", 1),
+    ("Diagnóstico", "Regularizar Conselho Fiscal: três titulares e respectivos suplentes", 1),
+    ("Diagnóstico", "Comprovar no mínimo três anos de existência e experiência prévia", 1),
+    ("Diagnóstico", "Certidões fiscais, trabalhistas e de regularidade válidas", 1),
+    ("Diagnóstico", "Declarações de inexistência de impedimentos da OSC e dirigentes", 1),
+    ("Diagnóstico", "Escrituração contábil, balanço e prestação de contas institucional", 1),
+    ("Mapa/SISMAPA", "Definir município anfitrião e obter anuência institucional", 1),
     ("Mapa/SISMAPA", "Normativo da estrutura municipal com órgão responsável pelo turismo", 1),
     ("Mapa/SISMAPA", "LOA e QDD vigentes com dotação destinada ao turismo", 1),
     ("Mapa/SISMAPA", "Ao menos um prestador obrigatório regular no Cadastur", 1),
@@ -30,6 +38,7 @@ CHECKLIST_PADRAO = (
     ("Mapa/SISMAPA", "Critérios adicionais do Estado e declaração da IGR para renovação", 1),
     ("Captação", "Identificar emenda, parlamentar, programa e janela vigente", 1),
     ("Captação", "Confirmar que o objeto e o proponente são elegíveis no programa", 1),
+    ("Captação", "Registrar CNPJ do IBDTEC como beneficiário indicado e ordem de prioridade", 1),
     ("Proposta", "Comprovar tradição, interesse turístico e histórico do evento", 1),
     ("Proposta", "Definir objeto, justificativa, público, resultados e indicadores", 1),
     ("Proposta", "Validar gratuidade e restrições do instrumento vigente", 1),
@@ -81,6 +90,28 @@ def garantir_schema():
                 atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 INDEX idx_consultoria_municipio (uf,nome), INDEX idx_consultoria_validade (validade_mapa)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4""")
+            cur.execute("""CREATE TABLE IF NOT EXISTS consultoria_entidade (
+                id INT AUTO_INCREMENT PRIMARY KEY, razao_social VARCHAR(220) NOT NULL, nome_fantasia VARCHAR(120),
+                cnpj VARCHAR(20) NOT NULL, natureza_juridica VARCHAR(120), data_abertura DATE NULL,
+                cnae_principal VARCHAR(220), presidente VARCHAR(180), mandato_inicio DATE NULL, mandato_fim DATE NULL,
+                situacao_cnpj VARCHAR(30), cadastro_transferegov VARCHAR(30) DEFAULT 'Não verificado',
+                estatuto_registrado VARCHAR(30) DEFAULT 'Sim', ata_registrada VARCHAR(30) DEFAULT 'Sim',
+                experiencia_comprovada VARCHAR(30) DEFAULT 'Pendente', certidoes VARCHAR(30) DEFAULT 'Pendente',
+                contabilidade VARCHAR(30) DEFAULT 'Pendente', governanca VARCHAR(30) DEFAULT 'Pendente',
+                impedimentos VARCHAR(30) DEFAULT 'Não verificado',
+                observacoes LONGTEXT, atualizado_por VARCHAR(120), atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4""")
+            cur.execute("SELECT id FROM consultoria_entidade LIMIT 1")
+            if not cur.fetchone():
+                cur.execute("""INSERT INTO consultoria_entidade
+                    (razao_social,nome_fantasia,cnpj,natureza_juridica,data_abertura,cnae_principal,presidente,
+                     mandato_inicio,mandato_fim,situacao_cnpj,estatuto_registrado,ata_registrada,governanca,observacoes,atualizado_por)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    ("IBDTEC-INSTITUTO BRASILEIRO DE DESENVOLVIMENTO E TECNOLOGIA", "IBDTEC",
+                     "20.506.185/0001-18", "399-9 - Associação Privada", "2014-06-16",
+                     "94.93-6-00 - Atividades de organizações associativas ligadas à cultura e à arte",
+                     "Francisco Ramos Peixoto Júnior", "2026-03-02", "2030-03-01", "Ativa", "Sim", "Sim", "Pendente",
+                     "Perfil conferido em 02/07/2026. PENDÊNCIA: o art. 30 do Estatuto exige Conselho Fiscal com 3 membros e respectivos suplentes; a Ata apresentada elege apenas 1 conselheiro fiscal.", usuario_atual()))
             cur.execute("""CREATE TABLE IF NOT EXISTS consultoria_projetos (
                 id INT AUTO_INCREMENT PRIMARY KEY, municipio_id INT NOT NULL, titulo VARCHAR(220) NOT NULL,
                 objeto LONGTEXT, data_evento_inicio DATE NULL, data_evento_fim DATE NULL, local_evento VARCHAR(220),
@@ -118,6 +149,24 @@ def garantir_schema():
 def registrar(cur, acao, projeto_id=None, municipio_id=None, detalhes=None):
     cur.execute("INSERT INTO consultoria_historico (projeto_id,municipio_id,acao,detalhes,usuario) VALUES (%s,%s,%s,%s,%s)",
                 (projeto_id, municipio_id, acao, detalhes, usuario_atual()))
+
+
+@bp_consultoria.route("/instituto", methods=["GET", "POST"])
+def instituto():
+    bloqueio = login_obrigatorio()
+    if bloqueio: return bloqueio
+    garantir_schema(); conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM consultoria_entidade ORDER BY id LIMIT 1"); entidade = cur.fetchone()
+            if request.method == "POST":
+                campos = ("cadastro_transferegov","experiencia_comprovada","certidoes","contabilidade","governanca","impedimentos","observacoes")
+                valores = tuple(request.form.get(c, "").strip() or None for c in campos)
+                cur.execute("UPDATE consultoria_entidade SET cadastro_transferegov=%s,experiencia_comprovada=%s,certidoes=%s,contabilidade=%s,governanca=%s,impedimentos=%s,observacoes=%s,atualizado_por=%s WHERE id=%s", valores + (usuario_atual(), entidade["id"]))
+                flash("Dossiê institucional atualizado.")
+                return redirect(url_for("consultoria.instituto"))
+    finally: conn.close()
+    return render_template("consultoria_instituto.html", entidade=entidade)
 
 
 def moeda(valor):
