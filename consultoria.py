@@ -82,7 +82,7 @@ def garantir_schema():
         with conn.cursor() as cur:
             cur.execute("""CREATE TABLE IF NOT EXISTS consultoria_municipios (
                 id INT AUTO_INCREMENT PRIMARY KEY, nome VARCHAR(180) NOT NULL, uf CHAR(2) NOT NULL,
-                codigo_ibge VARCHAR(10), cnpj VARCHAR(20), prefeito VARCHAR(180), orgao_turismo VARCHAR(220),
+                codigo_ibge VARCHAR(10), populacao INT NULL, cnpj VARCHAR(20), prefeito VARCHAR(180), orgao_turismo VARCHAR(220),
                 gestor_nome VARCHAR(180), gestor_email VARCHAR(180), gestor_telefone VARCHAR(30),
                 regiao_turistica VARCHAR(180), igr VARCHAR(180), situacao_mapa VARCHAR(50) DEFAULT 'Não verificado',
                 validade_mapa DATE NULL, categoria_mapa VARCHAR(20), observacoes LONGTEXT,
@@ -90,6 +90,9 @@ def garantir_schema():
                 atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 INDEX idx_consultoria_municipio (uf,nome), INDEX idx_consultoria_validade (validade_mapa)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4""")
+            cur.execute("SHOW COLUMNS FROM consultoria_municipios LIKE 'populacao'")
+            if not cur.fetchone():
+                cur.execute("ALTER TABLE consultoria_municipios ADD COLUMN populacao INT NULL AFTER codigo_ibge")
             cur.execute("""CREATE TABLE IF NOT EXISTS consultoria_entidade (
                 id INT AUTO_INCREMENT PRIMARY KEY, razao_social VARCHAR(220) NOT NULL, nome_fantasia VARCHAR(120),
                 cnpj VARCHAR(20) NOT NULL, natureza_juridica VARCHAR(120), data_abertura DATE NULL,
@@ -223,14 +226,16 @@ def municipio_form(municipio_id=None):
                 cur.execute("SELECT * FROM consultoria_municipios WHERE id=%s", (municipio_id,)); municipio = cur.fetchone()
                 if not municipio: flash("Prefeitura não encontrada."); return redirect(url_for("consultoria.dashboard"))
             if request.method == "POST":
-                campos = ("nome","uf","codigo_ibge","cnpj","prefeito","orgao_turismo","gestor_nome","gestor_email","gestor_telefone","regiao_turistica","igr","situacao_mapa","validade_mapa","categoria_mapa","observacoes")
+                campos = ("nome","uf","codigo_ibge","populacao","cnpj","prefeito","orgao_turismo","gestor_nome","gestor_email","gestor_telefone","regiao_turistica","igr","situacao_mapa","validade_mapa","categoria_mapa","observacoes")
                 d = {c: request.form.get(c, "").strip() or None for c in campos}; d["uf"] = (d["uf"] or "").upper()[:2]
+                try: d["populacao"] = int(d["populacao"]) if d["populacao"] else None
+                except (TypeError, ValueError): d["populacao"] = None
                 if not d["nome"] or len(d["uf"]) != 2: flash("Informe o município e a UF."); municipio=d
                 elif municipio_id:
-                    cur.execute("""UPDATE consultoria_municipios SET nome=%s,uf=%s,codigo_ibge=%s,cnpj=%s,prefeito=%s,orgao_turismo=%s,gestor_nome=%s,gestor_email=%s,gestor_telefone=%s,regiao_turistica=%s,igr=%s,situacao_mapa=%s,validade_mapa=%s,categoria_mapa=%s,observacoes=%s,atualizado_por=%s WHERE id=%s""", tuple(d[c] for c in campos)+(usuario_atual(),municipio_id))
+                    cur.execute("""UPDATE consultoria_municipios SET nome=%s,uf=%s,codigo_ibge=%s,populacao=%s,cnpj=%s,prefeito=%s,orgao_turismo=%s,gestor_nome=%s,gestor_email=%s,gestor_telefone=%s,regiao_turistica=%s,igr=%s,situacao_mapa=%s,validade_mapa=%s,categoria_mapa=%s,observacoes=%s,atualizado_por=%s WHERE id=%s""", tuple(d[c] for c in campos)+(usuario_atual(),municipio_id))
                     registrar(cur,"Cadastro da Prefeitura atualizado",municipio_id=municipio_id); flash("Prefeitura atualizada."); return redirect(url_for("consultoria.municipio_detalhe",municipio_id=municipio_id))
                 else:
-                    cur.execute("""INSERT INTO consultoria_municipios (nome,uf,codigo_ibge,cnpj,prefeito,orgao_turismo,gestor_nome,gestor_email,gestor_telefone,regiao_turistica,igr,situacao_mapa,validade_mapa,categoria_mapa,observacoes,criado_por,atualizado_por) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", tuple(d[c] for c in campos)+(usuario_atual(),usuario_atual()))
+                    cur.execute("""INSERT INTO consultoria_municipios (nome,uf,codigo_ibge,populacao,cnpj,prefeito,orgao_turismo,gestor_nome,gestor_email,gestor_telefone,regiao_turistica,igr,situacao_mapa,validade_mapa,categoria_mapa,observacoes,criado_por,atualizado_por) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", tuple(d[c] for c in campos)+(usuario_atual(),usuario_atual()))
                     municipio_id=cur.lastrowid; registrar(cur,"Prefeitura cadastrada",municipio_id=municipio_id); flash("Prefeitura cadastrada."); return redirect(url_for("consultoria.municipio_detalhe",municipio_id=municipio_id))
     finally: conn.close()
     return render_template("consultoria_municipio_form.html", municipio=municipio or {})
