@@ -696,57 +696,78 @@ def calcular_motor_financeiro(item, pagamentos=None, data_referencia=None):
     inicio = data_iso_ou_none(item.get("data_inicio")) or hoje
     vencimento = data_iso_ou_none(item.get("data_pgto")) or hoje
     fim_projecao = max(vencimento, hoje)
-    inicio_mes = inicio.replace(day=1)
-    fim_mes = fim_projecao.replace(day=1)
-    mapa_pagamentos = pagamentos_por_mes(pagamentos)
 
-    saldo = principal
-    cronograma = []
-    data_mes = inicio_mes
-    indice = 1
-    valor_ate_hoje = principal
-    saldo_ate_hoje = principal
+    # Mesma convenção do Simulador JP2:
+    # FV = PV * (1 + taxa_mensal) ** (dias_corridos / 30)
+    def capitalizar(saldo, data_de, data_ate):
+        if saldo <= 0 or taxa <= 0 or data_ate <= data_de:
+            return saldo, Decimal("0")
+        dias = Decimal((data_ate - data_de).days)
+        fator = (Decimal("1") + taxa) ** (dias / Decimal("30"))
+        novo_saldo = saldo * fator
+        return novo_saldo, novo_saldo - saldo
 
-    while data_mes <= fim_mes:
-        saldo_inicial = saldo
-        juros = saldo * taxa if saldo > 0 else Decimal("0")
-        valor_com_juros = saldo + juros
-        pagamento = mapa_pagamentos.get(chave_mes(data_mes), Decimal("0"))
-        saldo = valor_com_juros - pagamento
-        if saldo < 0:
-            saldo = Decimal("0")
+    pagamentos_validos = []
+    for pagamento in pagamentos:
+        data_pagamento = data_iso_ou_none(pagamento.get("data_pagamento"))
+        valor_pago = decimal_ou_zero(pagamento.get("valor_pago"))
+        if data_pagamento and valor_pago > 0:
+            pagamentos_validos.append((data_pagamento, valor_pago))
+    pagamentos_validos.sort(key=lambda p: p[0])
 
-        linha = {
-            "mes": chave_mes(data_mes),
-            "numero": indice,
-            "valor_inicial": saldo_inicial,
+    def saldo_na_data(alvo):
+        if alvo <= inicio:
+            return principal, Decimal("0")
+        saldo, juros_total, cursor = principal, Decimal("0"), inicio
+        for data_pagamento, valor_pago in pagamentos_validos:
+            if data_pagamento < inicio or data_pagamento > alvo:
+                continue
+            saldo, juros = capitalizar(saldo, cursor, data_pagamento)
+            juros_total += juros
+            saldo = max(Decimal("0"), saldo - valor_pago)
+            cursor = data_pagamento
+        saldo, juros = capitalizar(saldo, cursor, alvo)
+        return saldo, juros_total + juros
+
+    saldo_ate_hoje, juros_ate_hoje = saldo_na_data(hoje)
+    saldo_futuro, juros_futuro = saldo_na_data(fim_projecao)
+
+    # Demonstrativo em períodos de 30 dias, mantendo pagamentos na data efetiva.
+    cronograma, saldo, cursor, indice = [], principal, inicio, 1
+    while cursor < fim_projecao:
+        limite = min(cursor + timedelta(days=30), fim_projecao)
+        saldo_inicial, juros_periodo, pagamento_periodo = saldo, Decimal("0"), Decimal("0")
+        ponto = cursor
+        for data_pagamento, valor_pago in pagamentos_validos:
+            if ponto < data_pagamento <= limite:
+                saldo, juros = capitalizar(saldo, ponto, data_pagamento)
+                juros_periodo += juros
+                pagamento_periodo += valor_pago
+                saldo = max(Decimal("0"), saldo - valor_pago)
+                ponto = data_pagamento
+        saldo, juros = capitalizar(saldo, ponto, limite)
+        juros_periodo += juros
+        cronograma.append({
+            "mes": chave_mes(limite), "numero": indice, "valor_inicial": saldo_inicial,
             "taxa_juros": decimal_ou_zero(item.get("juros_mensais")),
-            "valor_juros": juros,
-            "valor_com_juros": valor_com_juros,
-            "pagamento_realizado": pagamento,
-            "saldo_devedor": saldo,
-        }
-        cronograma.append(linha)
+            "valor_juros": juros_periodo, "valor_com_juros": saldo_inicial + juros_periodo,
+            "pagamento_realizado": pagamento_periodo, "saldo_devedor": saldo,
+        })
+        cursor, indice = limite, indice + 1
 
-        if data_mes <= hoje.replace(day=1):
-            valor_ate_hoje = valor_com_juros
-            saldo_ate_hoje = saldo
-
-        data_mes = adicionar_mes(data_mes)
-        indice += 1
-
-    total_pago = sum((decimal_ou_zero(p.get("valor_pago")) for p in pagamentos), Decimal("0"))
-    valor_futuro = cronograma[-1]["valor_com_juros"] if cronograma else principal
-    saldo_futuro = cronograma[-1]["saldo_devedor"] if cronograma else principal
+    total_pago = sum((valor for data, valor in pagamentos_validos if data <= hoje), Decimal("0"))
+    valor_ate_hoje = saldo_ate_hoje
+    valor_futuro = saldo_futuro
 
     return {
         "cronograma": cronograma,
         "total_pago": total_pago,
-        "valor_juros_day_calculado": valor_ate_hoje - principal if valor_ate_hoje > principal else Decimal("0"),
+        "valor_juros_day_calculado": juros_ate_hoje,
         "valor_divida_day_calculado": valor_ate_hoje,
         "saldo_atual_calculado": saldo_ate_hoje,
         "valor_futuro_calculado": valor_futuro,
         "saldo_futuro_calculado": saldo_futuro,
+        "juros_futuro_calculado": juros_futuro,
     }
 
 
@@ -793,6 +814,7 @@ def listar_investimentos_com_pagamentos(cur):
         pagamentos = pagamentos_por_investimento.get(item["id"], [])
         motor = calcular_motor_financeiro(item, pagamentos)
         projetado = decimal_ou_zero(item.get("valor_divida_futuro"))
+        projetado_calculado_pelo_motor = False
         importado_excel = item.get("importacao_origem") == ORIGEM_IMPORTACAO_EXCEL
         status_manual = texto_limpo(item.get("status_pagamento"))
         status_em_aberto = status_manual in {"Em aberto", "Parcial", "Vencido", "Vencendo"}
@@ -800,6 +822,7 @@ def listar_investimentos_com_pagamentos(cur):
             projetado = Decimal("0")
         elif projetado <= 0:
             projetado = motor["valor_futuro_calculado"]
+            projetado_calculado_pelo_motor = True
         item["total_pago"] = motor["total_pago"]
         if status_manual == "Quitado":
             item["valor_juros_day_base"] = Decimal("0")
@@ -811,7 +834,13 @@ def listar_investimentos_com_pagamentos(cur):
             item["saldo_atual"] = motor["saldo_atual_calculado"]
         item["valor_projetado_base"] = projetado
         item["sem_projecao_futura"] = bool(importado_excel and projetado <= 0)
-        item["saldo_projetado"] = Decimal("0") if status_manual == "Quitado" else projetado - motor["total_pago"]
+        if status_manual == "Quitado":
+            item["saldo_projetado"] = Decimal("0")
+        elif projetado_calculado_pelo_motor:
+            # O motor já desconta os pagamentos nas respectivas datas.
+            item["saldo_projetado"] = projetado
+        else:
+            item["saldo_projetado"] = projetado - motor["total_pago"]
         if item["saldo_projetado"] < 0:
             item["saldo_projetado"] = Decimal("0")
     return dados
