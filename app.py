@@ -1,10 +1,9 @@
-import os
+﻿import os
 import uuid
 import re
 import hashlib
 import traceback
 import urllib.request
-import urllib.error
 import csv
 import io
 import time
@@ -39,7 +38,6 @@ COLUNA_PERFIL_USUARIOS_VERIFICADA = False
 COLUNAS_2FA_USUARIOS_VERIFICADAS = False
 COLUNAS_AGENDA_VERIFICADAS = False
 TABELA_CONTATOS_VERIFICADA = False
-TABELA_EMAILS_VERIFICADA = False
 USUARIOS_ADMIN_CACHE = None
 RESUMO_DASHBOARD_CACHE = {"expira_em": None, "dados": None}
 LISTAR_CACHE = {}
@@ -64,26 +62,6 @@ app.register_blueprint(bp_financeiro)
 # Registro do módulo de cadastro de eventos
 from eventos import bp_eventos
 app.register_blueprint(bp_eventos)
-
-# Registro do modulo de termos de fomento e planos de trabalho
-from fomentos import bp_fomentos
-app.register_blueprint(bp_fomentos)
-
-# Registro do módulo interno de carteira de investimentos
-from carteira import bp_carteira
-app.register_blueprint(bp_carteira)
-
-# Registro do modulo de atas de reuniao
-from atas import bp_atas
-app.register_blueprint(bp_atas)
-
-# Registro do gerenciador premium de tarefas
-from tarefas import bp_tarefas
-app.register_blueprint(bp_tarefas)
-
-# Central de consultoria para prefeituras e projetos de turismo
-from consultoria import bp_consultoria
-app.register_blueprint(bp_consultoria)
 
 # DIRETÃ“RIO LOCAL DE ARMAZENAMENTO
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
@@ -380,35 +358,6 @@ def garantir_tabela_contatos():
     finally:
         conn.close()
 
-def garantir_tabela_emails():
-    global TABELA_EMAILS_VERIFICADA
-    if TABELA_EMAILS_VERIFICADA:
-        return
-
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS credenciais_email (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    nome VARCHAR(120) NOT NULL,
-                    sobrenome VARCHAR(120) NULL,
-                    email VARCHAR(180) NOT NULL,
-                    senha VARCHAR(255) NULL,
-                    provedor_url VARCHAR(255) NULL,
-                    observacoes TEXT NULL,
-                    criado_por VARCHAR(120) NULL,
-                    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-                ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
-            """)
-
-            criar_indice_se_necessario(cur, "credenciais_email", "idx_credenciais_email_busca", "nome(80), sobrenome(80), email(140)")
-            criar_indice_se_necessario(cur, "credenciais_email", "idx_credenciais_email_email", "email(180)")
-        TABELA_EMAILS_VERIFICADA = True
-    finally:
-        conn.close()
-
 def limpar_telefone(valor):
     return re.sub(r"\D+", "", str(valor or ""))
 
@@ -435,36 +384,6 @@ def formatar_telefone_br(valor):
         return f"+55 {ddd} {numero[:4]}-{numero[4:]}"
     return f"+55 {ddd} {numero}"
 
-def detectar_provedor_email(email, url_manual=""):
-    url_manual = str(url_manual or "").strip()
-    if url_manual:
-        if not re.match(r"^https?://", url_manual, re.I):
-            return "https://" + url_manual
-        return url_manual
-
-    email = str(email or "").strip().lower()
-    dominio = email.split("@")[-1] if "@" in email else ""
-    mapa = {
-        "gmail.com": "https://mail.google.com/",
-        "googlemail.com": "https://mail.google.com/",
-        "outlook.com": "https://outlook.live.com/mail/",
-        "hotmail.com": "https://outlook.live.com/mail/",
-        "live.com": "https://outlook.live.com/mail/",
-        "msn.com": "https://outlook.live.com/mail/",
-        "office365.com": "https://outlook.office.com/mail/",
-        "yahoo.com": "https://mail.yahoo.com/",
-        "yahoo.com.br": "https://mail.yahoo.com/",
-        "uol.com.br": "https://email.uol.com.br/",
-        "bol.com.br": "https://email.bol.uol.com.br/",
-        "terra.com.br": "https://mail.terra.com.br/",
-        "icloud.com": "https://www.icloud.com/mail/",
-    }
-    if dominio in mapa:
-        return mapa[dominio]
-    if dominio:
-        return f"https://webmail.{dominio}"
-    return ""
-
 def criar_indice_se_necessario(cur, tabela, nome_indice, definicao_colunas):
     if not re.match(r"^[A-Za-z0-9_]+$", tabela) or not re.match(r"^[A-Za-z0-9_]+$", nome_indice):
         raise ValueError("Nome de tabela ou indice invalido")
@@ -490,8 +409,8 @@ def garantir_indices_performance():
         ("usuarios", "idx_usuarios_usuario", "usuario(80)"),
         ("empresas", "idx_empresas_nome", "nome(120)"),
         ("investimentos", "idx_investimentos_empresa_datas", "empresa_id, data_inicio, data_pgto"),
-        ("investimentos", "idx_investimentos_credor", "nome_investidor(80)"),
-        ("investimentos", "idx_investimentos_captador", "captador(80)"),
+        ("investimentos", "idx_investimentos_credor", "nome_investidor(120)"),
+        ("investimentos", "idx_investimentos_captador", "captador(120)"),
         ("investimento_pagamentos", "idx_pagamentos_investimento_data", "investimento_id, data_pagamento"),
         ("eventos_cadastro", "idx_eventos_data_cidade", "data_inicio, cidade(120), uf(2)"),
         ("eventos_custos", "idx_eventos_custos_evento", "evento_id"),
@@ -693,8 +612,6 @@ def finalizar_medicao_performance(response):
     response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
-    if request.path.startswith("/static/") and response.status_code == 200:
-        response.headers.setdefault("Cache-Control", "public, max-age=604800, immutable")
     if request.is_secure:
         response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 
@@ -856,76 +773,19 @@ def home():
 
     return render_template('home.html', nome_socio=session.get('nome_exibicao', 'Sócio'))
 
-@app.route('/painel-arquivos')
-def painel_arquivos():
-    if 'usuario_logado' not in session:
-        return redirect(url_for('tela_login'))
-    return render_template('dashboard.html', nome_socio=session.get('nome_exibicao', 'Socio'))
-
-@app.route('/api/home-carteira-b3')
-def api_home_carteira_b3():
-    if 'usuario_logado' not in session:
-        return jsonify({"status": "erro", "msg": "Nao autorizado"}), 401
-    dados = {"status": "sucesso", "total": 0, "ativos": 0, "classes": [], "melhor": None, "renda_mes": 0}
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-            try:
-                cur.execute("""
-                    SELECT classe, SUM(COALESCE(quantidade,0) * COALESCE(valor_atual,0)) AS total, COUNT(*) AS qtd
-                    FROM carteira_ativos
-                    GROUP BY classe
-                    ORDER BY total DESC
-                """)
-                classes = cur.fetchall()
-                dados["classes"] = [
-                    {"classe": row.get("classe") or "-", "total": float(row.get("total") or 0), "qtd": int(row.get("qtd") or 0)}
-                    for row in classes
-                ]
-                dados["total"] = sum(item["total"] for item in dados["classes"])
-                dados["ativos"] = sum(item["qtd"] for item in dados["classes"])
-            except Exception:
-                pass
-
-            try:
-                cur.execute("""
-                    SELECT ticker, nome, classe, score_final
-                    FROM carteira_universo_acoes
-                    ORDER BY score_final DESC, ticker ASC
-                    LIMIT 1
-                """)
-                melhor = cur.fetchone()
-                if melhor:
-                    dados["melhor"] = {
-                        "ticker": melhor.get("ticker"),
-                        "nome": melhor.get("nome"),
-                        "classe": melhor.get("classe") or "Acoes",
-                        "score": float(melhor.get("score_final") or 0),
-                    }
-            except Exception:
-                pass
-
-            try:
-                inicio_mes = datetime.now().replace(day=1).strftime("%Y-%m-%d")
-                cur.execute("""
-                    SELECT SUM(COALESCE(valor,0)) AS total
-                    FROM carteira_aportes
-                    WHERE data_aporte >= %s
-                      AND UPPER(tipo) IN ('DIVIDENDO','JCP','RENDA','PROVENTO')
-                """, (inicio_mes,))
-                dados["renda_mes"] = float((cur.fetchone() or {}).get("total") or 0)
-            except Exception:
-                pass
-    finally:
-        conn.close()
-    return jsonify(dados)
-
 @app.route('/carteira-investimentos')
-@app.route('/carteira-investimentos/')
 def carteira_investimentos():
     if 'usuario_logado' not in session:
         return redirect(url_for('tela_login'))
-    return redirect('/carteira')
+
+    url_modulo = os.environ.get("CARTEIRA_INVESTIMENTOS_URL", "").strip()
+    if url_modulo:
+        return redirect(url_modulo)
+
+    return render_template(
+        'carteira_investimentos.html',
+        nome_socio=session.get('nome_exibicao', 'Sócio')
+    )
 
 @app.route('/login', methods=['GET', 'POST'])
 def tela_login():
@@ -1206,136 +1066,6 @@ def excluir_contato(contato_id):
         conn.close()
 
     return redirect(url_for('pagina_contatos'))
-
-@app.route('/contatos/emails')
-def pagina_contatos_emails():
-    if 'usuario_logado' not in session:
-        return redirect(url_for('tela_login'))
-
-    garantir_tabela_emails()
-    busca = request.args.get('q', '').strip()
-    filtros = []
-    params = []
-    if busca:
-        termo = f"%{busca}%"
-        filtros.append("(nome LIKE %s OR sobrenome LIKE %s OR email LIKE %s OR observacoes LIKE %s)")
-        params.extend([termo, termo, termo, termo])
-
-    where_sql = f"WHERE {' AND '.join(filtros)}" if filtros else ""
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(f"""
-                SELECT id, nome, sobrenome, email, senha, provedor_url, observacoes, criado_por, criado_em, atualizado_em
-                FROM credenciais_email
-                {where_sql}
-                ORDER BY nome ASC, sobrenome ASC, email ASC
-                LIMIT 160
-            """, tuple(params))
-            emails = cur.fetchall()
-    finally:
-        conn.close()
-
-    for item in emails:
-        item['provedor_final'] = detectar_provedor_email(item.get('email'), item.get('provedor_url'))
-
-    return render_template(
-        'contatos_emails.html',
-        emails=emails,
-        busca=busca,
-        limite_emails=160,
-        nome_socio=session.get('nome_exibicao', 'Socio')
-    )
-
-@app.route('/contatos/emails/adicionar', methods=['POST'])
-def adicionar_contato_email():
-    if 'usuario_logado' not in session:
-        return redirect(url_for('tela_login'))
-
-    garantir_tabela_emails()
-    nome = request.form.get('nome', '').strip()
-    email = request.form.get('email', '').strip().lower()
-    if not nome or not email:
-        flash("Informe nome e e-mail.")
-        return redirect(url_for('pagina_contatos_emails'))
-
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO credenciais_email
-                (nome, sobrenome, email, senha, provedor_url, observacoes, criado_por)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """, (
-                nome,
-                request.form.get('sobrenome', '').strip(),
-                email,
-                request.form.get('senha', '').strip(),
-                request.form.get('provedor_url', '').strip(),
-                request.form.get('observacoes', '').strip(),
-                session.get('nome_exibicao', 'Sistema')
-            ))
-        conn.commit()
-        registrar_log(f"Cadastrou credencial de e-mail: {email}")
-        flash("E-mail cadastrado com sucesso.")
-    finally:
-        conn.close()
-
-    return redirect(url_for('pagina_contatos_emails'))
-
-@app.route('/contatos/emails/editar/<int:email_id>', methods=['POST'])
-def editar_contato_email(email_id):
-    if 'usuario_logado' not in session:
-        return redirect(url_for('tela_login'))
-
-    garantir_tabela_emails()
-    nome = request.form.get('nome', '').strip()
-    email = request.form.get('email', '').strip().lower()
-    if not nome or not email:
-        flash("Informe nome e e-mail.")
-        return redirect(url_for('pagina_contatos_emails'))
-
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                UPDATE credenciais_email
-                SET nome = %s, sobrenome = %s, email = %s, senha = %s, provedor_url = %s, observacoes = %s
-                WHERE id = %s
-            """, (
-                nome,
-                request.form.get('sobrenome', '').strip(),
-                email,
-                request.form.get('senha', '').strip(),
-                request.form.get('provedor_url', '').strip(),
-                request.form.get('observacoes', '').strip(),
-                email_id
-            ))
-        conn.commit()
-        registrar_log(f"Atualizou credencial de e-mail ID: {email_id}")
-        flash("E-mail atualizado com sucesso.")
-    finally:
-        conn.close()
-
-    return redirect(url_for('pagina_contatos_emails'))
-
-@app.route('/contatos/emails/excluir/<int:email_id>', methods=['POST'])
-def excluir_contato_email(email_id):
-    if 'usuario_logado' not in session:
-        return redirect(url_for('tela_login'))
-
-    garantir_tabela_emails()
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("DELETE FROM credenciais_email WHERE id = %s", (email_id,))
-        conn.commit()
-        registrar_log(f"Removeu credencial de e-mail ID: {email_id}")
-        flash("E-mail removido com sucesso.")
-    finally:
-        conn.close()
-
-    return redirect(url_for('pagina_contatos_emails'))
 
 @app.route('/admin/usuarios', methods=['GET', 'POST'])
 def admin_usuarios():
@@ -1674,60 +1404,6 @@ def criar_pasta():
         print(f"Erro ao criar pasta: {e}")
         return jsonify({'status': 'erro', 'mensagem': 'Nao foi possivel criar a pasta.'}), 500
 
-def limpar_nome_pasta_upload(nome):
-    nome = str(nome or "").strip()
-    nome = re.sub(r'[\\/:*?"<>|]+', '-', nome)
-    nome = re.sub(r'\s+', ' ', nome).strip(" .")
-    return nome[:180]
-
-def obter_ou_criar_pasta_upload(cur, nome, bloco, categoria, pasta_pai_id):
-    nome_limpo = limpar_nome_pasta_upload(nome)
-    if not nome_limpo:
-        return pasta_pai_id
-
-    if pasta_pai_id is None:
-        cur.execute("""
-            SELECT id FROM arquivos_painel
-            WHERE bloco = %s
-              AND nome_original = %s
-              AND tipo = 'pasta'
-              AND pasta_pai_id IS NULL
-              AND deletado = 0
-            LIMIT 1
-        """, (bloco, nome_limpo))
-    else:
-        cur.execute("""
-            SELECT id FROM arquivos_painel
-            WHERE bloco = %s
-              AND nome_original = %s
-              AND tipo = 'pasta'
-              AND pasta_pai_id = %s
-              AND deletado = 0
-            LIMIT 1
-        """, (bloco, nome_limpo, pasta_pai_id))
-
-    pasta = cur.fetchone()
-    if pasta:
-        return pasta["id"]
-
-    cur.execute("""
-        INSERT INTO arquivos_painel (nome_original, bloco, categoria, tipo, pasta_pai_id, criado_por, deletado)
-        VALUES (%s, %s, %s, 'pasta', %s, %s, 0)
-    """, (nome_limpo, bloco, categoria or 'raiz', pasta_pai_id, session.get('nome_exibicao', 'Sistema')))
-    return cur.lastrowid
-
-def resolver_destino_upload_pasta(cur, caminho_relativo, bloco, categoria, pasta_pai_id):
-    caminho = str(caminho_relativo or "").replace("\\", "/").strip("/")
-    if not caminho or "/" not in caminho:
-        return pasta_pai_id
-
-    partes = [limpar_nome_pasta_upload(parte) for parte in caminho.split("/")[:-1]]
-    partes = [parte for parte in partes if parte]
-    destino_id = pasta_pai_id
-    for parte in partes:
-        destino_id = obter_ou_criar_pasta_upload(cur, parte, bloco, categoria, destino_id)
-    return destino_id
-
 # ðŸš€ 1. INSTALAÃ‡ÃƒO DO MOTOR FATIADOR COMPATÃVEL COM ALTA VELOCIDADE (Mini-fatias)
 @app.route('/upload-avancado', methods=['POST'])
 def upload_avancado():
@@ -1743,7 +1419,6 @@ def upload_avancado():
     total_chunks = int(request.form.get('totalChunks', 1))
     guid_uuid = request.form.get('guid', uuid.uuid4().hex)
     nome_original = request.form.get('nome_original', file.filename if file else 'arquivo')
-    caminho_relativo = request.form.get('caminho_relativo') or nome_original
     
     conn = None
     try:
@@ -1771,11 +1446,10 @@ def upload_avancado():
 
             conn = get_db_connection()
             with conn.cursor() as cur:
-                pasta_destino_id = resolver_destino_upload_pasta(cur, caminho_relativo, bloco, cat, p_id)
                 cur.execute("""
                     INSERT INTO arquivos_painel (nome_original, caminho_sistema, bloco, categoria, tipo, criado_por, pasta_pai_id, deletado)
                     VALUES (%s, %s, %s, %s, 'arquivo', %s, %s, 0)
-                """, (nome_original, caminho_sistema, bloco, cat, session.get('nome_exibicao', 'Sistema'), pasta_destino_id))
+                """, (nome_original, caminho_sistema, bloco, cat, session.get('nome_exibicao', 'Sistema'), p_id))
                 novo_id = cur.lastrowid
 
             try:
@@ -1797,7 +1471,7 @@ def upload_avancado():
                     'autor': session.get('nome_exibicao', 'Sistema'),
                     'bloco': bloco,
                     'categoria': cat,
-                    'pasta_pai_id': pasta_destino_id
+                    'pasta_pai_id': p_id
                 }
             })
             
@@ -2141,5 +1815,6 @@ def manifest(): return send_from_directory('static', 'manifest.json')
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
