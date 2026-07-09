@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <title>Cadastro de E-mails | JP2 Business</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root{--jp2-bg:#f4f7fb;--jp2-ink:#101828;--jp2-muted:#667085;--jp2-line:#d9e2ef;--jp2-blue:#155eef;--jp2-green:#078c55;--jp2-red:#d92d20}
+        body{background:var(--jp2-bg);color:var(--jp2-ink);font-family:"Segoe UI",system-ui,sans-serif;min-height:100vh}
+        .page-shell{max-width:1240px;margin:0 auto;padding:28px 18px 46px}
+        .page-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+        .page-kicker{color:var(--jp2-muted);font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+        .page-title{font-size:1.55rem;font-weight:850;margin:3px 0 0}
+        .panel{background:#fff;border:1px solid var(--jp2-line);border-radius:8px;box-shadow:0 10px 30px rgba(15,23,42,.06)}
+        .toolbar-panel{padding:16px;margin-bottom:18px}
+        .form-control,.form-select{border-color:#d5deeb;min-height:42px}
+        .btn{border-radius:7px;font-weight:700}
+        .agenda-menu{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+        .agenda-menu a{align-items:center;background:#fff;border:1px solid var(--jp2-line);border-radius:999px;color:#344054;display:inline-flex;font-size:13px;font-weight:800;gap:7px;padding:9px 13px;text-decoration:none}
+        .agenda-menu a.active{background:var(--jp2-blue);border-color:var(--jp2-blue);color:#fff}
+        .security-note{background:#fff7ed;border:1px solid #fed7aa;border-left:4px solid #f79009;border-radius:8px;color:#7a2e0e;font-size:13px;font-weight:650;margin-bottom:16px;padding:12px 14px}
+        .emails-list{overflow:hidden}
+        .emails-list-header,.email-row{display:grid;grid-template-columns:minmax(190px,1fr) minmax(220px,1.05fr) minmax(170px,.8fr) 210px;gap:14px;align-items:center}
+        .emails-list-header{background:#f8fafc;border-bottom:1px solid #edf1f7;color:var(--jp2-muted);font-size:11px;font-weight:850;letter-spacing:.06em;padding:12px 16px;text-transform:uppercase}
+        .email-row{border-bottom:1px solid #edf1f7;min-height:78px;padding:13px 16px}
+        .email-row:last-child{border-bottom:0}
+        .email-row:hover{background:#fbfdff}
+        .email-name{font-size:15px;font-weight:850;line-height:1.15;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .email-meta{color:var(--jp2-muted);font-size:12px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .email-line{align-items:center;color:#344054;display:flex;font-size:13px;gap:8px;min-width:0}
+        .email-line span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .password-box{align-items:center;background:#f8fafc;border:1px solid #edf1f7;border-radius:8px;display:flex;gap:8px;min-width:0;padding:8px 9px}
+        .password-text{font-family:Consolas,monospace;font-size:13px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .password-text.masked{-webkit-text-security:disc}
+        .email-actions{display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap}
+        .empty-state{padding:46px 20px;text-align:center}
+        .empty-state i{color:#98a2b3;font-size:42px}
+        .count{color:var(--jp2-muted);font-size:12px;font-weight:700;margin-top:10px}
+        .copy-toast{background:#101828;border-radius:8px;bottom:22px;box-shadow:0 18px 42px rgba(15,23,42,.22);color:#fff;display:none;font-size:13px;font-weight:700;padding:12px 14px;position:fixed;right:22px;z-index:2000}
+        .copy-toast.show{display:block}
+        .modal-content{border:0;border-radius:10px;box-shadow:0 22px 60px rgba(15,23,42,.22)}
+        .modal-header{border-bottom:1px solid #edf1f7;padding:20px 24px}
+        .modal-body{padding:22px 24px}
+        .modal-footer{border-top:0;padding:0 24px 24px}
+        @media(max-width:720px){.page-header{align-items:flex-start;flex-direction:column}.emails-list-header{display:none}.email-row{grid-template-columns:1fr;gap:9px;align-items:flex-start}.email-actions{justify-content:flex-start}}
+    </style>
+</head>
+<body>
+    <main class="page-shell">
+        <header class="page-header">
+            <div>
+                <div class="page-kicker">Central de Relacionamento</div>
+                <h1 class="page-title">Cadastro de E-mails</h1>
+                <div class="text-secondary">Guarde e acesse rapidamente os e-mails operacionais usados pelo grupo.</div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="/" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovoEmail"><i class="bi bi-envelope-plus"></i> Novo E-mail</button>
+            </div>
+        </header>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info border-0 shadow-sm">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <nav class="agenda-menu" aria-label="Menu da agenda telefônica">
+            <a href="{{ url_for('pagina_contatos') }}"><i class="bi bi-telephone"></i> Cadastro de Telefone</a>
+            <a class="active" href="{{ url_for('pagina_contatos_emails') }}"><i class="bi bi-envelope-lock"></i> Cadastro de E-mail</a>
+        </nav>
+
+        <div class="security-note">
+            <i class="bi bi-shield-lock"></i>
+            As senhas ficam visíveis nesta tela para consulta operacional, conforme solicitado. Use apenas para contas necessárias e controle quem tem acesso ao painel.
+        </div>
+
+        <section class="panel toolbar-panel">
+            <form method="GET" action="{{ url_for('pagina_contatos_emails') }}" class="row g-3 align-items-end">
+                <div class="col-lg-9">
+                    <label class="form-label small fw-bold text-secondary">Buscar e-mail</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input class="form-control" type="search" name="q" value="{{ busca }}" autocomplete="off" placeholder="Nome, sobrenome, e-mail ou observação">
+                    </div>
+                </div>
+                <div class="col-lg-3 d-flex gap-2">
+                    <button class="btn btn-primary flex-fill" type="submit">Filtrar</button>
+                    <a class="btn btn-outline-secondary" href="{{ url_for('pagina_contatos_emails') }}">Limpar</a>
+                </div>
+            </form>
+        </section>
+
+        {% if emails %}
+            <section class="panel emails-list">
+                <div class="emails-list-header">
+                    <span>Responsável</span>
+                    <span>E-mail</span>
+                    <span>Senha</span>
+                    <span class="text-end">Ações</span>
+                </div>
+                {% for item in emails %}
+                    <article class="email-row">
+                        <div>
+                            <h2 class="email-name">{{ item.nome }} {{ item.sobrenome or '' }}</h2>
+                            <div class="email-meta">
+                                Cadastrado por {{ item.criado_por or 'Sistema' }}
+                                {% if item.observacoes %} - {{ item.observacoes }}{% endif %}
+                            </div>
+                        </div>
+                        <div class="email-line">
+                            <i class="bi bi-envelope text-primary"></i>
+                            <span>{{ item.email }}</span>
+                        </div>
+                        <div class="password-box">
+                            <span class="password-text masked" id="senhaEmail{{ item.id }}">{{ item.senha or 'Sem senha' }}</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="alternarSenhaEmail('{{ item.id }}')" title="Mostrar ou ocultar senha">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <div class="email-actions">
+                            {% if item.provedor_final %}
+                                <a class="btn btn-sm btn-outline-primary" href="{{ item.provedor_final }}" target="_blank" rel="noopener" title="Abrir provedor">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                            {% endif %}
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="copiarTexto('{{ item.email|e }}','E-mail copiado.')" title="Copiar e-mail">
+                                <i class="bi bi-envelope"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-success" onclick="copiarTexto(document.getElementById('senhaEmail{{ item.id }}').innerText,'Senha copiada.')" title="Copiar senha">
+                                <i class="bi bi-key"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalEditarEmail"
+                                    data-id="{{ item.id }}"
+                                    data-nome="{{ item.nome }}"
+                                    data-sobrenome="{{ item.sobrenome or '' }}"
+                                    data-email="{{ item.email }}"
+                                    data-senha="{{ item.senha or '' }}"
+                                    data-provedor-url="{{ item.provedor_url or '' }}"
+                                    data-observacoes="{{ item.observacoes or '' }}"
+                                    onclick="prepararEdicaoEmail(this)"
+                                    title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalExcluirEmail"
+                                    data-id="{{ item.id }}"
+                                    data-email="{{ item.email }}"
+                                    onclick="prepararExclusaoEmail(this)"
+                                    title="Excluir">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </article>
+                {% endfor %}
+            </section>
+            <div class="count">
+                {{ emails|length }} e-mails exibidos.
+                {% if emails|length >= limite_emails %} Use a busca para refinar a lista. {% endif %}
+            </div>
+        {% else %}
+            <section class="panel empty-state">
+                <i class="bi bi-envelope-lock"></i>
+                <h2 class="h5 fw-bold mt-3">Nenhum e-mail cadastrado</h2>
+                <p class="text-secondary mb-3">Cadastre os e-mails importantes para encontrar login e senha quando precisar.</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovoEmail">
+                    <i class="bi bi-envelope-plus"></i> Cadastrar primeiro e-mail
+                </button>
+            </section>
+        {% endif %}
+    </main>
+
+    <div class="copy-toast" id="copyToastEmail">Copiado.</div>
+
+    <div class="modal fade" id="modalNovoEmail" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <form class="modal-content" method="POST" action="{{ url_for('adicionar_contato_email') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-envelope-plus text-primary"></i> Novo E-mail</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Nome</label>
+                            <input class="form-control" name="nome" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Sobrenome</label>
+                            <input class="form-control" name="sobrenome">
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label small fw-bold text-secondary">E-mail</label>
+                            <input class="form-control" type="email" name="email" required>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold text-secondary">Senha</label>
+                            <input class="form-control" type="text" name="senha" autocomplete="new-password">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary">URL do provedor/webmail (opcional)</label>
+                            <input class="form-control" name="provedor_url" placeholder="Ex.: https://mail.google.com ou https://webmail.seudominio.com.br">
+                            <div class="form-text">Se deixar vazio, o sistema tenta abrir Gmail, Outlook, Yahoo, UOL ou webmail do domínio automaticamente.</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary">Observações</label>
+                            <textarea class="form-control" name="observacoes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar e-mail</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalEditarEmail" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <form class="modal-content" method="POST" id="formEditarEmail">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square text-primary"></i> Editar E-mail</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Nome</label>
+                            <input class="form-control" name="nome" id="editEmailNome" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Sobrenome</label>
+                            <input class="form-control" name="sobrenome" id="editEmailSobrenome">
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label small fw-bold text-secondary">E-mail</label>
+                            <input class="form-control" type="email" name="email" id="editEmailEndereco" required>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold text-secondary">Senha</label>
+                            <input class="form-control" type="text" name="senha" id="editEmailSenha" autocomplete="new-password">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary">URL do provedor/webmail (opcional)</label>
+                            <input class="form-control" name="provedor_url" id="editEmailProvedorUrl">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary">Observações</label>
+                            <textarea class="form-control" name="observacoes" id="editEmailObservacoes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalExcluirEmail" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content" method="POST" id="formExcluirEmail">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger"><i class="bi bi-trash3"></i> Excluir e-mail</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Deseja remover <strong id="nomeEmailExcluir">este e-mail</strong> do cadastro?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toastEmail(texto){
+            const toast = document.getElementById('copyToastEmail');
+            toast.innerText = texto;
+            toast.classList.add('show');
+            clearTimeout(window.toastEmailTimer);
+            window.toastEmailTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+        }
+
+        function copiarTexto(texto, mensagem){
+            if(!texto) return;
+            navigator.clipboard.writeText(texto)
+                .then(() => toastEmail(mensagem || 'Copiado.'))
+                .catch(() => toastEmail('Não foi possível copiar.'));
+        }
+
+        function alternarSenhaEmail(id){
+            const campo = document.getElementById(`senhaEmail${id}`);
+            if(!campo) return;
+            campo.classList.toggle('masked');
+        }
+
+        function prepararEdicaoEmail(botao){
+            const id = botao.dataset.id;
+            document.getElementById('formEditarEmail').action = `/contatos/emails/editar/${id}`;
+            document.getElementById('editEmailNome').value = botao.dataset.nome || '';
+            document.getElementById('editEmailSobrenome').value = botao.dataset.sobrenome || '';
+            document.getElementById('editEmailEndereco').value = botao.dataset.email || '';
+            document.getElementById('editEmailSenha').value = botao.dataset.senha || '';
+            document.getElementById('editEmailProvedorUrl').value = botao.dataset.provedorUrl || '';
+            document.getElementById('editEmailObservacoes').value = botao.dataset.observacoes || '';
+        }
+
+        function prepararExclusaoEmail(botao){
+            const id = botao.dataset.id;
+            document.getElementById('formExcluirEmail').action = `/contatos/emails/excluir/${id}`;
+            document.getElementById('nomeEmailExcluir').innerText = botao.dataset.email || 'este e-mail';
+        }
+    </script>
+</body>
+</html>

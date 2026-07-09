@@ -63,6 +63,33 @@
             margin-bottom: 18px;
         }
 
+        .agenda-menu {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .agenda-menu a {
+            align-items: center;
+            background: #fff;
+            border: 1px solid var(--jp2-line);
+            border-radius: 999px;
+            color: #344054;
+            display: inline-flex;
+            font-size: 13px;
+            font-weight: 800;
+            gap: 7px;
+            padding: 9px 13px;
+            text-decoration: none;
+        }
+
+        .agenda-menu a.active {
+            background: var(--jp2-blue);
+            border-color: var(--jp2-blue);
+            color: #fff;
+        }
+
         .form-control, .form-select {
             border-color: #d5deeb;
             min-height: 42px;
@@ -271,6 +298,11 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
+
+        <nav class="agenda-menu" aria-label="Menu da agenda telefônica">
+            <a class="active" href="{{ url_for('pagina_contatos') }}"><i class="bi bi-telephone"></i> Cadastro de Telefone</a>
+            <a href="{{ url_for('pagina_contatos_emails') }}"><i class="bi bi-envelope-lock"></i> Cadastro de E-mail</a>
+        </nav>
 
         <section class="panel toolbar-panel">
             <form method="GET" action="{{ url_for('pagina_contatos') }}" class="row g-3 align-items-end">
