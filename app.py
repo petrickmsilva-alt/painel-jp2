@@ -39,6 +39,7 @@ COLUNA_PERFIL_USUARIOS_VERIFICADA = False
 COLUNAS_2FA_USUARIOS_VERIFICADAS = False
 COLUNAS_AGENDA_VERIFICADAS = False
 TABELA_CONTATOS_VERIFICADA = False
+TABELA_EMAILS_VERIFICADA = False
 USUARIOS_ADMIN_CACHE = None
 RESUMO_DASHBOARD_CACHE = {"expira_em": None, "dados": None}
 LISTAR_CACHE = {}
@@ -379,6 +380,35 @@ def garantir_tabela_contatos():
     finally:
         conn.close()
 
+def garantir_tabela_emails():
+    global TABELA_EMAILS_VERIFICADA
+    if TABELA_EMAILS_VERIFICADA:
+        return
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS credenciais_email (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    nome VARCHAR(120) NOT NULL,
+                    sobrenome VARCHAR(120) NULL,
+                    email VARCHAR(180) NOT NULL,
+                    senha VARCHAR(255) NULL,
+                    provedor_url VARCHAR(255) NULL,
+                    observacoes TEXT NULL,
+                    criado_por VARCHAR(120) NULL,
+                    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+            """)
+
+            criar_indice_se_necessario(cur, "credenciais_email", "idx_credenciais_email_busca", "nome(80), sobrenome(80), email(140)")
+            criar_indice_se_necessario(cur, "credenciais_email", "idx_credenciais_email_email", "email(180)")
+        TABELA_EMAILS_VERIFICADA = True
+    finally:
+        conn.close()
+
 def limpar_telefone(valor):
     return re.sub(r"\D+", "", str(valor or ""))
 
@@ -404,6 +434,36 @@ def formatar_telefone_br(valor):
     if len(numero) == 8:
         return f"+55 {ddd} {numero[:4]}-{numero[4:]}"
     return f"+55 {ddd} {numero}"
+
+def detectar_provedor_email(email, url_manual=""):
+    url_manual = str(url_manual or "").strip()
+    if url_manual:
+        if not re.match(r"^https?://", url_manual, re.I):
+            return "https://" + url_manual
+        return url_manual
+
+    email = str(email or "").strip().lower()
+    dominio = email.split("@")[-1] if "@" in email else ""
+    mapa = {
+        "gmail.com": "https://mail.google.com/",
+        "googlemail.com": "https://mail.google.com/",
+        "outlook.com": "https://outlook.live.com/mail/",
+        "hotmail.com": "https://outlook.live.com/mail/",
+        "live.com": "https://outlook.live.com/mail/",
+        "msn.com": "https://outlook.live.com/mail/",
+        "office365.com": "https://outlook.office.com/mail/",
+        "yahoo.com": "https://mail.yahoo.com/",
+        "yahoo.com.br": "https://mail.yahoo.com/",
+        "uol.com.br": "https://email.uol.com.br/",
+        "bol.com.br": "https://email.bol.uol.com.br/",
+        "terra.com.br": "https://mail.terra.com.br/",
+        "icloud.com": "https://www.icloud.com/mail/",
+    }
+    if dominio in mapa:
+        return mapa[dominio]
+    if dominio:
+        return f"https://webmail.{dominio}"
+    return ""
 
 def criar_indice_se_necessario(cur, tabela, nome_indice, definicao_colunas):
     if not re.match(r"^[A-Za-z0-9_]+$", tabela) or not re.match(r"^[A-Za-z0-9_]+$", nome_indice):
@@ -1146,6 +1206,136 @@ def excluir_contato(contato_id):
         conn.close()
 
     return redirect(url_for('pagina_contatos'))
+
+@app.route('/contatos/emails')
+def pagina_contatos_emails():
+    if 'usuario_logado' not in session:
+        return redirect(url_for('tela_login'))
+
+    garantir_tabela_emails()
+    busca = request.args.get('q', '').strip()
+    filtros = []
+    params = []
+    if busca:
+        termo = f"%{busca}%"
+        filtros.append("(nome LIKE %s OR sobrenome LIKE %s OR email LIKE %s OR observacoes LIKE %s)")
+        params.extend([termo, termo, termo, termo])
+
+    where_sql = f"WHERE {' AND '.join(filtros)}" if filtros else ""
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"""
+                SELECT id, nome, sobrenome, email, senha, provedor_url, observacoes, criado_por, criado_em, atualizado_em
+                FROM credenciais_email
+                {where_sql}
+                ORDER BY nome ASC, sobrenome ASC, email ASC
+                LIMIT 160
+            """, tuple(params))
+            emails = cur.fetchall()
+    finally:
+        conn.close()
+
+    for item in emails:
+        item['provedor_final'] = detectar_provedor_email(item.get('email'), item.get('provedor_url'))
+
+    return render_template(
+        'contatos_emails.html',
+        emails=emails,
+        busca=busca,
+        limite_emails=160,
+        nome_socio=session.get('nome_exibicao', 'Socio')
+    )
+
+@app.route('/contatos/emails/adicionar', methods=['POST'])
+def adicionar_contato_email():
+    if 'usuario_logado' not in session:
+        return redirect(url_for('tela_login'))
+
+    garantir_tabela_emails()
+    nome = request.form.get('nome', '').strip()
+    email = request.form.get('email', '').strip().lower()
+    if not nome or not email:
+        flash("Informe nome e e-mail.")
+        return redirect(url_for('pagina_contatos_emails'))
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO credenciais_email
+                (nome, sobrenome, email, senha, provedor_url, observacoes, criado_por)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (
+                nome,
+                request.form.get('sobrenome', '').strip(),
+                email,
+                request.form.get('senha', '').strip(),
+                request.form.get('provedor_url', '').strip(),
+                request.form.get('observacoes', '').strip(),
+                session.get('nome_exibicao', 'Sistema')
+            ))
+        conn.commit()
+        registrar_log(f"Cadastrou credencial de e-mail: {email}")
+        flash("E-mail cadastrado com sucesso.")
+    finally:
+        conn.close()
+
+    return redirect(url_for('pagina_contatos_emails'))
+
+@app.route('/contatos/emails/editar/<int:email_id>', methods=['POST'])
+def editar_contato_email(email_id):
+    if 'usuario_logado' not in session:
+        return redirect(url_for('tela_login'))
+
+    garantir_tabela_emails()
+    nome = request.form.get('nome', '').strip()
+    email = request.form.get('email', '').strip().lower()
+    if not nome or not email:
+        flash("Informe nome e e-mail.")
+        return redirect(url_for('pagina_contatos_emails'))
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE credenciais_email
+                SET nome = %s, sobrenome = %s, email = %s, senha = %s, provedor_url = %s, observacoes = %s
+                WHERE id = %s
+            """, (
+                nome,
+                request.form.get('sobrenome', '').strip(),
+                email,
+                request.form.get('senha', '').strip(),
+                request.form.get('provedor_url', '').strip(),
+                request.form.get('observacoes', '').strip(),
+                email_id
+            ))
+        conn.commit()
+        registrar_log(f"Atualizou credencial de e-mail ID: {email_id}")
+        flash("E-mail atualizado com sucesso.")
+    finally:
+        conn.close()
+
+    return redirect(url_for('pagina_contatos_emails'))
+
+@app.route('/contatos/emails/excluir/<int:email_id>', methods=['POST'])
+def excluir_contato_email(email_id):
+    if 'usuario_logado' not in session:
+        return redirect(url_for('tela_login'))
+
+    garantir_tabela_emails()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM credenciais_email WHERE id = %s", (email_id,))
+        conn.commit()
+        registrar_log(f"Removeu credencial de e-mail ID: {email_id}")
+        flash("E-mail removido com sucesso.")
+    finally:
+        conn.close()
+
+    return redirect(url_for('pagina_contatos_emails'))
 
 @app.route('/admin/usuarios', methods=['GET', 'POST'])
 def admin_usuarios():
