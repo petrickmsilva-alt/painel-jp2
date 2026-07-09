@@ -40,6 +40,7 @@ COLUNAS_2FA_USUARIOS_VERIFICADAS = False
 COLUNAS_AGENDA_VERIFICADAS = False
 TABELA_CONTATOS_VERIFICADA = False
 TABELA_EMAILS_VERIFICADA = False
+TABELA_SITES_SENHAS_VERIFICADA = False
 USUARIOS_ADMIN_CACHE = None
 RESUMO_DASHBOARD_CACHE = {"expira_em": None, "dados": None}
 LISTAR_CACHE = {}
@@ -409,6 +410,35 @@ def garantir_tabela_emails():
     finally:
         conn.close()
 
+def garantir_tabela_sites_senhas():
+    global TABELA_SITES_SENHAS_VERIFICADA
+    if TABELA_SITES_SENHAS_VERIFICADA:
+        return
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS bloco_sites_senhas (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    titulo VARCHAR(160) NOT NULL,
+                    url_site VARCHAR(255) NULL,
+                    usuario_login VARCHAR(180) NULL,
+                    senha VARCHAR(255) NULL,
+                    categoria VARCHAR(60) NOT NULL DEFAULT 'geral',
+                    observacoes TEXT NULL,
+                    criado_por VARCHAR(120) NULL,
+                    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+            """)
+
+            criar_indice_se_necessario(cur, "bloco_sites_senhas", "idx_sites_senhas_busca", "titulo(120), usuario_login(120), categoria(40)")
+            criar_indice_se_necessario(cur, "bloco_sites_senhas", "idx_sites_senhas_categoria", "categoria(40), titulo(120)")
+        TABELA_SITES_SENHAS_VERIFICADA = True
+    finally:
+        conn.close()
+
 def limpar_telefone(valor):
     return re.sub(r"\D+", "", str(valor or ""))
 
@@ -464,6 +494,14 @@ def detectar_provedor_email(email, url_manual=""):
     if dominio:
         return f"https://webmail.{dominio}"
     return ""
+
+def normalizar_url_site(url):
+    url = str(url or "").strip()
+    if not url:
+        return ""
+    if not re.match(r"^https?://", url, re.I):
+        return "https://" + url
+    return url
 
 def criar_indice_se_necessario(cur, tabela, nome_indice, definicao_colunas):
     if not re.match(r"^[A-Za-z0-9_]+$", tabela) or not re.match(r"^[A-Za-z0-9_]+$", nome_indice):
@@ -1336,6 +1374,152 @@ def excluir_contato_email(email_id):
         conn.close()
 
     return redirect(url_for('pagina_contatos_emails'))
+
+@app.route('/contatos/sites-senhas')
+def pagina_contatos_sites_senhas():
+    if 'usuario_logado' not in session:
+        return redirect(url_for('tela_login'))
+
+    garantir_tabela_sites_senhas()
+    busca = request.args.get('q', '').strip()
+    categoria = request.args.get('categoria', '').strip()
+    categorias_validas = ['geral', 'banco', 'governo', 'email', 'site', 'sistema', 'fornecedor', 'cliente', 'social']
+
+    filtros = []
+    params = []
+    if busca:
+        termo = f"%{busca}%"
+        filtros.append("(titulo LIKE %s OR url_site LIKE %s OR usuario_login LIKE %s OR observacoes LIKE %s)")
+        params.extend([termo, termo, termo, termo])
+    if categoria in categorias_validas:
+        filtros.append("categoria = %s")
+        params.append(categoria)
+
+    where_sql = f"WHERE {' AND '.join(filtros)}" if filtros else ""
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"""
+                SELECT id, titulo, url_site, usuario_login, senha, categoria, observacoes, criado_por, criado_em, atualizado_em
+                FROM bloco_sites_senhas
+                {where_sql}
+                ORDER BY titulo ASC
+                LIMIT 200
+            """, tuple(params))
+            registros = cur.fetchall()
+    finally:
+        conn.close()
+
+    for item in registros:
+        item['url_final'] = normalizar_url_site(item.get('url_site'))
+
+    return render_template(
+        'contatos_sites_senhas.html',
+        registros=registros,
+        busca=busca,
+        categoria_atual=categoria,
+        categorias=categorias_validas,
+        limite_registros=200,
+        nome_socio=session.get('nome_exibicao', 'Socio')
+    )
+
+@app.route('/contatos/sites-senhas/adicionar', methods=['POST'])
+def adicionar_contato_site_senha():
+    if 'usuario_logado' not in session:
+        return redirect(url_for('tela_login'))
+
+    garantir_tabela_sites_senhas()
+    titulo = request.form.get('titulo', '').strip()
+    if not titulo:
+        flash("Informe o nome do site ou sistema.")
+        return redirect(url_for('pagina_contatos_sites_senhas'))
+
+    categoria = request.form.get('categoria', 'geral')
+    categorias_validas = ['geral', 'banco', 'governo', 'email', 'site', 'sistema', 'fornecedor', 'cliente', 'social']
+    if categoria not in categorias_validas:
+        categoria = 'geral'
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO bloco_sites_senhas
+                (titulo, url_site, usuario_login, senha, categoria, observacoes, criado_por)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (
+                titulo,
+                request.form.get('url_site', '').strip(),
+                request.form.get('usuario_login', '').strip(),
+                request.form.get('senha', '').strip(),
+                categoria,
+                request.form.get('observacoes', '').strip(),
+                session.get('nome_exibicao', 'Sistema')
+            ))
+        conn.commit()
+        registrar_log(f"Cadastrou site/senha no bloco premium: {titulo}")
+        flash("Registro salvo no bloco premium.")
+    finally:
+        conn.close()
+
+    return redirect(url_for('pagina_contatos_sites_senhas'))
+
+@app.route('/contatos/sites-senhas/editar/<int:registro_id>', methods=['POST'])
+def editar_contato_site_senha(registro_id):
+    if 'usuario_logado' not in session:
+        return redirect(url_for('tela_login'))
+
+    garantir_tabela_sites_senhas()
+    titulo = request.form.get('titulo', '').strip()
+    if not titulo:
+        flash("Informe o nome do site ou sistema.")
+        return redirect(url_for('pagina_contatos_sites_senhas'))
+
+    categoria = request.form.get('categoria', 'geral')
+    categorias_validas = ['geral', 'banco', 'governo', 'email', 'site', 'sistema', 'fornecedor', 'cliente', 'social']
+    if categoria not in categorias_validas:
+        categoria = 'geral'
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE bloco_sites_senhas
+                SET titulo = %s, url_site = %s, usuario_login = %s, senha = %s, categoria = %s, observacoes = %s
+                WHERE id = %s
+            """, (
+                titulo,
+                request.form.get('url_site', '').strip(),
+                request.form.get('usuario_login', '').strip(),
+                request.form.get('senha', '').strip(),
+                categoria,
+                request.form.get('observacoes', '').strip(),
+                registro_id
+            ))
+        conn.commit()
+        registrar_log(f"Atualizou site/senha do bloco premium ID: {registro_id}")
+        flash("Registro atualizado com sucesso.")
+    finally:
+        conn.close()
+
+    return redirect(url_for('pagina_contatos_sites_senhas'))
+
+@app.route('/contatos/sites-senhas/excluir/<int:registro_id>', methods=['POST'])
+def excluir_contato_site_senha(registro_id):
+    if 'usuario_logado' not in session:
+        return redirect(url_for('tela_login'))
+
+    garantir_tabela_sites_senhas()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM bloco_sites_senhas WHERE id = %s", (registro_id,))
+        conn.commit()
+        registrar_log(f"Removeu site/senha do bloco premium ID: {registro_id}")
+        flash("Registro removido com sucesso.")
+    finally:
+        conn.close()
+
+    return redirect(url_for('pagina_contatos_sites_senhas'))
 
 @app.route('/admin/usuarios', methods=['GET', 'POST'])
 def admin_usuarios():
