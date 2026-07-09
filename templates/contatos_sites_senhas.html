@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <title>Bloco de Notas Premium | JP2 Business</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root{--jp2-bg:#f4f7fb;--jp2-ink:#101828;--jp2-muted:#667085;--jp2-line:#d9e2ef;--jp2-blue:#155eef;--jp2-gold:#b7791f}
+        body{background:radial-gradient(circle at 80% -10%,rgba(183,121,31,.12),transparent 32%),var(--jp2-bg);color:var(--jp2-ink);font-family:"Segoe UI",system-ui,sans-serif;min-height:100vh}
+        .page-shell{max-width:1240px;margin:0 auto;padding:28px 18px 46px}
+        .page-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+        .page-kicker{color:var(--jp2-muted);font-size:12px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
+        .page-title{font-size:1.55rem;font-weight:900;margin:3px 0 0}
+        .panel{background:#fff;border:1px solid var(--jp2-line);border-radius:10px;box-shadow:0 10px 30px rgba(15,23,42,.06)}
+        .toolbar-panel{padding:16px;margin-bottom:18px}
+        .form-control,.form-select{border-color:#d5deeb;min-height:42px}
+        .btn{border-radius:7px;font-weight:750}
+        .agenda-menu{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+        .agenda-menu a{align-items:center;background:#fff;border:1px solid var(--jp2-line);border-radius:999px;color:#344054;display:inline-flex;font-size:13px;font-weight:850;gap:7px;padding:9px 13px;text-decoration:none}
+        .agenda-menu a.active{background:#111827;border-color:#111827;color:#fff}
+        .premium-note{background:linear-gradient(135deg,#111827,#1f2937);border:1px solid #111827;border-radius:10px;color:#fff;margin-bottom:16px;padding:16px}
+        .premium-note strong{display:block;font-size:15px;margin-bottom:4px}
+        .premium-note span{color:#d1d5db;font-size:13px}
+        .sites-list{overflow:hidden}
+        .sites-list-header,.site-row{display:grid;grid-template-columns:minmax(190px,1fr) minmax(180px,.9fr) minmax(170px,.75fr) 240px;gap:14px;align-items:center}
+        .sites-list-header{background:#f8fafc;border-bottom:1px solid #edf1f7;color:var(--jp2-muted);font-size:11px;font-weight:850;letter-spacing:.06em;padding:12px 16px;text-transform:uppercase}
+        .site-row{border-bottom:1px solid #edf1f7;min-height:84px;padding:13px 16px}
+        .site-row:last-child{border-bottom:0}
+        .site-row:hover{background:#fbfdff}
+        .site-title{font-size:15px;font-weight:900;line-height:1.15;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .site-meta{color:var(--jp2-muted);font-size:12px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .pill{background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;color:#b54708;display:inline-flex;font-size:11px;font-weight:900;padding:5px 9px;text-transform:uppercase}
+        .line{align-items:center;color:#344054;display:flex;font-size:13px;gap:8px;min-width:0}
+        .line span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .password-box{align-items:center;background:#f8fafc;border:1px solid #edf1f7;border-radius:8px;display:flex;gap:8px;min-width:0;padding:8px 9px}
+        .password-text{font-family:Consolas,monospace;font-size:13px;font-weight:850;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .password-text.masked{-webkit-text-security:disc}
+        .site-actions{display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap}
+        .empty-state{padding:46px 20px;text-align:center}
+        .empty-state i{color:#98a2b3;font-size:42px}
+        .count{color:var(--jp2-muted);font-size:12px;font-weight:750;margin-top:10px}
+        .copy-toast{background:#101828;border-radius:8px;bottom:22px;box-shadow:0 18px 42px rgba(15,23,42,.22);color:#fff;display:none;font-size:13px;font-weight:750;padding:12px 14px;position:fixed;right:22px;z-index:2000}
+        .copy-toast.show{display:block}
+        .modal-content{border:0;border-radius:10px;box-shadow:0 22px 60px rgba(15,23,42,.22)}
+        .modal-header{border-bottom:1px solid #edf1f7;padding:20px 24px}
+        .modal-body{padding:22px 24px}
+        .modal-footer{border-top:0;padding:0 24px 24px}
+        @media(max-width:760px){.page-header{align-items:flex-start;flex-direction:column}.sites-list-header{display:none}.site-row{grid-template-columns:1fr;gap:9px;align-items:flex-start}.site-actions{justify-content:flex-start}}
+    </style>
+</head>
+<body>
+    <main class="page-shell">
+        <header class="page-header">
+            <div>
+                <div class="page-kicker">Agenda Telefônica</div>
+                <h1 class="page-title">Bloco de Notas Premium</h1>
+                <div class="text-secondary">Sites, sistemas, logins e senhas importantes em um só lugar.</div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="/" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
+                <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#modalNovoSiteSenha"><i class="bi bi-journal-plus"></i> Novo Registro</button>
+            </div>
+        </header>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info border-0 shadow-sm">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <nav class="agenda-menu" aria-label="Menu da agenda telefônica">
+            <a href="{{ url_for('pagina_contatos') }}"><i class="bi bi-telephone"></i> Cadastro de Telefone</a>
+            <a href="{{ url_for('pagina_contatos_emails') }}"><i class="bi bi-envelope-lock"></i> Cadastro de E-mail</a>
+            <a class="active" href="{{ url_for('pagina_contatos_sites_senhas') }}"><i class="bi bi-journal-lock"></i> Bloco de Notas Premium</a>
+        </nav>
+
+        <div class="premium-note">
+            <strong><i class="bi bi-shield-lock"></i> Cofre operacional de sites e senhas</strong>
+            <span>As senhas ficam consultáveis nesta tela para evitar perda de acesso. Recomendo manter o painel protegido e, depois, criarmos uma permissão extra só para visualizar senhas.</span>
+        </div>
+
+        <section class="panel toolbar-panel">
+            <form method="GET" action="{{ url_for('pagina_contatos_sites_senhas') }}" class="row g-3 align-items-end">
+                <div class="col-lg-6">
+                    <label class="form-label small fw-bold text-secondary">Buscar</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input class="form-control" type="search" name="q" value="{{ busca }}" autocomplete="off" placeholder="Site, link, usuário, login ou observação">
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <label class="form-label small fw-bold text-secondary">Categoria</label>
+                    <select class="form-select" name="categoria">
+                        <option value="">Todas</option>
+                        {% for cat in categorias %}
+                            <option value="{{ cat }}" {% if categoria_atual == cat %}selected{% endif %}>{{ cat|capitalize }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-3 d-flex gap-2">
+                    <button class="btn btn-dark flex-fill" type="submit">Filtrar</button>
+                    <a class="btn btn-outline-secondary" href="{{ url_for('pagina_contatos_sites_senhas') }}">Limpar</a>
+                </div>
+            </form>
+        </section>
+
+        {% if registros %}
+            <section class="panel sites-list">
+                <div class="sites-list-header">
+                    <span>Site / Sistema</span>
+                    <span>Login</span>
+                    <span>Senha</span>
+                    <span class="text-end">Ações</span>
+                </div>
+                {% for item in registros %}
+                    <article class="site-row">
+                        <div>
+                            <h2 class="site-title">{{ item.titulo }}</h2>
+                            <div class="site-meta">
+                                <span class="pill">{{ item.categoria }}</span>
+                                {% if item.url_site %} &nbsp; {{ item.url_site }}{% endif %}
+                            </div>
+                            <div class="site-meta">
+                                Cadastrado por {{ item.criado_por or 'Sistema' }}
+                                {% if item.observacoes %} - {{ item.observacoes }}{% endif %}
+                            </div>
+                        </div>
+                        <div class="line">
+                            <i class="bi bi-person-badge text-primary"></i>
+                            <span>{{ item.usuario_login or 'Login não informado' }}</span>
+                        </div>
+                        <div class="password-box">
+                            <span class="password-text masked" id="senhaSite{{ item.id }}">{{ item.senha or 'Sem senha' }}</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="alternarSenhaSite('{{ item.id }}')" title="Mostrar ou ocultar senha">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <div class="site-actions">
+                            {% if item.url_final %}
+                                <a class="btn btn-sm btn-outline-primary" href="{{ item.url_final }}" target="_blank" rel="noopener" title="Abrir site">
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </a>
+                            {% endif %}
+                            {% if item.usuario_login %}
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copiarTexto('{{ item.usuario_login|e }}','Login copiado.')" title="Copiar login">
+                                    <i class="bi bi-person-check"></i>
+                                </button>
+                            {% endif %}
+                            <button type="button" class="btn btn-sm btn-outline-success" onclick="copiarTexto(document.getElementById('senhaSite{{ item.id }}').innerText,'Senha copiada.')" title="Copiar senha">
+                                <i class="bi bi-key"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalEditarSiteSenha"
+                                    data-id="{{ item.id }}"
+                                    data-titulo="{{ item.titulo }}"
+                                    data-url-site="{{ item.url_site or '' }}"
+                                    data-usuario-login="{{ item.usuario_login or '' }}"
+                                    data-senha="{{ item.senha or '' }}"
+                                    data-categoria="{{ item.categoria }}"
+                                    data-observacoes="{{ item.observacoes or '' }}"
+                                    onclick="prepararEdicaoSiteSenha(this)"
+                                    title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalExcluirSiteSenha"
+                                    data-id="{{ item.id }}"
+                                    data-titulo="{{ item.titulo }}"
+                                    onclick="prepararExclusaoSiteSenha(this)"
+                                    title="Excluir">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </article>
+                {% endfor %}
+            </section>
+            <div class="count">
+                {{ registros|length }} registros exibidos.
+                {% if registros|length >= limite_registros %} Use a busca para refinar a lista. {% endif %}
+            </div>
+        {% else %}
+            <section class="panel empty-state">
+                <i class="bi bi-journal-lock"></i>
+                <h2 class="h5 fw-bold mt-3">Nenhum site ou senha cadastrado</h2>
+                <p class="text-secondary mb-3">Cadastre os acessos importantes para não depender da memória — que, convenhamos, às vezes tira férias sem avisar.</p>
+                <button class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#modalNovoSiteSenha">
+                    <i class="bi bi-journal-plus"></i> Cadastrar primeiro registro
+                </button>
+            </section>
+        {% endif %}
+    </main>
+
+    <div class="copy-toast" id="copyToastSiteSenha">Copiado.</div>
+
+    <div class="modal fade" id="modalNovoSiteSenha" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <form class="modal-content" method="POST" action="{{ url_for('adicionar_contato_site_senha') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-journal-plus text-primary"></i> Novo Registro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <label class="form-label small fw-bold text-secondary">Nome do site / sistema</label>
+                            <input class="form-control" name="titulo" required placeholder="Ex.: HostGator, Cloudflare, Render, Prefeitura...">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold text-secondary">Categoria</label>
+                            <select class="form-select" name="categoria">
+                                {% for cat in categorias %}
+                                    <option value="{{ cat }}">{{ cat|capitalize }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary">Link do site</label>
+                            <input class="form-control" name="url_site" placeholder="Ex.: https://app.render.com ou hostgator.com.br">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Usuário / login / e-mail</label>
+                            <input class="form-control" name="usuario_login" autocomplete="off">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Senha</label>
+                            <input class="form-control" type="text" name="senha" autocomplete="new-password">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary">Observações</label>
+                            <textarea class="form-control" name="observacoes" rows="3" placeholder="Ex.: conta principal, vencimento, responsável, telefone de suporte..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark">Salvar registro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalEditarSiteSenha" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <form class="modal-content" method="POST" id="formEditarSiteSenha">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square text-primary"></i> Editar Registro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <label class="form-label small fw-bold text-secondary">Nome do site / sistema</label>
+                            <input class="form-control" name="titulo" id="editSiteTitulo" required>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold text-secondary">Categoria</label>
+                            <select class="form-select" name="categoria" id="editSiteCategoria">
+                                {% for cat in categorias %}
+                                    <option value="{{ cat }}">{{ cat|capitalize }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary">Link do site</label>
+                            <input class="form-control" name="url_site" id="editSiteUrl">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Usuário / login / e-mail</label>
+                            <input class="form-control" name="usuario_login" id="editSiteUsuario" autocomplete="off">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-secondary">Senha</label>
+                            <input class="form-control" type="text" name="senha" id="editSiteSenha" autocomplete="new-password">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary">Observações</label>
+                            <textarea class="form-control" name="observacoes" id="editSiteObservacoes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark">Salvar alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalExcluirSiteSenha" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form class="modal-content" method="POST" id="formExcluirSiteSenha">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger"><i class="bi bi-trash3"></i> Excluir registro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Deseja remover <strong id="nomeSiteExcluir">este registro</strong> do bloco premium?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toastSiteSenha(texto){
+            const toast = document.getElementById('copyToastSiteSenha');
+            toast.innerText = texto;
+            toast.classList.add('show');
+            clearTimeout(window.toastSiteSenhaTimer);
+            window.toastSiteSenhaTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+        }
+
+        function copiarTexto(texto, mensagem){
+            if(!texto) return;
+            navigator.clipboard.writeText(texto)
+                .then(() => toastSiteSenha(mensagem || 'Copiado.'))
+                .catch(() => toastSiteSenha('Não foi possível copiar.'));
+        }
+
+        function alternarSenhaSite(id){
+            const campo = document.getElementById(`senhaSite${id}`);
+            if(!campo) return;
+            campo.classList.toggle('masked');
+        }
+
+        function prepararEdicaoSiteSenha(botao){
+            const id = botao.dataset.id;
+            document.getElementById('formEditarSiteSenha').action = `/contatos/sites-senhas/editar/${id}`;
+            document.getElementById('editSiteTitulo').value = botao.dataset.titulo || '';
+            document.getElementById('editSiteUrl').value = botao.dataset.urlSite || '';
+            document.getElementById('editSiteUsuario').value = botao.dataset.usuarioLogin || '';
+            document.getElementById('editSiteSenha').value = botao.dataset.senha || '';
+            document.getElementById('editSiteCategoria').value = botao.dataset.categoria || 'geral';
+            document.getElementById('editSiteObservacoes').value = botao.dataset.observacoes || '';
+        }
+
+        function prepararExclusaoSiteSenha(botao){
+            const id = botao.dataset.id;
+            document.getElementById('formExcluirSiteSenha').action = `/contatos/sites-senhas/excluir/${id}`;
+            document.getElementById('nomeSiteExcluir').innerText = botao.dataset.titulo || 'este registro';
+        }
+    </script>
+</body>
+</html>
