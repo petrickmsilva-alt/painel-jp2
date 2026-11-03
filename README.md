@@ -68,3 +68,12 @@ SSO e nenhum token federado é emitido. Consulte
 Teste isolado do Flask: `python -m unittest discover -s tests -v` após instalar
 `requirements.txt` em ambiente virtual. O manifesto Node legado não corresponde à
 árvore de fontes deste checkout e deve ser reconciliado antes de qualquer deploy.
+
+## Fase 2 — gates, enforcement e sessão revogável (opt-in)
+
+`JP2_ENFORCE_CORPORATE_CONTEXT` e `JP2_REVOCABLE_SESSIONS` ficam **desligados
+por padrão**; nenhum comportamento muda sem ativação explícita. Antes de ativar,
+aplique manualmente `migrations/20261104_revocable_sessions.sql` em homologação
+e revise memberships/grants. Não há provedor OIDC, SSO ou token federado nesta
+fase. Limites, estado declarado e evidências:
+`docs/JP2-FASE2-GATES-AND-ENFORCEMENT.md`.

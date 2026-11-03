@@ -273,6 +273,9 @@ def finalizar_login_usuario(user):
     session['nome_exibicao'] = user.get('nome_exibicao', user['usuario'])
     session['perfil_usuario'] = user.get('perfil') or obter_perfil_usuario(user['usuario']) or 'socio'
     session.permanent = True
+    # Fase 2 (opt-in): registra sessao revogavel no banco do proprio JP2.
+    from revocable_sessions import registrar_sessao_apos_login
+    registrar_sessao_apos_login(user, session)
     limpar_falhas_login(user['usuario'])
     registrar_log("Realizou login no sistema")
 
@@ -1068,6 +1071,9 @@ def verificar_2fa():
 
 @app.route('/logout')
 def logout():
+    # Fase 2 (opt-in): revoga a linha da sessao antes de limpar o cookie.
+    from revocable_sessions import revogar_sessao_atual
+    revogar_sessao_atual(session)
     registrar_log("Realizou logout no sistema")
     session.clear()
     return redirect(url_for('tela_login'))
@@ -2323,6 +2329,12 @@ def performance_status():
 def manifest(): return send_from_directory('static', 'manifest.json')    
 
 from corporate import bp_corporate
+from revocable_sessions import install as instalar_sessoes_revogaveis
+from corporate_enforcement import install as instalar_gate_corporativo
+
+# Ambos desligados por padrao; nenhum comportamento muda sem as flags.
+instalar_sessoes_revogaveis(app)
+instalar_gate_corporativo(app)
 app.register_blueprint(bp_corporate)
 
 if __name__ == '__main__':
