@@ -1,9 +1,12 @@
 """Corporate control plane for the existing Flask/MySQL panel; NOT an OIDC provider."""
 from urllib.parse import urlsplit
 from uuid import uuid4
+import logging
+from werkzeug.exceptions import HTTPException
 
 from flask import Blueprint, abort, jsonify, redirect, render_template, request, session, url_for
 from database import get_db_connection
+from identity_policy import is_administrator
 
 bp_corporate = Blueprint('corporate', __name__)
 ROLES = ('admin', 'socio', 'leitura')  # Existing JP2 nomenclature; corporate role is per company.
@@ -66,7 +69,7 @@ def audit(cur, action, user_id, company_id=None, system_id=None, result='allowed
 
 def is_admin(user):
     # Recheck DB; a stale cookie cannot retain administrative privileges after role change.
-    return bool(user and user['perfil'] == 'admin')
+    return is_administrator(user)
 
 
 @bp_corporate.route('/api/corporate/me')
@@ -150,9 +153,80 @@ def detail(slug):
             return render_template('corporate_detail.html', system=system, member=member)
 
 
+def apply_governance(cur, actor):
+    """Called only inside an explicit transaction; audit writes use this same cursor."""
+    action = request.form.get('action')
+    if action == 'system':
+        slug = request.form.get('slug')
+        status = request.form.get('status')
+        environment = request.form.get('environment')
+        base_url = request.form.get('base_url', '').strip()
+        if status not in ('active', 'inactive') or environment not in ENVIRONMENTS or (base_url and not safe_system_url(base_url)):
+            abort(400)
+        cur.execute('SELECT id FROM corporate_systems WHERE slug=%s FOR UPDATE', (slug,))
+        system = cur.fetchone()
+        if not system:
+            abort(400)
+        cur.execute('UPDATE corporate_systems SET status=%s, environment=%s, base_url=%s WHERE id=%s',
+                    (status, environment, safe_system_url(base_url), system['id']))
+        audit(cur, 'SYSTEM_CHANGED', actor['id'], system_id=system['id'])
+        return
+
+    if action not in ('membership', 'access'):
+        abort(400)
+    try:
+        user_id = int(request.form.get('user_id', ''))
+        company_id = int(request.form.get('empresa_id', ''))
+    except ValueError:
+        abort(400)
+    # Serialize membership and access writes for the same user (including first membership).
+    # This also protects a grant from racing a concurrent revocation.
+    cur.execute('SELECT id FROM usuarios WHERE id=%s FOR UPDATE', (user_id,))
+    if not cur.fetchone():
+        abort(400)
+    cur.execute('SELECT id FROM empresas WHERE id=%s', (company_id,))
+    if not cur.fetchone():
+        abort(400)
+    if action == 'membership':
+        role = request.form.get('role')
+        status = request.form.get('status')
+        if role not in ROLES or status not in ('active', 'revoked'):
+            abort(400)
+        cur.execute('''INSERT INTO corporate_memberships (user_id, empresa_id, role, status)
+                       VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE role=VALUES(role), status=VALUES(status)''',
+                    (user_id, company_id, role, status))
+        audit(cur, 'MEMBERSHIP_CHANGED', actor['id'], company_id)
+        return
+
+    slug = request.form.get('slug')
+    grant = request.form.get('grant')
+    if grant not in ('yes', 'no'):
+        abort(400)
+    cur.execute('SELECT id FROM corporate_systems WHERE slug=%s', (slug,))
+    system = cur.fetchone()
+    cur.execute('''SELECT id, status FROM corporate_memberships
+                   WHERE user_id=%s AND empresa_id=%s FOR UPDATE''', (user_id, company_id))
+    member = cur.fetchone()
+    if not member or member['status'] != 'active' or not system:
+        abort(400)
+    if grant == 'yes':
+        cur.execute('INSERT IGNORE INTO corporate_system_access (membership_id, system_id) VALUES (%s,%s)',
+                    (member['id'], system['id']))
+    else:
+        cur.execute('DELETE FROM corporate_system_access WHERE membership_id=%s AND system_id=%s',
+                    (member['id'], system['id']))
+    audit(cur, 'SYSTEM_ACCESS_GRANTED' if grant == 'yes' else 'SYSTEM_ACCESS_REVOKED',
+          actor['id'], company_id, system['id'])
+
+
 @bp_corporate.route('/admin/acessos', methods=['GET', 'POST'])
 def manage():
-    with get_db_connection() as conn:
+    conn = get_db_connection()
+    try:
+        if request.method == 'POST':
+            # database.py uses autocommit=True for the legacy application. Explicit begin,
+            # commit and rollback are required; connection.close() is not a commit.
+            conn.begin()
         with conn.cursor() as cur:
             actor = current_user(cur)
             if not actor:
@@ -160,61 +234,8 @@ def manage():
             if not is_admin(actor):
                 abort(403)
             if request.method == 'POST':
-                try:
-                    user_id = int(request.form.get('user_id', ''))
-                    company_id = int(request.form.get('empresa_id', ''))
-                except ValueError:
-                    abort(400)
-                cur.execute('SELECT id FROM usuarios WHERE id = %s', (user_id,))
-                if not cur.fetchone():
-                    abort(400)
-                cur.execute('SELECT id FROM empresas WHERE id = %s', (company_id,))
-                if not cur.fetchone():
-                    abort(400)
-                action = request.form.get('action')
-                if action == 'membership':
-                    role = request.form.get('role')
-                    status = request.form.get('status')
-                    if role not in ROLES or status not in ('active', 'revoked'):
-                        abort(400)
-                    cur.execute('''INSERT INTO corporate_memberships (user_id, empresa_id, role, status)
-                                   VALUES (%s,%s,%s,%s) ON DUPLICATE KEY UPDATE role=VALUES(role), status=VALUES(status)''',
-                                (user_id, company_id, role, status))
-                    audit(cur, 'MEMBERSHIP_CHANGED', actor['id'], company_id)
-                elif action == 'access':
-                    slug = request.form.get('slug')
-                    grant = request.form.get('grant')
-                    if grant not in ('yes', 'no'):
-                        abort(400)
-                    cur.execute('SELECT id FROM corporate_systems WHERE slug = %s', (slug,))
-                    system = cur.fetchone()
-                    cur.execute('''SELECT id, status FROM corporate_memberships
-                                   WHERE user_id = %s AND empresa_id = %s''', (user_id, company_id))
-                    member = cur.fetchone()
-                    if not member or member['status'] != 'active' or not system:
-                        abort(400)
-                    if grant == 'yes':
-                        cur.execute('INSERT IGNORE INTO corporate_system_access (membership_id, system_id) VALUES (%s,%s)', (member['id'], system['id']))
-                    else:
-                        cur.execute('DELETE FROM corporate_system_access WHERE membership_id = %s AND system_id = %s', (member['id'], system['id']))
-                    audit(cur, 'SYSTEM_ACCESS_GRANTED' if grant == 'yes' else 'SYSTEM_ACCESS_REVOKED', actor['id'], company_id, system['id'])
-                elif action == 'system':
-                    slug = request.form.get('slug')
-                    status = request.form.get('status')
-                    environment = request.form.get('environment')
-                    base_url = request.form.get('base_url', '').strip()
-                    if status not in ('active', 'inactive') or environment not in ENVIRONMENTS or (base_url and not safe_system_url(base_url)):
-                        abort(400)
-                    cur.execute('UPDATE corporate_systems SET status=%s, environment=%s, base_url=%s WHERE slug=%s',
-                                (status, environment, safe_system_url(base_url), slug))
-                    if cur.rowcount == 0:
-                        # MySQL reports zero for an unchanged row; verify its existence independently.
-                        cur.execute('SELECT id FROM corporate_systems WHERE slug=%s', (slug,))
-                        if not cur.fetchone():
-                            abort(400)
-                    audit(cur, 'SYSTEM_CHANGED', actor['id'])
-                else:
-                    abort(400)
+                apply_governance(cur, actor)
+                conn.commit()
                 return redirect(url_for('corporate.manage'))
             cur.execute('SELECT id, usuario FROM usuarios ORDER BY usuario')
             users = cur.fetchall()
@@ -227,7 +248,20 @@ def manage():
                            JOIN empresas e ON e.id=m.empresa_id ORDER BY u.usuario,e.nome''')
             rows = cur.fetchall()
             from app import obter_csrf_token
-            return render_template('corporate_admin.html', users=users, companies=companies, catalog=catalog, rows=rows, roles=ROLES, environments=ENVIRONMENTS, csrf=obter_csrf_token())
+            return render_template('corporate_admin.html', users=users, companies=companies,
+                                   catalog=catalog, rows=rows, roles=ROLES,
+                                   environments=ENVIRONMENTS, csrf=obter_csrf_token())
+    except HTTPException:
+        if request.method == 'POST':
+            conn.rollback()
+        raise
+    except Exception:
+        if request.method == 'POST':
+            conn.rollback()
+        logging.exception('Corporate governance transaction failed')
+        abort(500)
+    finally:
+        conn.close()
 
 
 @bp_corporate.after_request

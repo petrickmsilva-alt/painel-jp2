@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote, quote_plus, urljoin, urlparse
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, redirect, url_for, session, flash, make_response, send_from_directory, send_file, g
+from identity_policy import configured_admins, is_administrator
 from database import get_db_connection
 from storage import enviar_arquivo_r2, gerar_url_temporaria_r2, r2_configurado
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -147,13 +148,8 @@ def senha_precisa_atualizar(hash_salvo):
     return not str(hash_salvo or "").startswith(("pbkdf2:", "scrypt:"))
 
 def usuarios_admin():
-    global USUARIOS_ADMIN_CACHE
-    if USUARIOS_ADMIN_CACHE is not None:
-        return USUARIOS_ADMIN_CACHE
+    return configured_admins()
 
-    usuarios = os.environ.get("ADMIN_USERS", "petrick")
-    USUARIOS_ADMIN_CACHE = {u.strip().lower() for u in usuarios.split(",") if u.strip()}
-    return USUARIOS_ADMIN_CACHE
 
 def invalidar_cache_resumo_dashboard():
     RESUMO_DASHBOARD_CACHE["expira_em"] = None
@@ -264,12 +260,11 @@ def garantir_colunas_2fa_usuarios():
         conn.close()
 
 def usuario_login_e_admin(user):
-    if not user:
-        return False
-    usuario = str(user.get("usuario") or "").lower()
-    return usuario in usuarios_admin() or (user.get("perfil") == "admin")
+    return is_administrator(user)
+
 
 def finalizar_login_usuario(user):
+    session.clear()  # Rotate the signed cookie and discard any previous company context.
     session.pop("2fa_pending_user", None)
     session.pop("2fa_pending_nome", None)
     session.pop("2fa_pending_perfil", None)
@@ -282,6 +277,7 @@ def finalizar_login_usuario(user):
     registrar_log("Realizou login no sistema")
 
 def iniciar_fluxo_2fa(user):
+    session.clear()  # Do not carry a previous authenticated session into a pending login.
     session['2fa_pending_user'] = user['usuario']
     session['2fa_pending_nome'] = user.get('nome_exibicao', user['usuario'])
     session['2fa_pending_perfil'] = user.get('perfil') or 'admin'
@@ -314,15 +310,18 @@ def obter_perfil_usuario(usuario):
         conn.close()
 
 def usuario_atual_e_admin():
-    usuario = session.get("usuario_logado", "").lower()
-    if usuario in usuarios_admin():
-        return True
+    usuario = session.get("usuario_logado")
+    if not usuario:
+        return False
+    garantir_coluna_perfil_usuarios()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, usuario, perfil FROM usuarios WHERE usuario = %s", (usuario,))
+            return is_administrator(cur.fetchone())
+    finally:
+        conn.close()
 
-    perfil_sessao = session.get("perfil_usuario")
-    if perfil_sessao:
-        return perfil_sessao == "admin"
-
-    return obter_perfil_usuario(usuario) == "admin"
 
 def acesso_negado():
     registrar_log("Tentou acessar uma area restrita de administrador")

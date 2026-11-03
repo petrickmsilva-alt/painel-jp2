@@ -40,6 +40,10 @@ class Connection:
     def __enter__(self): return self
     def __exit__(self, *args): pass
     def cursor(self): return Cursor(self.state)
+    def begin(self): pass
+    def commit(self): pass
+    def rollback(self): pass
+    def close(self): pass
 
 
 class CorporateTests(unittest.TestCase):
@@ -129,4 +133,5 @@ class CorporateTests(unittest.TestCase):
         self.assertEqual(safe_system_url('https://legit.example/'), 'https://legit.example')
 
 
-if __name__ == '__main__': unittest.main()
+if __name__ == '__main__':
+    unittest.main()
