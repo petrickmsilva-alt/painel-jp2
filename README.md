@@ -54,3 +54,26 @@ Depois que o Render gerar a URL publica do modulo, cadastre esta URL no painel p
 ```bash
 CARTEIRA_INVESTIMENTOS_URL="https://sua-carteira.onrender.com"
 ```
+
+## Autoridade corporativa (Flask)
+
+O painel Flask contém o catálogo de sistemas e o controle de acesso por empresa em
+`/sistemas` e `/admin/acessos`. Antes de usar, aplicar manualmente
+`migrations/20261103_corporate_authority.sql` no **banco MySQL do próprio JP2**
+(após backup e validação em homologação). Não há grants automáticos: o administrador
+deve criar memberships e autorizações explícitas. ERP/Commerce ainda não possuem
+SSO e nenhum token federado é emitido. Consulte
+`docs/JP2-CORPORATE-AUTHORITY-ARCHITECTURE.md` para limites, segurança e roadmap.
+
+Teste isolado do Flask: `python -m unittest discover -s tests -v` após instalar
+`requirements.txt` em ambiente virtual. O manifesto Node legado não corresponde à
+árvore de fontes deste checkout e deve ser reconciliado antes de qualquer deploy.
+
+## Fase 2 — gates, enforcement e sessão revogável (opt-in)
+
+`JP2_ENFORCE_CORPORATE_CONTEXT` e `JP2_REVOCABLE_SESSIONS` ficam **desligados
+por padrão**; nenhum comportamento muda sem ativação explícita. Antes de ativar,
+aplique manualmente `migrations/20261104_revocable_sessions.sql` em homologação
+e revise memberships/grants. Não há provedor OIDC, SSO ou token federado nesta
+fase. Limites, estado declarado e evidências:
+`docs/JP2-FASE2-GATES-AND-ENFORCEMENT.md`.

@@ -1,0 +1,85 @@
+# JP2 Business — autoridade corporativa (estado e contrato)
+
+## Auditoria do repositório (2026-11-03)
+
+- Aplicação principal: Flask 3 / Python (`app.py`, `Procfile: gunicorn app:app`), HTML/Jinja em `templates/`, CSS/JS em `static/`; blueprints `financeiro`, `eventos`, `fomentos`, `carteira`, `atas`, `tarefas`, `consultoria`. `database.py` usa PyMySQL e variáveis `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`; `autocommit=True`. Dump legado em `BDADOSSQL/brobon39_ibdtec_painel.sql`; não é migration executada automaticamente. DDL adicional no próprio `app.py` no primeiro acesso. `storage.py` integra R2.
+- `package.json`/`render.yaml` declaram outro serviço Next/Prisma, mas **não há** `prisma/`, `scripts/` ou árvore Next neste checkout. Não tratar o manifesto Node como backend em execução. `next.config.mjs` está presente. README descreve serviço Render separado; infraestrutura efetiva não verificável daqui. Domínio `app.ibdtec.ong.br` é citado em arquivos LEIA-ME; configuração real de produção/homologação: NOT_DISCOVERED. Docker/Railway/Vercel/Redis/GitHub Actions: NOT_IMPLEMENTED neste checkout. Segredos de produção: NOT_DISCOVERED.
+- Identidade anterior: tabela `usuarios` (id, usuario, senha, nome_exibicao, perfil), `empresas` (id, nome, cnpj, ramo_atividade). Sem vínculo usuário×empresa; `empresa_id` já aparece no domínio financeiro. Login `/login` usa hash Werkzeug scrypt e aceita SHA-256 legado migrado no login. `ADMIN_USERS` pode elevar usuário. Admin usa TOTP (`pyotp`) no login. Sessão Flask assinada no **cookie**, expira após 8h (`PERMANENT_SESSION_LIFETIME`); não há armazenamento/revogação server-side. Logout `/logout` limpa cookie no navegador; não revoga outros cookies/dispositivos. Proteção CSRF global para métodos de escrita, cookie HttpOnly/SameSite Lax/Secure configurável; controle de tentativa de login em memória por processo (não distribuído). Perfil global `admin`, `socio`, `leitura` e verificações ad hoc em rotas; não é RBAC corporativo. Logs em `logs_auditoria`. MFA global para todos: NOT_IMPLEMENTED (admin usa TOTP). Password reset/rotation e revogação de sessão após troca de senha: NOT_IMPLEMENTED.
+- Busca literal foi realizada no código por: user, users, usuario, usuarios, auth, authentication, authorization, login, logout, session, sessions, token, jwt, refresh, password, role, roles, permission, permissions, company, companies, empresa, empresas, tenant, tenancy, organization, oauth, oidc, openid, sso, callback, redirect. OIDC/OAuth provider, JWKS, client registry e SSO: NOT_IMPLEMENTED.
+
+## Autoridade e limites
+
+JP2 controla **quem é**, a associação a empresas, o contexto selecionado, o papel corporativo por empresa e a autorização de acesso a sistemas. ERP controla estoque, finanças, vendas, produção, fiscal, compras e WMS; Commerce controla catálogo, checkout, pagamentos, pedidos, canais, OMS e storefront. Nunca acessar diretamente bancos desses sistemas. Identidade corporativa futura é referenciada por `usuarios.id`, não se cria uma segunda tabela de usuários/senhas. Os outros sistemas não foram consultados nem modificados.
+
+```
+JP2 (identity/control plane)
+  └── futura federação OIDC/SSO (NÃO IMPLEMENTADA)
+       ├── BROBOND ERP (domínio operacional)
+       ├── BROBOND COMMERCE (domínio comercial)
+       └── outros sistemas
+```
+
+## Identity / Company / Membership / Corporate RBAC
+
+Migration manual `migrations/20261103_corporate_authority.sql`: `corporate_memberships` com UNIQUE `(user_id, empresa_id)`, FK para `usuarios` e `empresas`, papel `admin|socio|leitura` (nomenclatura existente), estado `active|revoked`; sem `organizationId`. `corporate_system_access` tem PK `(membership_id, system_id)`. Papel corporativo é contextual e **não** habilita administração global; administração de acessos requer `usuarios.perfil='admin'` relido do DB. `ADMIN_USERS` legado ainda concede privilégio em outras rotas; alinhar antes de federar. Contexto de empresa é explicitamente selecionado em `/sistemas/contexto`, guardado no cookie assinado, e **relido/validado** contra membership ativo em cada consulta corporativa. Revogar membership retira imediatamente visibilidade corporativa inclusive se o cookie antigo continuar válido. Não migra/atribui memberships automaticamente; admin deve conceder após revisão. Acesso ao JP2 legado permanece independente do catálogo durante a transição.
+
+**Limite crítico**: módulos operacionais preexistentes não consultam `corporate_memberships`; diversos endpoints financeiros verificam apenas `usuario_logado` e recebem `empresa_id` do cliente. Logo o isolamento corporativo demonstrado nos testes aplica-se **somente às novas rotas corporativas**. Não afirmar isolamento global/tenant escape = NO em produção até revisar essas rotas.
+
+## System Registry / URL / environment
+
+`corporate_systems` contém slug único, nome, descrição, base_url opcional, environment, status, icon, access_policy. Seeds idempotentes: JP2 ativo; ERP, Commerce, Store inativos. `base_url` é apenas cadastral (origem HTTPS sem path, userinfo, query, fragment); não existe redirect nem token, mesmo se ativado. Admin determina URL e ambiente explicitamente; nenhum fallback entre DEVELOPMENT/STAGING/PRODUCTION. URLs reais não foram descobertas; não inventar. URLs/credenciais de integração não são incluídas no frontend/API. Catálogo completo é visível apenas para admins na página protegida. API retorna somente sistemas ativos concedidos no membership ativo e contexto atual; a tela de detalhe nunca encaminha ao sistema remoto. Para integração futura, exigir allowlist de redirect URIs por cliente e ambiente; nunca reutilizar `base_url` como allowlist de callback.
+
+## API
+
+`GET /api/corporate/me`: cookie Flask autenticado; identidade mínima, empresa selecionada, memberships próprios, papel selecionado, sistemas ativos autorizados. `GET /api/corporate/systems`: apenas sistemas autorizados no contexto. `Cache-Control: no-store`. **Não são endpoints bearer**, não usar como API entre aplicações. Sem CORS permissivo; clientes externos não devem consumir cookies JP2. Para API futura: validação JWT issuer/audience/expiry/scope/company, rate limit distribuído e CORS explícito antes de liberar integrações.
+
+## OIDC / OAuth / SSO / client registration / logout
+
+OIDC_IMPLEMENTED = NO. OIDC_ARCHITECTURE_READY = contrato documentado, **não provider operacional**. A stack Flask comporta biblioteca/provider confiável e storage persistente, mas cookie Flask stateless, ausência de sessão corporativa revogável, rate limit distribuído, chaves assimétricas/JWKS e client registry impedem publicar um authorization server seguro nesta etapa. NÃO existem `/.well-known/openid-configuration`, `/oauth/authorize`, `/oauth/token`, `/oauth/userinfo`, `/oauth/jwks`, `/oauth/revoke`, `/oauth/logout`. Não emitir tokens ou criar callbacks fictícios. Próxima implementação: escolher provider mantido e auditado; definir issuer canônico `JP2_BASE_URL`, HTTPS, registro administrativo de clientes com segredo armazenado com hash quando aplicável, redirect allowlist exata por ambiente, grants authorization code + PKCE, state/nonce, escopos mínimos `openid profile email company systems` somente quando dados existirem, consentimento/associação por empresa, assinatura assimétrica e JWKS com rotação, armazenamento transacional de códigos/sessões/revogações, introspecção ou TTL curto com revogação coordenada. Logout central deve revogar sessão persistente e informar consumidores conforme contrato acordado. Sem JWT_SECRET compartilhado, senhas copiadas, tokens em URL ou iframe.
+
+## Events / audit / segurança
+
+`corporate_audit` registra acesso/negação, mudanças de contexto, membership e grant/revoke com ator, empresa, sistema quando aplicável, timestamp, IP do request, user-agent truncado, correlation_id gerado e resultado. Não armazena senha ou tokens. Logs legados de login/logout permanecem em `logs_auditoria`, sem correlação com auditoria corporativa. Os eventos de integração `USER_CREATED`, `USER_UPDATED`, `USER_DISABLED`, `MEMBERSHIP_CREATED`, `MEMBERSHIP_REVOKED`, `ROLE_CHANGED`, `COMPANY_CREATED`, `COMPANY_UPDATED`, `SYSTEM_ACCESS_GRANTED`, `SYSTEM_ACCESS_REVOKED` são **contrato futuro**, não publicações atuais. Quando houver outbox, envelopes: `event_id`, `event_type`, `aggregate_id`, `timestamp`, `correlation_id`, `payload`, `version`; consumidores idempotentes por event_id e operações de grant/membership protegidas por chave única. Sem event bus até haver infraestrutura operacional.
+
+Proteções existentes: CSRF para writes, cookies Secure/HttpOnly/SameSite, templates com autoescape, queries parametrizadas; novas páginas não fazem redirect remoto. **Pendências**: rate limit distribuído (incluindo APIs corporativas e MFA), revogação server-side de sessão, proteção completa contra replay TOTP, revisão de legacy SHA-256, política de senha e reset, revisão tenant de TODOS os módulos, tratamento de falhas de DB e hardening de logs. O `X-Forwarded-For` legado não é confiável sem proxy configurado. Não declarar security PASS global.
+
+## Contratos futuros
+
+**JP2 → BROBOND ERP:** JP2 provê identidade, autenticação, acesso corporativo, contexto empresa, papel e SSO federado; ERP valida tokens emitidos pelo JP2 (issuer/audience/company/expiry/scope) e gerencia autorização operacional e dados ERP. Sem senha corporativa separada no ERP; sem banco compartilhado.
+
+**JP2 → BROBOND COMMERCE:** mesmas garantias de identidade/autenticação/acesso corporativo, claims mínimos e escopos por tenant; Commerce gerencia catálogo, checkout, pagamentos, pedidos, canais, OMS e storefront. Sem banco compartilhado nem senha corporativa separada. Sistemas futuros seguem o mesmo modelo e só entram via registro e aprovação explícita.
+
+## Roadmap e operação
+
+1. Fase 1: modelo corporativo, catálogo e acesso contextual (este PR, requer migration manual e grants administrados).
+2. Fase 2: OIDC Provider, sessão revogável e chaves/clientes/redirects.
+3. Fase 3: ERP como OIDC client **no repositório próprio**.
+4. Fase 4: Commerce como OIDC client no repositório próprio.
+5. Fase 5: Corporate API bearer com scopes/tenant e rate limit distribuído.
+6. Fase 6: integração de eventos/outbox/idempotência.
+7. Fase 7: dashboard corporativo expandido.
+8. Fase 8: auditoria/observabilidade centralizadas.
+
+Antes de habilitar produção: backup testado, aplicar SQL ao MySQL JP2 com permissões DDL controladas, validar FKs e nomes/tipos no banco real, revisar memberships e grants individualmente, conferir `FLASK_SECRET_KEY`, HTTPS/cookies e WAF, executar testes MySQL reais em homologação. Não rodar migration automaticamente em requisição ou deploy. Configuração relevante: `FLASK_SECRET_KEY`, `FLASK_COOKIE_SECURE`, `ADMIN_USERS`, `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`. `JP2_BASE_URL` e URLs BROBOND: propostas futuras, **não exigidas/implementadas**. `render.yaml` aponta Node sem fontes suficientes; conciliar manifestos antes de promover deploy.
+
+## Revisão corretiva do PR #125 (2026-11-03)
+
+### Matriz de rotas legadas e enforcement
+
+Inventário **completo das 141 regras Flask registradas**, incluindo métodos, domínio, identidade, seleção de empresa, membership e risco: [JP2-LEGACY-ROUTE-MATRIX.md](JP2-LEGACY-ROUTE-MATRIX.md). Reproduzir: `.venv/bin/python scripts/audit_routes.py`. Classificação conservadora: 6 CONFORME (apenas corporate), 28 NÃO CONFORME (financeiro multiempresa), 104 PARCIAL (outros legados/autenticação) e 3 NÃO APLICÁVEL (assets). A classificação automática não substitui revisão de SQL/helpers; não há prova de isolamento global. `financeiro.py` aceita `empresa_id` do formulário e lista investimentos/empresas sem filtro por membership; `/api/empresas`, `/api/adicionar-empresa` e `/api/excluir-empresa` operam globalmente. Outros domínios frequentemente aceitam apenas cookie existente e não relêem `usuarios`. Prioridade: primeiro financeiro e consultas por ID, depois empresas, arquivos, eventos/consultoria, carteira e demais módulos; desenhar política e migração de memberships antes de impor filtros, para não bloquear usuários legítimos indiscriminadamente.
+
+Rotas corrigidas nesta revisão: todas as administrativas legadas que chamam `usuario_atual_e_admin()` (revalidação DB da política única), `/admin/acessos` (transação explícita), e fluxo de login/2FA (limpa contexto anterior no cookie retornado; cookies já emitidos NÃO são revogados). **Sem alteração nos fluxos operacionais existentes**. `identity_policy.is_administrator(user)` é a regra única para login/admin legado/admin corporativo: usuário existente carregado do DB, `perfil=admin` **ou** `usuario` em `ADMIN_USERS` (compatibilidade histórica), nunca um claim de perfil guardado no cookie. A tabela atual não possui flag de usuário desativado; a desativação comprovável neste schema é a exclusão de `usuarios` (FKs em cascata). Evitar usar exclusão como política de lifecycle permanente antes de definir status e retenção de auditoria. Mudança de perfil no DB tem efeito na próxima requisição administrativa. Mudança de `ADMIN_USERS` requer atualização de configuração dos processos; não é rol de membership.
+
+`database.get_db_connection()` é PyMySQL `autocommit=True`. Antes, `/admin/acessos` podia gravar grant e falhar na auditoria, deixando concessão sem trilha. Agora cada POST usa `conn.begin()` antes de revalidar ator, grava alterações e auditoria **pelo mesmo cursor/conexão**, confirma só após o último INSERT; exceção (inclusive `abort(4xx)`) faz `rollback()` e fecha a conexão. Bloqueio de linha `usuarios FOR UPDATE` serializa alterações para o mesmo usuário (inclusive primeiro membership); `corporate_memberships FOR UPDATE` no grant/revoke impede competição com revogação. Chaves únicas tornam reexecuções/grants idempotentes no estado; cada requisição bem-sucedida ainda é auditada. GET não inicia transação. Exceções inesperadas geram 500 sem exibir detalhes ao cliente. Auditoria de leitura/contexto continua legada em autocommit, fora da garantia de atomicidade de governança.
+
+### Migration MySQL e testes
+
+Dump versionado `BDADOSSQL/brobon39_ibdtec_painel.sql`: `usuarios.id` e `empresas.id` são `int(11) NOT NULL` **signed**, PK com AUTO_INCREMENT e InnoDB; `corporate_memberships.user_id`/`empresa_id` são `INT` signed e FKs apontam para essas chaves. Outras FKs são `BIGINT` signed para PKs corporativas; charset das colunas FK inteiras não interfere. A migration é idempotente para a estrutura e seeds (`IF NOT EXISTS`, `INSERT IGNORE`); não é rollback automático. Não substituir schema real por dump com dados históricos/credenciais na CI.
+
+`tests/test_mysql_corporate.py` usa MySQL descartável local explicitamente autorizado (`JP2_TEST_MYSQL_ISOLATED=1`), cria schema `jp2_ci_<aleatório>`, reproduz os tipos/PK/engine do dump para duas tabelas-mãe **sem dados reais**, aplica migration, verifica 4 tabelas, 4 FKs, seeds, grant/revoke, duplicidade, reexecução, isolamento, concorrência de grants e rollback em falha simulada da auditoria. Remove schema ao terminar. `JP2_REQUIRE_MYSQL=1` transforma ausência do serviço em falha. Não conectar a host remoto; não foi fornecido banco de homologação neste sandbox. Essa suíte testa compatibilidade com schema mínimo do dump e não certifica compatibilidade com o banco de produção.
+
+Workflow `.github/workflows/jp2-flask.yml`: `push` e `pull_request`, Python 3.11 conforme `runtime.txt`, dependências de `requirements.txt`, `compileall`, Ruff para erros críticos no legado e validação estática das novas fontes, `unittest` completo com serviço **MySQL 8 isolado**, sem secrets de produção. Não usar o manifesto Node incompleto como gate Flask. Resultados observados: local `unittest discover` — 12 testes passaram, 1 classe MySQL pulada por ausência de servidor; compileall e Ruff passaram. GitHub Actions com MySQL 8 isolado: [run push 41644052813](https://github.com/petrickmsilva-alt/painel-jp2/actions/runs/41644052813) **concluiu com sucesso**, 17 testes (12 unitários + 5 integração; sem skips esperados pois `JP2_REQUIRE_MYSQL=1`); validação estática/compileall passaram. Casos MySQL individuais: (1) schema/replay/4 FKs/seeds/integridade; (2) criação/role/revoke/grant/duplicidade/isolamento; (3) IDs inválidos/CSRF/origem/privilégio; (4) falha de auditoria/rollback de membership, grant e catálogo; (5) duas concessões concorrentes/idempotência. Não foi usado banco de homologação/produção.
+
+### Controles restantes e fase OIDC
+
+`OIDC_IMPLEMENTED = NO`. Não há tokens de federação. Persistem ausência de sessão corporativa revogável (cookie Flask stateless), lifecycle/status do usuário, enforcement de empresa em todo legado, rate limit distribuído e comprovação de banco real de homologação. Próxima fase: provider OIDC mantido, sessão persistente e revogável, registro de clientes, redirect URIs exatas por ambiente, Authorization Code + PKCE, state/nonce, assinatura assimétrica, JWKS com rotação, scopes mínimos, logout central e integração ERP/Commerce em seus próprios repositórios. Nenhum endpoint OIDC incompleto será publicado.
