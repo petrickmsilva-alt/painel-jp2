@@ -264,7 +264,7 @@ def usuario_login_e_admin(user):
 
 
 def finalizar_login_usuario(user):
-    session.clear()  # Rotate the signed cookie and discard any previous company context.
+    session.clear()  # Discard prior company context; Flask cookies have no server-side session ID.
     session.pop("2fa_pending_user", None)
     session.pop("2fa_pending_nome", None)
     session.pop("2fa_pending_perfil", None)
