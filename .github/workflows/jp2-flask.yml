@@ -48,7 +48,7 @@ jobs:
           else
             python - <<'PYLOG'
           import pathlib
-          text = pathlib.Path('/tmp/jp2-tests.log').read_text()[-5500:]
+          text = pathlib.Path('/tmp/jp2-tests.log').read_text()[-1800:]
           text = text.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
           print('::error title=JP2 tests failed::' + text)
           PYLOG
