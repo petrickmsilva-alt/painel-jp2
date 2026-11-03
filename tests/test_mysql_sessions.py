@@ -114,12 +114,14 @@ class MySQLSessionTests(unittest.TestCase):
     def test_migration_idempotente_preserva_invariantes_da_fase1(self):
         self.migrate()  # replay nao pode duplicar seeds, dados ou tabelas
         with self.db.cursor() as cur:
-            cur.execute("SELECT engine FROM information_schema.tables WHERE table_schema=%s AND table_name='jp2_sessions'",
+            # MySQL 8 devolve colunas de information_schema em maiusculas: usar alias.
+            cur.execute("SELECT engine AS engine_name FROM information_schema.tables "
+                        "WHERE table_schema=%s AND table_name='jp2_sessions'", (self.schema,))
+            self.assertEqual(cur.fetchone()['engine_name'], 'InnoDB')
+            cur.execute("SELECT column_type AS column_type_name FROM information_schema.columns "
+                        "WHERE table_schema=%s AND table_name='jp2_sessions' AND column_name='sid_hash'",
                         (self.schema,))
-            self.assertEqual(cur.fetchone()['engine'], 'InnoDB')
-            cur.execute("SELECT column_type FROM information_schema.columns WHERE table_schema=%s "
-                        "AND table_name='jp2_sessions' AND column_name='sid_hash'", (self.schema,))
-            self.assertEqual(cur.fetchone()['column_type'], 'char(64)')
+            self.assertEqual(cur.fetchone()['column_type_name'].lower(), 'char(64)')
             cur.execute("SELECT COUNT(*) AS n FROM information_schema.referential_constraints "
                         "WHERE constraint_schema=%s AND table_name='jp2_sessions'", (self.schema,))
             self.assertEqual(cur.fetchone()['n'], 1)
