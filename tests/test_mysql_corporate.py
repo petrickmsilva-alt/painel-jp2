@@ -114,15 +114,15 @@ class MySQLCorporateTests(unittest.TestCase):
     def test_schema_replay_fk_seeds_and_integrity(self):
         self.migrate()  # re-execution must preserve data and seeds
         with self.db.cursor() as cur:
-            cur.execute("SELECT table_name, engine FROM information_schema.tables WHERE table_schema=%s AND table_name LIKE 'corporate%%'", (self.schema,))
-            self.assertEqual({r['table_name'] for r in cur.fetchall()},
+            cur.execute("SELECT table_name AS table_name_lower, engine FROM information_schema.tables WHERE table_schema=%s AND table_name LIKE 'corporate%%'", (self.schema,))
+            self.assertEqual({r['table_name_lower'] for r in cur.fetchall()},
                              {'corporate_memberships', 'corporate_systems', 'corporate_system_access', 'corporate_audit'})
             cur.execute("SELECT constraint_name FROM information_schema.referential_constraints WHERE constraint_schema=%s AND table_name LIKE 'corporate%%'", (self.schema,))
             self.assertEqual(len(cur.fetchall()), 4)
-            cur.execute("SELECT column_name,column_type FROM information_schema.columns WHERE table_schema=%s AND table_name='usuarios' AND column_name='id'", (self.schema,))
-            self.assertRegex(cur.fetchone()['column_type'], r'^int(\(11\))?$')
-            cur.execute("SELECT column_name,column_type FROM information_schema.columns WHERE table_schema=%s AND table_name='empresas' AND column_name='id'", (self.schema,))
-            self.assertRegex(cur.fetchone()['column_type'], r'^int(\(11\))?$')
+            cur.execute("SELECT column_name,column_type AS signed_id_type FROM information_schema.columns WHERE table_schema=%s AND table_name='usuarios' AND column_name='id'", (self.schema,))
+            self.assertRegex(cur.fetchone()['signed_id_type'], r'^int(\(11\))?$')
+            cur.execute("SELECT column_name,column_type AS signed_id_type FROM information_schema.columns WHERE table_schema=%s AND table_name='empresas' AND column_name='id'", (self.schema,))
+            self.assertRegex(cur.fetchone()['signed_id_type'], r'^int(\(11\))?$')
             cur.execute('SELECT slug,status FROM corporate_systems ORDER BY slug')
             self.assertEqual(len(cur.fetchall()), 4)
             with self.assertRaises(pymysql.err.IntegrityError):
