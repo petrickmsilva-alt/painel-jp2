@@ -2323,6 +2323,9 @@ def performance_status():
 @app.route('/manifest.json')
 def manifest(): return send_from_directory('static', 'manifest.json')    
 
+from corporate import bp_corporate
+app.register_blueprint(bp_corporate)
+
 if __name__ == '__main__':
     app.run(debug=True)
 

@@ -54,3 +54,17 @@ Depois que o Render gerar a URL publica do modulo, cadastre esta URL no painel p
 ```bash
 CARTEIRA_INVESTIMENTOS_URL="https://sua-carteira.onrender.com"
 ```
+
+## Autoridade corporativa (Flask)
+
+O painel Flask contém o catálogo de sistemas e o controle de acesso por empresa em
+`/sistemas` e `/admin/acessos`. Antes de usar, aplicar manualmente
+`migrations/20261103_corporate_authority.sql` no **banco MySQL do próprio JP2**
+(após backup e validação em homologação). Não há grants automáticos: o administrador
+deve criar memberships e autorizações explícitas. ERP/Commerce ainda não possuem
+SSO e nenhum token federado é emitido. Consulte
+`docs/JP2-CORPORATE-AUTHORITY-ARCHITECTURE.md` para limites, segurança e roadmap.
+
+Teste isolado do Flask: `python -m unittest discover -s tests -v` após instalar
+`requirements.txt` em ambiente virtual. O manifesto Node legado não corresponde à
+árvore de fontes deste checkout e deve ser reconciliado antes de qualquer deploy.
