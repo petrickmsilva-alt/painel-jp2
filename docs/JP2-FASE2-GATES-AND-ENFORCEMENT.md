@@ -122,13 +122,41 @@ linha no banco, não de uma segunda implementação de cookies.
 | `compileall`, `ruff` (legado + novos), `git diff --check` (local) | ✅ passaram |
 | `scripts/check_contract.py` (local) | ✅ `CONTRACT PASS`: 141 rotas, nenhuma rota de federação, flags desligadas, nenhum acesso externo/DDL em request |
 | Inventário reproduzível (`audit_routes.py` + `git diff --exit-code`) | ✅ matriz inalterada: 141 rotas (6/28/104/3) |
-| `unittest discover -s tests -v` (local, sem MySQL) | ✅ 38 testes passaram; **2 classes MySQL integração puladas** — não há servidor MySQL isolado neste sandbox |
-| Suíte MySQL 8 descartável (CI, `JP2_REQUIRE_MYSQL=1`) | **aguardando o run deste PR** |
+| `unittest discover -s tests -v` (local, sem MySQL) | ✅ `Ran 38 tests ... OK (skipped=2)`: **2 classes de integração MySQL puladas** — não há servidor MySQL isolado neste sandbox |
+| Suíte MySQL 8 descartável (CI, `JP2_REQUIRE_MYSQL=1`) | ✅ **4 runs verdes** no head `d45d12e` (detalhes abaixo) |
 | Banco real de homologação/produção | **não executado** |
 | Deploy, migration em banco real, SSO/tokens | **não executados** |
 
-Local significa apenas este sandbox: sem MySQL, sem homologação e sem produção.
-Um `CONTRACT PASS` local não é gate de CI verde e muito menos autorização de deploy.
+### Evidência de CI registrada (head `d45d12e`)
+
+| Evento | Workflow | Run | Conclusão |
+|---|---|---|---|
+| push | `JP2 Flask and MySQL` | [41672379331](https://github.com/petrickmsilva-alt/painel-jp2/actions/runs/41672379331) | success |
+| push | `JP2 Fase 2 gates` | [41672379344](https://github.com/petrickmsilva-alt/painel-jp2/actions/runs/41672379344) | success |
+| pull_request (#126) | `JP2 Flask and MySQL` | [41672388946](https://github.com/petrickmsilva-alt/painel-jp2/actions/runs/41672388946) | success |
+| pull_request (#126) | `JP2 Fase 2 gates` | [41672389095](https://github.com/petrickmsilva-alt/painel-jp2/actions/runs/41672389095) | success |
+
+Os steps `Contract gate (OIDC=NO, flags off, no ERP/Commerce access)`,
+`Route inventory reproducibility gate` e `Unit, security and disposable MySQL
+integration tests` concluíram com **success** nos jobs de PR. Como os workflows
+definem `JP2_REQUIRE_MYSQL=1`, a ausência do serviço MySQL isolado transformaria
+o skip em erro: as duas classes de integração (`MySQLCorporateTests` e
+`MySQLSessionTests`, 9 casos ao todo) **rodaram** no CI, em schema descartável
+`jp2_ci_*` em `127.0.0.1`, sem dados reais e sem secrets de produção.
+
+O commit anterior `bd7138d` falhou nos dois workflows exatamente no step de
+testes com MySQL (`information_schema` devolve colunas em maiúsculas no MySQL 8);
+`d45d12e` corrigiu os aliases e os quatro runs seguintes passaram. Conclusões
+por step obtidas pela API do GitHub Actions; o download do log compactado do Actions
+retornou `EOF` nesta sessão, portanto **não** afirmamos contagem de testes lida
+nos logs do CI, apenas as conclusões verificadas.
+
+Isso é evidência de **CI isolado**, não de produção: não certifica o schema real
+do MySQL do painel, não valida migration em homologação, não autoriza deploy e
+não altera nenhum marcador de estado acima. Local significa apenas este sandbox:
+sem MySQL, sem homologação e sem produção. Um `CONTRACT PASS` local não é gate de
+CI verde e muito menos autorização de deploy; um CI verde também não ativa o
+enforcement, que continua **desligado por padrão**.
 
 ## Roadmap (inalterado quanto ao OIDC)
 
